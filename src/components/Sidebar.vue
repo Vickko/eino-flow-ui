@@ -39,9 +39,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <aside class="w-64 border-r border-border bg-card flex flex-col h-full">
+  <aside class="h-full rounded-xl border border-border bg-card/80 backdrop-blur-md flex flex-col shadow-sm">
     <!-- Header / Branding -->
-    <div class="p-4 border-b border-border flex items-center justify-between">
+    <div class="p-4 border-b border-border/50 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <div class="w-6 h-6 bg-primary rounded-md flex items-center justify-center text-primary-foreground text-xs font-bold">E</div>
         <h1 class="font-semibold text-foreground">Eino DevOps</h1>

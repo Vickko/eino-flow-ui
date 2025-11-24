@@ -15,74 +15,94 @@
     </div>
 
     <!-- Empty State -->
-    <div v-else class="flex-1 flex flex-col h-full overflow-hidden relative">
-      <!-- Hover Trigger Zone -->
+    <!-- Hover Trigger Zone -->
+    <div
+      class="absolute top-0 left-0 right-0 h-8 z-[60]"
+      @mouseenter="show"
+      @mouseleave="hide"
+    ></div>
+
+    <!-- Floating Toolbar -->
+    <div
+      class="absolute top-0 left-0 right-0 z-[60] flex justify-center transition-transform duration-300 ease-in-out pointer-events-none"
+      :class="showToolbar ? 'translate-y-4' : '-translate-y-full'"
+    >
       <div
-        class="absolute top-0 left-0 right-0 h-8 z-40"
+        class="bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border border-border shadow-lg rounded-full px-4 py-2 flex items-center gap-4 pointer-events-auto transition-all duration-300 ease-in-out"
         @mouseenter="show"
         @mouseleave="hide"
-      ></div>
-
-      <!-- Floating Toolbar -->
-      <div
-        class="absolute top-0 left-0 right-0 z-50 flex justify-center transition-transform duration-300 ease-in-out pointer-events-none"
-        :class="showToolbar ? 'translate-y-4' : '-translate-y-full'"
       >
-        <div
-          class="bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border border-border shadow-lg rounded-full px-4 py-2 flex items-center gap-4 pointer-events-auto"
-          @mouseenter="show"
-          @mouseleave="hide"
+        <!-- Left Panel Toggle -->
+        <button
+          @click="showSidebar = !showSidebar"
+          class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors text-foreground cursor-pointer"
+          :class="{ 'text-primary': showSidebar }"
+          title="Toggle Sidebar"
         >
-          <!-- Left Panel Toggle -->
-          <button
-            @click="showSidebar = !showSidebar"
-            class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors text-foreground cursor-pointer"
-            :class="{ 'text-primary': showSidebar }"
-            title="Toggle Sidebar"
-          >
-            <PanelLeft class="w-4 h-4" />
-          </button>
+          <PanelLeft class="w-4 h-4" />
+        </button>
 
-          <div class="h-3 w-px bg-border"></div>
+        <div class="h-3 w-px bg-border"></div>
 
-          <div class="flex items-center gap-3">
-            <h2 class="font-semibold text-foreground text-sm">{{ graphName || 'No Graph Selected' }}</h2>
-            <template v-if="selectedGraphId">
-              <span class="w-px h-4 bg-border"></span>
-              <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                <span class="font-mono">{{ selectedGraphId }}</span>
-                <span>v{{ graphVersion }}</span>
+        <div
+          class="transition-[width] duration-300 ease-in-out overflow-hidden"
+          :style="{ width: typeof wrapperWidth === 'number' ? wrapperWidth + 'px' : wrapperWidth }"
+        >
+          <div ref="contentRef" class="w-max flex items-center justify-center min-w-[24px]">
+            <Transition
+              mode="out-in"
+              enter-active-class="transition-all duration-200 ease-in-out"
+              leave-active-class="transition-all duration-200 ease-in-out"
+              enter-from-class="opacity-0 scale-95"
+              enter-to-class="opacity-100 scale-100"
+              leave-from-class="opacity-100 scale-100"
+              leave-to-class="opacity-0 scale-95"
+            >
+              <div v-if="loading" class="flex items-center justify-center px-2 h-6">
+                <Loader2 class="w-4 h-4 animate-spin text-muted-foreground" />
               </div>
-              <div class="flex items-center gap-2 ml-2">
-                <span class="px-2 py-0.5 bg-green-500/10 text-green-600 text-[10px] font-medium rounded-full uppercase tracking-wider">Active</span>
+              <div v-else class="flex items-center">
+                <h2 class="font-semibold text-foreground text-sm">{{ graphName || 'No Graph Selected' }}</h2>
+                <div v-if="selectedGraphId" class="flex items-center gap-3 whitespace-nowrap ml-3">
+                  <span class="w-px h-4 bg-border"></span>
+                  <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span class="font-mono">{{ selectedGraphId }}</span>
+                    <span>v{{ graphVersion }}</span>
+                  </div>
+                  <div class="flex items-center gap-2 ml-2">
+                    <span class="px-2 py-0.5 bg-green-500/10 text-green-600 text-[10px] font-medium rounded-full uppercase tracking-wider">Active</span>
+                  </div>
+                </div>
               </div>
-            </template>
+            </Transition>
           </div>
-
-          <div class="h-3 w-px bg-border"></div>
-
-          <!-- Bottom Panel Toggle -->
-          <button
-            @click="showBottomPanel = !showBottomPanel"
-            class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors text-foreground cursor-pointer"
-            :class="{ 'text-primary': showBottomPanel }"
-            title="Toggle Bottom Panel"
-          >
-            <PanelBottom class="w-4 h-4" />
-          </button>
-
-          <!-- Right Panel Toggle -->
-          <button
-            @click="showInspector = !showInspector"
-            class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors text-foreground cursor-pointer"
-            :class="{ 'text-primary': showInspector }"
-            title="Toggle Inspector"
-          >
-            <PanelRight class="w-4 h-4" />
-          </button>
         </div>
-      </div>
 
+        <div class="h-3 w-px bg-border"></div>
+
+        <!-- Bottom Panel Toggle -->
+        <button
+          @click="showBottomPanel = !showBottomPanel"
+          class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors text-foreground cursor-pointer"
+          :class="{ 'text-primary': showBottomPanel }"
+          title="Toggle Bottom Panel"
+        >
+          <PanelBottom class="w-4 h-4" />
+        </button>
+
+        <!-- Right Panel Toggle -->
+        <button
+          @click="showInspector = !showInspector"
+          class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors text-foreground cursor-pointer"
+          :class="{ 'text-primary': showInspector }"
+          title="Toggle Inspector"
+        >
+          <PanelRight class="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+
+    <div v-if="!loading && !error" class="flex-1 flex flex-col h-full overflow-hidden relative">
       <!-- Empty State -->
       <div v-if="!selectedGraphId" class="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-muted/20">
         <div class="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 shadow-sm">
@@ -125,12 +145,12 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { VueFlow, useVueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
-import { PanelLeft, PanelRight, PanelBottom } from 'lucide-vue-next';
+import { PanelLeft, PanelRight, PanelBottom, Loader2 } from 'lucide-vue-next';
 import dagre from 'dagre';
 import { fetchGraphCanvas } from '../api';
 import CustomNode from './CustomNode.vue';
@@ -149,6 +169,26 @@ const { fitView } = useVueFlow();
 
 const showToolbar = ref(false);
 let hideTimeout;
+const contentRef = ref(null);
+const wrapperWidth = ref('auto');
+let resizeObserver;
+
+onMounted(() => {
+  if (contentRef.value) {
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        wrapperWidth.value = entry.contentRect.width;
+      }
+    });
+    resizeObserver.observe(contentRef.value);
+  }
+});
+
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+});
 
 const show = () => {
   clearTimeout(hideTimeout);
@@ -196,12 +236,18 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
 };
 
 const loadGraphDetails = async (id) => {
-  if (!id) return;
-  
-  loading.value = true;
+  // Reset state first
   error.value = null;
   elements.value = [];
   setSelectedNode(null); // Clear selection
+  
+  if (!id) {
+    graphName.value = '';
+    graphVersion.value = '';
+    return;
+  }
+  
+  loading.value = true;
 
   try {
     const data = await fetchGraphCanvas(id);

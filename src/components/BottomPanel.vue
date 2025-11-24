@@ -86,9 +86,9 @@ const runDebug = async () => {
 </script>
 
 <template>
-  <div class="h-64 border-t border-border bg-card flex flex-col shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
+  <div class="h-full rounded-xl border border-border bg-card/80 backdrop-blur-md flex flex-col shadow-lg overflow-hidden">
     <!-- Header / Toolbar -->
-    <div class="h-10 border-b border-border flex items-center justify-between px-4 bg-muted/30">
+    <div class="h-10 border-b border-border/50 flex items-center justify-between px-4 bg-muted/30">
       <div class="flex items-center gap-4">
         <h3 class="text-sm font-semibold text-foreground">Debug Console</h3>
         <div class="flex items-center gap-2">

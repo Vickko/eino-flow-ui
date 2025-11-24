@@ -26,9 +26,9 @@ const formattedConfig = computed(() => {
 </script>
 
 <template>
-  <aside class="w-80 border-l border-border bg-card flex flex-col h-full shadow-xl z-10">
+  <aside class="h-full rounded-xl border border-border bg-card/80 backdrop-blur-md flex flex-col shadow-xl overflow-hidden">
     <!-- Header -->
-    <div class="h-14 border-b border-border flex items-center justify-between px-4 bg-card/80 backdrop-blur-sm">
+    <div class="h-14 border-b border-border/50 flex items-center justify-between px-4">
       <h2 class="font-semibold text-foreground">Inspector</h2>
       <div v-if="selectedNode" class="text-xs text-muted-foreground font-mono truncate max-w-[120px]">{{ selectedNode.key }}</div>
     </div>
