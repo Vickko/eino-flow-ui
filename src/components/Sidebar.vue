@@ -39,7 +39,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <aside class="h-full rounded-xl border border-border bg-card/80 backdrop-blur-md flex flex-col shadow-sm">
+  <aside class="w-64 h-full rounded-xl border border-border bg-card/80 backdrop-blur-md flex flex-col shadow-sm">
     <!-- Header / Branding -->
     <div class="p-4 border-b border-border/50 flex items-center justify-between">
       <div class="flex items-center gap-2">
