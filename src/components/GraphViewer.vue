@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 h-full relative flex flex-col bg-background">
+  <div class="flex-1 h-full relative flex flex-col">
     <!-- Loading State -->
     <div v-if="loading" class="absolute inset-0 bg-background/80 flex flex-col items-center justify-center z-50 backdrop-blur-sm">
       <div class="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin mb-4"></div>
@@ -121,7 +121,7 @@
       </div>
       
       <!-- Canvas -->
-      <div v-else class="flex-1 bg-muted/20 relative">
+      <div v-else class="flex-1 relative">
         <VueFlow
           v-model="elements"
           :default-zoom="1"

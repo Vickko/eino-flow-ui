@@ -31,46 +31,71 @@ onMounted(() => {
     </div>
 
     <!-- 2. UI Overlay Layer (Top Z-Index, Pointer Events None) -->
-    <div class="absolute inset-0 z-10 pointer-events-none flex p-3 gap-3">
+    <div class="absolute inset-0 z-10 pointer-events-none flex flex-col p-3 gap-3">
       
-      <!-- Left Sidebar Container -->
-      <div
-        class="h-full flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden pointer-events-auto"
-        :class="showSidebar ? 'w-64' : 'w-0'"
-      >
-        <div class="w-64 h-full">
-          <Sidebar />
-        </div>
+      <!-- Top Row: Sidebar + Spacer + Inspector -->
+      <div class="flex flex-1 min-h-0 gap-3">
+        
+        <!-- Sidebar -->
+        <Transition name="slide-left">
+          <div v-if="showSidebar" class="w-64 h-full pointer-events-auto">
+            <Sidebar />
+          </div>
+        </Transition>
+
+        <!-- Spacer to let clicks pass through to Graph -->
+        <div class="flex-1"></div>
+
+        <!-- Inspector -->
+        <Transition name="slide-right">
+          <div v-if="showInspector" class="w-80 h-full pointer-events-auto">
+            <Inspector />
+          </div>
+        </Transition>
       </div>
 
-      <!-- Right Column (Inspector + BottomPanel) -->
-      <div class="flex flex-col flex-1 min-w-0 gap-3">
-        
-        <!-- Top Row: Spacer + Inspector -->
-        <div class="flex flex-1 min-h-0 gap-3">
-          <!-- Spacer to let clicks pass through to Graph -->
-          <div class="flex-1"></div>
-
-          <!-- Right Inspector Container -->
-          <div
-            class="flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden pointer-events-auto"
-            :class="showInspector ? 'w-80' : 'w-0'"
-          >
-            <div class="w-80 h-full">
-              <Inspector />
-            </div>
-          </div>
-        </div>
-
-        <!-- Bottom Panel Container -->
-        <div
-          class="flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden pointer-events-auto"
-          :class="showBottomPanel ? 'h-64' : 'h-0'"
-        >
+      <!-- Bottom Row: BottomPanel -->
+      <Transition name="slide-up">
+        <div v-if="showBottomPanel" class="h-64 w-full pointer-events-auto">
           <BottomPanel />
         </div>
-      </div>
+      </Transition>
 
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Sidebar Transition */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 0.3s ease-in-out;
+}
+.slide-left-enter-from,
+.slide-left-leave-to {
+  transform: translateX(-120%);
+  opacity: 0;
+}
+
+/* Inspector Transition */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.3s ease-in-out;
+}
+.slide-right-enter-from,
+.slide-right-leave-to {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+/* BottomPanel Transition */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease-in-out;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(120%);
+  opacity: 0;
+}
+</style>
