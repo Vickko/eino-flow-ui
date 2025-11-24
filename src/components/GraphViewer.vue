@@ -123,7 +123,7 @@
       </div>
       
       <!-- Canvas -->
-      <div v-else class="flex-1 relative">
+      <div v-else class="flex-1 relative" ref="graphContainer">
         <VueFlow
           v-model="elements"
           :default-zoom="1"
@@ -153,7 +153,7 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
-import { VueFlow, useVueFlow } from '@vue-flow/core';
+import { VueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
@@ -172,7 +172,9 @@ import '@vue-flow/minimap/dist/style.css';
 
 const { selectedGraphId, setSelectedNode } = useGraph();
 const { showSidebar, showInspector, showBottomPanel } = useLayout();
-const { fitView } = useVueFlow();
+
+const vueFlowInstance = ref(null);
+const graphContainer = ref(null);
 
 const showToolbar = ref(false);
 let hideTimeout;
@@ -231,7 +233,7 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
   dagreGraph.setGraph({ rankdir: direction });
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: 240, height: 100 }); // Approximate size
+    dagreGraph.setNode(node.id, { width: 240, height: 150 }); // Approximate size
   });
 
   edges.forEach((edge) => {
@@ -251,6 +253,7 @@ const getLayoutedElements = (nodes, edges, direction = 'LR') => {
     ...edges,
   ];
 };
+
 
 const loadGraphDetails = async (id) => {
   // Reset state first
@@ -297,9 +300,16 @@ const loadGraphDetails = async (id) => {
       // Wait for DOM update then fit view
       await nextTick();
       
-      // Fit view and show graph
-      fitView({ padding: 0.2, duration: 0 });
-      
+      // Give Vue Flow a moment to render nodes and calculate dimensions
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      if (vueFlowInstance.value) {
+        await vueFlowInstance.value.fitView({ padding: 0.3, duration: 0 });
+
+        // Adjust viewport to move content upward (for graph switching)
+        adjustViewportPosition(vueFlowInstance.value);
+      }
+
       // Use requestAnimationFrame to ensure the fitView has been applied before showing
       requestAnimationFrame(() => {
         isGraphReady.value = true;
@@ -314,13 +324,32 @@ const loadGraphDetails = async (id) => {
   }
 };
 
+// Helper function to adjust viewport position upward
+const adjustViewportPosition = (instance) => {
+  const viewport = instance.getViewport();
+  const upwardOffset = 160; // Fixed pixel offset upward
+
+  instance.setViewport({
+    x: viewport.x,
+    y: viewport.y - upwardOffset,
+    zoom: viewport.zoom
+  }, { duration: 0 });
+};
+
 const onNodeClick = (event) => {
   setSelectedNode(event.node.data);
 };
 
 const onPaneReady = (instance) => {
-  // Initial fit view just in case
-  instance.fitView({ padding: 0.2, duration: 0 });
+  vueFlowInstance.value = instance;
+
+  // Adjust viewport on initial load
+  setTimeout(() => {
+    if (elements.value.length > 0) {
+      instance.fitView({ padding: 0.3, duration: 0 });
+      adjustViewportPosition(instance);
+    }
+  }, 100);
 };
 
 watch(selectedGraphId, (newId) => {
