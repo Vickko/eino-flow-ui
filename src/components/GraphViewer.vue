@@ -23,15 +23,16 @@
     ></div>
 
     <!-- Floating Toolbar -->
-    <div
-      class="absolute top-0 left-0 right-0 z-[60] flex justify-center transition-transform duration-300 ease-in-out pointer-events-none"
-      :class="showToolbar ? 'translate-y-4' : '-translate-y-full'"
-    >
+    <Teleport to="body">
       <div
-        class="bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border border-border shadow-lg rounded-full px-4 py-2 flex items-center gap-4 pointer-events-auto transition-all duration-300 ease-in-out"
-        @mouseenter="show"
-        @mouseleave="hide"
+        class="fixed top-0 left-0 right-0 z-[9999] flex justify-center transition-transform duration-300 ease-in-out pointer-events-none"
+        :class="showToolbar ? 'translate-y-4' : '-translate-y-full'"
       >
+        <div
+          class="bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border border-border shadow-lg rounded-full px-4 py-2 flex items-center gap-4 pointer-events-auto transition-all duration-300 ease-in-out"
+          @mouseenter="show"
+          @mouseleave="hide"
+        >
         <!-- Left Panel Toggle -->
         <button
           @click="showSidebar = !showSidebar"
@@ -98,9 +99,10 @@
           title="Toggle Inspector"
         >
           <PanelRight class="w-4 h-4" />
-        </button>
+          </button>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <div v-if="!loading && !error" class="flex-1 flex flex-col h-full overflow-hidden relative">
       <!-- Empty State -->
@@ -137,7 +139,10 @@
           
           <Background pattern-color="#94a3b8" :gap="16" />
           <Controls class="bg-card border border-border shadow-sm rounded-md overflow-hidden" />
-          <MiniMap class="border border-border shadow-sm rounded-md overflow-hidden" />
+          <MiniMap
+            class="border border-border shadow-sm rounded-md overflow-hidden transition-all duration-300"
+            :style="minimapStyle"
+          />
         </VueFlow>
       </div>
     </div>
@@ -145,7 +150,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { VueFlow, useVueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
@@ -170,6 +175,15 @@ const { fitView } = useVueFlow();
 const showToolbar = ref(false);
 let hideTimeout;
 const contentRef = ref(null);
+
+const minimapStyle = computed(() => {
+  const bottom = showBottomPanel.value ? 'calc(12px + 256px + 15px)' : '15px';
+  const right = showInspector.value ? 'calc(12px + 320px + 15px)' : '15px';
+  return {
+    bottom,
+    right,
+  };
+});
 const wrapperWidth = ref('auto');
 let resizeObserver;
 

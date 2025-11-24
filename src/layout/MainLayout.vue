@@ -31,7 +31,7 @@ onMounted(() => {
     </div>
 
     <!-- 2. UI Overlay Layer (Top Z-Index, Pointer Events None) -->
-    <div class="absolute inset-0 z-10 pointer-events-none flex flex-col p-3 gap-3">
+    <div class="absolute inset-0 z-10 pointer-events-none flex flex-col p-3">
       
       <!-- Top Row: Sidebar + Spacer + Inspector -->
       <div class="flex flex-1 min-h-0 gap-3">
@@ -55,11 +55,12 @@ onMounted(() => {
       </div>
 
       <!-- Bottom Row: BottomPanel -->
-      <Transition name="slide-up">
-        <div v-if="showBottomPanel" class="h-64 w-full pointer-events-auto">
-          <BottomPanel />
-        </div>
-      </Transition>
+      <div
+        class="w-full pointer-events-auto shrink-0 transition-all duration-300 ease-in-out overflow-hidden"
+        :class="showBottomPanel ? 'h-64 mt-3 opacity-100' : 'h-0 mt-0 opacity-0'"
+      >
+        <BottomPanel />
+      </div>
 
     </div>
   </div>
@@ -69,33 +70,30 @@ onMounted(() => {
 /* Sidebar Transition */
 .slide-left-enter-active,
 .slide-left-leave-active {
-  transition: all 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out;
 }
 .slide-left-enter-from,
 .slide-left-leave-to {
   transform: translateX(-120%);
-  opacity: 0;
 }
 
 /* Inspector Transition */
 .slide-right-enter-active,
 .slide-right-leave-active {
-  transition: all 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out;
 }
 .slide-right-enter-from,
 .slide-right-leave-to {
   transform: translateX(120%);
-  opacity: 0;
 }
 
 /* BottomPanel Transition */
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: all 0.3s ease-in-out;
+  transition: opacity 0.3s ease-in-out;
 }
 .slide-up-enter-from,
 .slide-up-leave-to {
-  transform: translateY(120%);
   opacity: 0;
 }
 </style>

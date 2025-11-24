@@ -69,7 +69,7 @@ onMounted(() => {
     </div>
 
     <!-- Graph List -->
-    <div class="flex-1 overflow-y-auto p-2">
+    <div class="flex-1 overflow-y-auto overflow-x-hidden p-2">
       <div class="text-xs font-medium text-muted-foreground px-2 py-2 uppercase tracking-wider">Graphs</div>
       
       <div v-if="loading" class="p-4 text-center text-sm text-muted-foreground">
