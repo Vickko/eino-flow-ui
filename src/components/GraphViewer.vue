@@ -130,8 +130,10 @@
           :min-zoom="0.2"
           :max-zoom="4"
           :fit-view-on-init="true"
-          class="h-full w-full"
+          class="h-full w-full transition-opacity duration-300"
+          :class="{ 'opacity-0': !isGraphReady, 'opacity-100': isGraphReady }"
           @node-click="onNodeClick"
+          @pane-ready="onPaneReady"
         >
           <template #node-custom="props">
             <CustomNode :data="props.data" :selected="props.selected" />
@@ -150,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { VueFlow, useVueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
@@ -220,6 +222,7 @@ const error = ref(null);
 const graphName = ref('');
 const graphVersion = ref('');
 const elements = ref([]);
+const isGraphReady = ref(false);
 
 // Dagre layout function
 const getLayoutedElements = (nodes, edges, direction = 'LR') => {
@@ -254,6 +257,7 @@ const loadGraphDetails = async (id) => {
   error.value = null;
   elements.value = [];
   setSelectedNode(null); // Clear selection
+  isGraphReady.value = false;
   
   if (!id) {
     graphName.value = '';
@@ -289,11 +293,17 @@ const loadGraphDetails = async (id) => {
       }));
 
       elements.value = getLayoutedElements(nodes, edges);
+
+      // Wait for DOM update then fit view
+      await nextTick();
       
-      // Fit view after a short delay to allow rendering
-      setTimeout(() => {
-        fitView();
-      }, 100);
+      // Fit view and show graph
+      fitView({ padding: 0.2, duration: 0 });
+      
+      // Use requestAnimationFrame to ensure the fitView has been applied before showing
+      requestAnimationFrame(() => {
+        isGraphReady.value = true;
+      });
     } else {
       error.value = 'Failed to load graph details';
     }
@@ -306,6 +316,11 @@ const loadGraphDetails = async (id) => {
 
 const onNodeClick = (event) => {
   setSelectedNode(event.node.data);
+};
+
+const onPaneReady = (instance) => {
+  // Initial fit view just in case
+  instance.fitView({ padding: 0.2, duration: 0 });
 };
 
 watch(selectedGraphId, (newId) => {
