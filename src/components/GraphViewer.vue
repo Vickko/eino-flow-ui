@@ -177,8 +177,8 @@ let hideTimeout;
 const contentRef = ref(null);
 
 const minimapStyle = computed(() => {
-  const bottom = showBottomPanel.value ? 'calc(12px + 256px + 12px)' : '12px';
-  const right = showInspector.value ? 'calc(12px + 320px + 12px)' : '12px';
+  const bottom = showBottomPanel.value ? 'calc(12px + 256px)' : '12px';
+  const right = showInspector.value ? 'calc(12px + 320px)' : '12px';
   return {
     bottom,
     right,
