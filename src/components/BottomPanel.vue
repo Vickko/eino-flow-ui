@@ -3,7 +3,7 @@ import { ref, watch, nextTick } from 'vue';
 import { useGraph } from '../composables/useGraph';
 import { createDebugThread, streamDebugRun, fetchGraphCanvas } from '../api';
 
-const { selectedGraphId, selectedNode, setSelectedNode, setNodeExecutionResult, clearExecutionResults } = useGraph();
+const { selectedGraphId, selectedNode, setSelectedNode, setNodeExecutionResult, clearExecutionResults, nodeExecutionResults } = useGraph();
 
 const inputJson = ref('{\n  "query": "hello"\n}');
 const logs = ref([]);
@@ -16,6 +16,11 @@ const logsContainer = ref(null);
 const typewriteQueue = ref([]);
 const isTyping = ref(false);
 const isInternalUpdate = ref(false); // 标志位：是否为内部自动更新
+
+// 新增：管理手动修改状态
+const manuallyModifiedInputs = ref(new Map()); // 存储每个节点的手动修改内容
+const useDefaultTemplate = ref(false); // 标记是否使用默认模板（点击重置按钮后）
+const isSystemUpdate = ref(false); // 标记是否为系统自动更新输入框
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -211,23 +216,58 @@ const updateInputTemplate = () => {
     return;
   }
 
-  // 优先使用 component_schema 的 input_type
-  let inputType = null;
-  if (node.component_schema && node.component_schema.input_type) {
-    inputType = node.component_schema.input_type;
-  } else if (node.graph_schema && node.graph_schema.input_type) {
-    // 如果是子图，使用 graph_schema 的 input_type
-    inputType = node.graph_schema.input_type;
+  isSystemUpdate.value = true;
+
+  // 获取默认模板的函数
+  const getDefaultTemplate = () => {
+    // 优先使用 component_schema 的 input_type
+    let inputType = null;
+    if (node.component_schema && node.component_schema.input_type) {
+      inputType = node.component_schema.input_type;
+    } else if (node.graph_schema && node.graph_schema.input_type) {
+      // 如果是子图，使用 graph_schema 的 input_type
+      inputType = node.graph_schema.input_type;
+    }
+    return inputType ? generateSampleJson(inputType) : null;
+  };
+
+  // 如果点击了重置按钮，使用默认模板
+  if (useDefaultTemplate.value) {
+    const defaultTemplate = getDefaultTemplate();
+    if (defaultTemplate) {
+      inputJson.value = defaultTemplate;
+    }
+  }
+  // 如果当前节点有手动修改的内容，优先使用手动修改的内容
+  else if (manuallyModifiedInputs.value.has(selectedFromNode.value)) {
+    inputJson.value = manuallyModifiedInputs.value.get(selectedFromNode.value);
+  }
+  // 如果当前节点有执行结果的输入，使用执行结果中的输入
+  else if (nodeExecutionResults.value[selectedFromNode.value]?.input) {
+    const executionInput = nodeExecutionResults.value[selectedFromNode.value].input;
+    inputJson.value = typeof executionInput === 'string'
+      ? executionInput
+      : JSON.stringify(executionInput, null, 2);
+  }
+  // 否则使用默认模板
+  else {
+    const defaultTemplate = getDefaultTemplate();
+    if (defaultTemplate) {
+      inputJson.value = defaultTemplate;
+    }
   }
 
-  if (inputType) {
-    inputJson.value = generateSampleJson(inputType);
-  }
+  nextTick(() => {
+    isSystemUpdate.value = false;
+  });
 };
 
 // 监听图选择变化
 watch(selectedGraphId, (newId) => {
   loadCanvasNodes(newId);
+  // 切换图时清除手动修改记录
+  manuallyModifiedInputs.value.clear();
+  useDefaultTemplate.value = false;
 }, { immediate: true });
 
 // 监听图中节点选择变化，更新 from node
@@ -253,6 +293,9 @@ watch(selectedNode, (newNode) => {
 
 // 监听 from node 选择变化，更新输入模板并联动图节点选择
 watch(selectedFromNode, () => {
+  // 切换节点时，重置重置按钮的状态
+  useDefaultTemplate.value = false;
+
   // 总是更新输入模板
   updateInputTemplate();
 
@@ -276,6 +319,34 @@ watch(selectedFromNode, () => {
   }
 });
 
+// 监听输入框变化，跟踪手动修改
+watch(inputJson, (newValue) => {
+  // 如果是系统自动更新，不标记为手动修改
+  if (isSystemUpdate.value) {
+    return;
+  }
+  // 保存当前节点的手动修改内容
+  if (selectedFromNode.value) {
+    manuallyModifiedInputs.value.set(selectedFromNode.value, newValue);
+  }
+  // 重置重置按钮的状态
+  useDefaultTemplate.value = false;
+});
+
+// 重置按钮处理函数
+const resetToDefault = () => {
+  if (!selectedFromNode.value) return;
+
+  useDefaultTemplate.value = true;
+  manuallyModifiedInputs.value.delete(selectedFromNode.value);
+  updateInputTemplate();
+
+  // 重置后，立即清除标志，以便下次切换节点时正常工作
+  nextTick(() => {
+    useDefaultTemplate.value = false;
+  });
+};
+
 const runDebug = async () => {
   if (!selectedGraphId.value) {
     appendLog('Error: No graph selected');
@@ -294,6 +365,9 @@ const runDebug = async () => {
     appendLog('Error: Invalid JSON input');
     return;
   }
+
+  // 清除手动修改内容，因为用户已经运行了测试
+  manuallyModifiedInputs.value.delete(selectedFromNode.value);
 
   isRunning.value = true;
   status.value = 'Running...';
@@ -463,7 +537,21 @@ const runDebug = async () => {
       <!-- Input Area -->
       <div class="w-1/2 flex flex-col rounded-lg border border-border/30 bg-muted/20 overflow-hidden">
         <div class="bg-muted/20 px-3 py-2 border-b border-border/10 flex items-center justify-between">
-          <span class="text-xs text-muted-foreground font-mono font-medium">Input (JSON)</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted-foreground font-mono font-medium">Input (JSON)</span>
+            <!-- Reset Button -->
+            <button
+              @click="resetToDefault"
+              :disabled="!selectedFromNode"
+              class="text-[10px] px-2 py-0.5 rounded bg-muted/40 hover:bg-muted border border-border/30 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+              title="重置为默认模板"
+            >
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              重置
+            </button>
+          </div>
           <!-- Node Selector -->
           <div class="flex items-center gap-2">
             <label class="text-[10px] text-muted-foreground font-medium">From Node:</label>
