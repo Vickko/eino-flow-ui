@@ -3,7 +3,13 @@ import { computed, ref } from 'vue';
 import { useGraph } from '../composables/useGraph';
 import { Settings2, Activity } from 'lucide-vue-next';
 
-const { selectedNode, nodeExecutionResults } = useGraph();
+const { selectedNode, nodeExecutionResults, navigateToSubgraph } = useGraph();
+
+const handleViewSubgraph = () => {
+  if (selectedNode.value?.graph_schema) {
+    navigateToSubgraph(selectedNode.value.graph_schema);
+  }
+};
 
 const activeTab = ref('config');
 
@@ -54,6 +60,11 @@ const parsedError = computed(() => {
 });
 
 const nodeTypeColor = computed(() => {
+  // 如果节点包含子图，使用琥珀色
+  if (selectedNode.value?.graph_schema) {
+    return 'bg-amber-500';
+  }
+
   const type = selectedNode.value?.type?.toLowerCase() || '';
   switch (type) {
     case 'start': return 'bg-emerald-500';
@@ -165,17 +176,6 @@ const formattedStartTime = computed(() => {
             </div>
           </div>
         </div>
-
-        <!-- Subgraph Info -->
-        <div v-if="selectedNode.graph_schema" class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg backdrop-blur-sm">
-          <div class="flex items-center gap-2 text-amber-500 mb-1">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <span class="text-xs font-medium">Subgraph Available</span>
-          </div>
-          <p class="text-[10px] text-amber-500/80">This node contains a nested graph definition.</p>
-        </div>
       </div>
 
       <!-- Trace Tab -->
@@ -266,7 +266,10 @@ const formattedStartTime = computed(() => {
 
     <!-- Footer Actions -->
     <div v-if="selectedNode?.graph_schema" class="p-4 border-t border-border/40 bg-muted/10 backdrop-blur-sm">
-      <button class="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 active:scale-[0.98]">
+      <button
+        @click="handleViewSubgraph"
+        class="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-all duration-200 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 active:scale-[0.98]"
+      >
         <span>View Subgraph</span>
         <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

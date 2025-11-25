@@ -73,7 +73,7 @@ const filteredGraphs = computed(() => {
       <div
         v-for="graph in filteredGraphs"
         :key="graph.id"
-        @click="selectedId === graph.id ? $emit('select', '') : $emit('select', graph.id)"
+        @click="selectedId === graph.id ? $emit('select', '', '') : $emit('select', graph.id, graph.name)"
         class="relative px-3 py-2 rounded-r-md text-sm font-medium cursor-pointer transition-all duration-200 ease-out truncate border-l-2"
         :class="[
           selectedId === graph.id

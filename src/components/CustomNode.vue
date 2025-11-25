@@ -14,6 +14,11 @@ const props = defineProps({
 });
 
 const statusColor = computed(() => {
+  // 如果节点包含子图，使用琥珀色
+  if (props.data.graph_schema) {
+    return 'bg-amber-500';
+  }
+
   const type = props.data.type?.toLowerCase() || '';
   switch (type) {
     case 'start': return 'bg-emerald-500';

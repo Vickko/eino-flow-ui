@@ -62,7 +62,15 @@
               <div v-if="loading" class="flex items-center justify-center px-2 h-6">
                 <Loader2 class="w-4 h-4 animate-spin text-muted-foreground" />
               </div>
-              <div v-else class="flex items-center">
+              <div v-else class="flex items-center gap-2">
+                <button
+                  v-if="canNavigateBack"
+                  @click="navigateBack"
+                  class="flex items-center justify-center w-5 h-5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                  :title="`返回: ${graphNavigationStack[graphNavigationStack.length - 2]?.name || ''}`"
+                >
+                  <ChevronLeft class="w-4 h-4" />
+                </button>
                 <h2 class="font-semibold text-foreground text-sm">{{ graphName || 'No Graph Selected' }}</h2>
                 <div v-if="selectedGraphId" class="flex items-center gap-3 whitespace-nowrap ml-3">
                   <span class="w-px h-4 bg-border"></span>
@@ -160,7 +168,7 @@ import { VueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
-import { PanelLeft, PanelRight, PanelBottom, Loader2 } from 'lucide-vue-next';
+import { PanelLeft, PanelRight, PanelBottom, Loader2, ChevronLeft } from 'lucide-vue-next';
 import dagre from 'dagre';
 import { fetchGraphCanvas } from '../api';
 import CustomNode from './CustomNode.vue';
@@ -173,7 +181,7 @@ import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
 import '@vue-flow/minimap/dist/style.css';
 
-const { selectedGraphId, setSelectedNode } = useGraph();
+const { selectedGraphId, setSelectedNode, canNavigateBack, navigateBack, graphNavigationStack } = useGraph();
 const { showSidebar, showInspector, showBottomPanel } = useLayout();
 
 const vueFlowInstance = ref(null);

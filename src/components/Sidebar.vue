@@ -1,6 +1,6 @@
 <script setup>
-import { ref, nextTick } from 'vue';
-import { Sun, Moon, Monitor, Settings, Check, X } from 'lucide-vue-next';
+import { ref, nextTick, computed } from 'vue';
+import { Sun, Moon, Monitor, Settings, Check, X, ChevronLeft } from 'lucide-vue-next';
 import { useGraph } from '@/composables/useGraph';
 import { useTheme } from '@/composables/useTheme';
 import { useServerStatus } from '@/composables/useServerStatus';
@@ -8,7 +8,7 @@ import { useApiConfig } from '@/composables/useApiConfig';
 import GraphList from '@/components/GraphList.vue';
 import Logo from '@/components/Logo.vue';
 
-const { selectedGraphId, setSelectedGraphId } = useGraph();
+const { selectedGraphId, setSelectedGraphId, graphNavigationStack, canNavigateBack, navigateBack } = useGraph();
 const { theme, cycleTheme } = useTheme();
 const { isOnline, checkHeartbeat } = useServerStatus();
 const { apiBaseUrl, updateApiBaseUrl } = useApiConfig();
@@ -87,7 +87,7 @@ const cancelEditingApi = () => {
       <GraphList
         :search-query="searchQuery"
         :selected-id="selectedGraphId"
-        @select="setSelectedGraphId"
+        @select="(id, name) => setSelectedGraphId(id, name)"
       />
     </div>
 
