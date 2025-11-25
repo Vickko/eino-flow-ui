@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Sun, Moon } from 'lucide-vue-next';
+import { Sun, Moon, Monitor } from 'lucide-vue-next';
 import { fetchGraphs } from '@/api';
 import { useGraph } from '@/composables/useGraph';
 import { useTheme } from '@/composables/useTheme';
@@ -8,7 +8,7 @@ import GraphList from '@/components/GraphList.vue';
 import Logo from '@/components/Logo.vue';
 
 const { selectedGraphId, setSelectedGraphId } = useGraph();
-const { isDark, toggleTheme } = useTheme();
+const { theme, cycleTheme } = useTheme();
 const graphs = ref([]);
 const searchQuery = ref('');
 const loading = ref(false);
@@ -48,12 +48,13 @@ onMounted(() => {
         <h1 class="font-bold tracking-tight text-lg text-foreground">Eino DevOps</h1>
       </div>
       <button
-        @click="toggleTheme"
+        @click="cycleTheme"
         class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-primary/10 hover:text-primary transition-all duration-200 text-muted-foreground"
-        :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        :title="`Current: ${theme.charAt(0).toUpperCase() + theme.slice(1)}`"
       >
-        <Sun v-if="!isDark" class="w-4 h-4" />
-        <Moon v-else class="w-4 h-4" />
+        <Sun v-if="theme === 'light'" class="w-4 h-4" />
+        <Moon v-else-if="theme === 'dark'" class="w-4 h-4" />
+        <Monitor v-else class="w-4 h-4" />
       </button>
     </div>
 
