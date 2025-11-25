@@ -140,9 +140,12 @@
           </template>
           
           <Background pattern-color="#94a3b8" :gap="16" />
-          <Controls class="bg-card border border-border shadow-sm rounded-md overflow-hidden" />
+          <Controls
+            class="bg-card border border-border shadow-panel rounded-md overflow-hidden transition-all duration-300"
+            :style="controlsStyle"
+          />
           <MiniMap
-            class="border border-border shadow-sm rounded-md overflow-hidden transition-all duration-300"
+            class="border border-border shadow-panel rounded-md overflow-hidden transition-all duration-300"
             :style="minimapStyle"
           />
         </VueFlow>
@@ -186,6 +189,15 @@ const minimapStyle = computed(() => {
   return {
     bottom,
     right,
+  };
+});
+
+const controlsStyle = computed(() => {
+  const bottom = showBottomPanel.value ? 'calc(12px + 256px)' : '12px';
+  const left = showSidebar.value ? 'calc(12px + 256px)' : '12px';
+  return {
+    bottom,
+    left,
   };
 });
 const wrapperWidth = ref('auto');
@@ -291,8 +303,8 @@ const loadGraphDetails = async (id) => {
         label: edge.name,
         type: 'smoothstep',
         animated: true,
-        style: { stroke: '#94a3b8' },
-        labelStyle: { fill: '#64748b', fontWeight: 700 }
+        style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 2 },
+        labelStyle: { fontWeight: 700 }
       }));
 
       elements.value = getLayoutedElements(nodes, edges);

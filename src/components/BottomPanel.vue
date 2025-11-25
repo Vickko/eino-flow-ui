@@ -86,11 +86,11 @@ const runDebug = async () => {
 </script>
 
 <template>
-  <div class="h-full rounded-xl border border-border bg-card/10 backdrop-blur-md flex flex-col shadow-sm overflow-hidden">
+  <div class="h-full rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl flex flex-col shadow-panel overflow-hidden">
     <!-- Header / Toolbar -->
     <div class="h-12 flex items-center justify-between px-4 bg-transparent shrink-0">
       <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2 px-2 py-1 rounded-md bg-white/5 border border-white/10">
+        <div class="flex items-center gap-2 px-2 py-1 rounded-md bg-muted/20 border border-border/20">
           <h3 class="text-xs font-semibold text-foreground/80">Debug Console</h3>
         </div>
         <div class="flex items-center gap-2 px-2 py-1">
@@ -110,7 +110,7 @@ const runDebug = async () => {
         </button>
         <button
           @click="clearLogs"
-          class="text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-white/5 border border-transparent hover:border-white/10 transition-all duration-200 active:scale-95"
+          class="text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/20 border border-transparent hover:border-border/20 transition-all duration-200 active:scale-95"
         >
           Clear
         </button>
@@ -120,26 +120,26 @@ const runDebug = async () => {
     <!-- Content Area -->
     <div class="flex-1 flex overflow-hidden px-2 pb-2 pt-0 gap-2">
       <!-- Input Area -->
-      <div class="w-1/2 flex flex-col rounded-lg border border-border/30 bg-card overflow-hidden">
-        <div class="bg-white/5 px-3 py-2 border-b border-border/10 text-xs text-muted-foreground font-mono font-medium">Input (JSON)</div>
+      <div class="w-1/2 flex flex-col rounded-lg border border-border/30 bg-muted/20 overflow-hidden">
+        <div class="bg-muted/20 px-3 py-2 border-b border-border/10 text-xs text-muted-foreground font-mono font-medium">Input (JSON)</div>
         <textarea
           v-model="inputJson"
-          class="flex-1 w-full p-3 font-mono text-xs text-foreground bg-transparent resize-none focus:outline-none focus:bg-white/5 transition-colors placeholder:text-muted-foreground/40"
+          class="flex-1 w-full p-3 font-mono text-xs text-foreground bg-transparent resize-none focus:outline-none focus:bg-muted/10 transition-colors placeholder:text-muted-foreground/40"
           placeholder='{ "key": "value" }'
           spellcheck="false"
         ></textarea>
       </div>
 
       <!-- Output Area -->
-      <div class="w-1/2 flex flex-col rounded-lg border border-border/30 bg-zinc-950 overflow-hidden">
-        <div class="bg-white/5 px-3 py-2 border-b border-border/10 text-xs text-muted-foreground font-mono font-medium flex justify-between items-center">
+      <div class="w-1/2 flex flex-col rounded-lg border border-border/30 bg-muted/20 overflow-hidden">
+        <div class="bg-muted/20 px-3 py-2 border-b border-border/10 text-xs text-muted-foreground font-mono font-medium flex justify-between items-center">
           <span>Output / Logs</span>
-          <span v-if="logs.length" class="text-[10px] opacity-60 bg-white/10 px-1.5 py-0.5 rounded-full">{{ logs.length }}</span>
+          <span v-if="logs.length" class="text-[10px] opacity-60 bg-muted/30 px-1.5 py-0.5 rounded-full">{{ logs.length }}</span>
         </div>
-        <div class="flex-1 p-3 font-mono text-xs text-zinc-300 overflow-y-auto space-y-1">
-          <div v-if="logs.length === 0" class="text-zinc-500 italic px-1">Waiting for execution...</div>
-          <div v-for="(log, index) in logs" :key="index" class="flex gap-2 hover:bg-white/5 rounded px-2 py-0.5 -mx-1 transition-colors">
-            <span class="text-zinc-500 shrink-0 select-none">[{{ log.timestamp }}]</span>
+        <div class="flex-1 p-3 font-mono text-xs text-muted-foreground overflow-y-auto space-y-1">
+          <div v-if="logs.length === 0" class="text-muted-foreground/50 italic px-1">Waiting for execution...</div>
+          <div v-for="(log, index) in logs" :key="index" class="flex gap-2 hover:bg-muted/10 rounded px-2 py-0.5 -mx-1 transition-colors">
+            <span class="text-muted-foreground/60 shrink-0 select-none">[{{ log.timestamp }}]</span>
             <span class="break-all whitespace-pre-wrap">{{ log.message }}</span>
           </div>
         </div>

@@ -25,8 +25,8 @@ onMounted(() => {
       <slot :selectedGraphId="selectedGraphId" />
       
       <!-- Grid Background Placeholder (Visual Aid) -->
-      <div class="absolute inset-0 pointer-events-none opacity-[0.03]"
-           style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;">
+      <div class="absolute inset-0 pointer-events-none opacity-[0.05]"
+           style="background-image: radial-gradient(currentColor 1px, transparent 1px); background-size: 20px 20px;">
       </div>
     </div>
 

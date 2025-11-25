@@ -5,6 +5,7 @@ import { fetchGraphs } from '@/api';
 import { useGraph } from '@/composables/useGraph';
 import { useTheme } from '@/composables/useTheme';
 import GraphList from '@/components/GraphList.vue';
+import Logo from '@/components/Logo.vue';
 
 const { selectedGraphId, setSelectedGraphId } = useGraph();
 const { isDark, toggleTheme } = useTheme();
@@ -39,16 +40,16 @@ onMounted(() => {
 </script>
 
 <template>
-  <aside class="w-64 h-full rounded-xl border border-border bg-card/10 backdrop-blur-md flex flex-col shadow-sm">
+  <aside class="w-64 h-full rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl flex flex-col shadow-panel overflow-hidden">
     <!-- Header / Branding -->
-    <div class="p-4 border-b border-border/50 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <div class="w-6 h-6 bg-primary rounded-md flex items-center justify-center text-primary-foreground text-xs font-bold">E</div>
-        <h1 class="font-semibold text-foreground">Eino DevOps</h1>
+    <div class="p-4 border-b border-border/40 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <Logo />
+        <h1 class="font-bold tracking-tight text-lg text-foreground">Eino DevOps</h1>
       </div>
       <button
         @click="toggleTheme"
-        class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+        class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-primary/10 hover:text-primary transition-all duration-200 text-muted-foreground"
         :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
       >
         <Sun v-if="!isDark" class="w-4 h-4" />
@@ -58,19 +59,19 @@ onMounted(() => {
 
     <!-- Search -->
     <div class="p-4 pb-2">
-      <div class="relative">
+      <div class="relative group">
         <input
           v-model="searchQuery"
           type="text"
           placeholder="Search graphs..."
-          class="w-full h-9 bg-muted/50 border border-input rounded-md px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all"
+          class="w-full h-9 bg-muted/20 border border-border/50 rounded-md px-3 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all group-hover:border-border/80"
         />
       </div>
     </div>
 
     <!-- Graph List -->
     <div class="flex-1 overflow-y-auto overflow-x-hidden p-2">
-      <div class="text-xs font-medium text-muted-foreground px-2 py-2 uppercase tracking-wider">Graphs</div>
+      <div class="text-[10px] font-semibold text-muted-foreground px-3 py-2 uppercase tracking-wider opacity-80">Graphs</div>
       
       <div v-if="loading" class="p-4 text-center text-sm text-muted-foreground">
         Loading...
