@@ -29,7 +29,7 @@
         :class="showToolbar ? 'translate-y-4' : '-translate-y-full'"
       >
         <div
-          class="bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border border-border shadow-lg rounded-full px-4 py-2 flex items-center gap-4 pointer-events-auto transition-all duration-300 ease-in-out"
+          class="bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border border-border shadow-panel rounded-full px-4 py-2 flex items-center gap-4 pointer-events-auto transition-all duration-300 ease-in-out"
           @mouseenter="show"
           @mouseleave="hide"
         >

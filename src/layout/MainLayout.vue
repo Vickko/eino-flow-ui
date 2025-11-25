@@ -56,8 +56,8 @@ onMounted(() => {
 
       <!-- Bottom Row: BottomPanel -->
       <div
-        class="w-full pointer-events-auto shrink-0 transition-all duration-300 ease-in-out overflow-hidden"
-        :class="showBottomPanel ? 'h-64 mt-3 opacity-100' : 'h-0 mt-0 opacity-0'"
+        class="w-full pointer-events-auto shrink-0 transition-all duration-300 ease-in-out overflow-hidden rounded-xl relative z-20"
+        :class="showBottomPanel ? 'h-64 mt-3 opacity-100 shadow-panel border border-border/40 bg-background/60 backdrop-blur-xl' : 'h-0 mt-0 opacity-0 border-0'"
       >
         <BottomPanel />
       </div>
