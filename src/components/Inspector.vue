@@ -26,7 +26,7 @@ const formattedConfig = computed(() => {
 </script>
 
 <template>
-  <aside class="w-80 h-full rounded-xl border border-border bg-card/80 backdrop-blur-md flex flex-col shadow-sm overflow-hidden">
+  <aside class="w-80 h-full rounded-xl border border-border bg-card/10 backdrop-blur-md flex flex-col shadow-sm overflow-hidden">
     <!-- Header -->
     <div class="h-14 border-b border-border/50 flex items-center justify-between px-4">
       <h2 class="font-semibold text-foreground">Inspector</h2>

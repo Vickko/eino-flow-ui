@@ -86,21 +86,23 @@ const runDebug = async () => {
 </script>
 
 <template>
-  <div class="h-full rounded-xl border border-border bg-card/80 backdrop-blur-md flex flex-col shadow-sm overflow-hidden">
+  <div class="h-full rounded-xl border border-border bg-card/10 backdrop-blur-md flex flex-col shadow-sm overflow-hidden">
     <!-- Header / Toolbar -->
-    <div class="h-10 border-b border-border/50 flex items-center justify-between px-4 bg-muted/30">
+    <div class="h-12 flex items-center justify-between px-4 bg-transparent shrink-0">
       <div class="flex items-center gap-4">
-        <h3 class="text-sm font-semibold text-foreground">Debug Console</h3>
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full" :class="statusColor"></span>
-          <span class="text-xs text-muted-foreground">{{ status }}</span>
+        <div class="flex items-center gap-2 px-2 py-1 rounded-md bg-white/5 border border-white/10">
+          <h3 class="text-xs font-semibold text-foreground/80">Debug Console</h3>
+        </div>
+        <div class="flex items-center gap-2 px-2 py-1">
+          <span class="w-1.5 h-1.5 rounded-full" :class="statusColor"></span>
+          <span class="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">{{ status }}</span>
         </div>
       </div>
       <div class="flex items-center gap-2">
         <button
           @click="runDebug"
           :disabled="isRunning || !selectedGraphId"
-          class="text-xs font-medium text-white bg-green-500 hover:bg-green-600 px-2 py-1 rounded transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 active:scale-95"
+          class="text-xs font-medium text-white bg-green-600/90 hover:bg-green-500 border border-green-500/30 hover:border-green-400 px-3 py-1.5 rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 active:scale-95 shadow-[0_0_10px_rgba(34,197,94,0.15)]"
         >
           <svg v-if="!isRunning" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
           <svg v-else class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -108,7 +110,7 @@ const runDebug = async () => {
         </button>
         <button
           @click="clearLogs"
-          class="text-xs font-medium text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted transition-all duration-200 active:scale-95"
+          class="text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-white/5 border border-transparent hover:border-white/10 transition-all duration-200 active:scale-95"
         >
           Clear
         </button>
@@ -116,27 +118,27 @@ const runDebug = async () => {
     </div>
 
     <!-- Content Area -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex overflow-hidden px-2 pb-2 pt-0 gap-2">
       <!-- Input Area -->
-      <div class="w-1/2 border-r border-border p-0 flex flex-col">
-        <div class="bg-muted/30 px-3 py-1 border-b border-border text-xs text-muted-foreground font-mono">Input (JSON)</div>
+      <div class="w-1/2 flex flex-col rounded-lg border border-border/30 bg-card overflow-hidden">
+        <div class="bg-white/5 px-3 py-2 border-b border-border/10 text-xs text-muted-foreground font-mono font-medium">Input (JSON)</div>
         <textarea
           v-model="inputJson"
-          class="flex-1 w-full p-3 font-mono text-xs text-foreground bg-card resize-none focus:outline-none focus:bg-primary/5 transition-colors"
+          class="flex-1 w-full p-3 font-mono text-xs text-foreground bg-transparent resize-none focus:outline-none focus:bg-white/5 transition-colors placeholder:text-muted-foreground/40"
           placeholder='{ "key": "value" }'
           spellcheck="false"
         ></textarea>
       </div>
 
       <!-- Output Area -->
-      <div class="w-1/2 flex flex-col bg-zinc-950">
-        <div class="bg-zinc-900 px-3 py-1 border-b border-zinc-800 text-xs text-zinc-400 font-mono flex justify-between">
+      <div class="w-1/2 flex flex-col rounded-lg border border-border/30 bg-zinc-950 overflow-hidden">
+        <div class="bg-white/5 px-3 py-2 border-b border-border/10 text-xs text-muted-foreground font-mono font-medium flex justify-between items-center">
           <span>Output / Logs</span>
-          <span v-if="logs.length" class="text-[10px] opacity-60">{{ logs.length }} lines</span>
+          <span v-if="logs.length" class="text-[10px] opacity-60 bg-white/10 px-1.5 py-0.5 rounded-full">{{ logs.length }}</span>
         </div>
         <div class="flex-1 p-3 font-mono text-xs text-zinc-300 overflow-y-auto space-y-1">
-          <div v-if="logs.length === 0" class="opacity-30 italic">Waiting for execution...</div>
-          <div v-for="(log, index) in logs" :key="index" class="flex gap-2 hover:bg-white/5 rounded px-1 -mx-1">
+          <div v-if="logs.length === 0" class="text-zinc-500 italic px-1">Waiting for execution...</div>
+          <div v-for="(log, index) in logs" :key="index" class="flex gap-2 hover:bg-white/5 rounded px-2 py-0.5 -mx-1 transition-colors">
             <span class="text-zinc-500 shrink-0 select-none">[{{ log.timestamp }}]</span>
             <span class="break-all whitespace-pre-wrap">{{ log.message }}</span>
           </div>
