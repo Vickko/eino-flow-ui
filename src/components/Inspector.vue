@@ -71,6 +71,10 @@ const formattedConfig = computed(() => {
   const { component_schema, graph_schema, ...rest } = selectedNode.value;
   return JSON.stringify(rest, null, 2);
 });
+const formattedStartTime = computed(() => {
+  if (!executionResult.value?.timestamp) return '-';
+  return new Date(executionResult.value.timestamp).toLocaleTimeString();
+});
 </script>
 
 <template>
@@ -168,14 +172,29 @@ const formattedConfig = computed(() => {
         </div>
         <div v-else class="space-y-4">
           <!-- Status & Metrics -->
-          <div class="grid grid-cols-2 gap-2">
-            <div class="p-2 bg-muted/20 rounded border border-border/50">
+          <div class="space-y-2">
+            <!-- Status -->
+            <div class="p-2 bg-muted/20 rounded border border-border/50 flex items-center justify-between">
               <div class="text-[10px] text-muted-foreground uppercase">Status</div>
-              <div class="text-xs font-medium capitalize" :class="executionResult.status === 'error' ? 'text-red-500' : 'text-green-500'">{{ executionResult.status }}</div>
+              <div class="flex items-center gap-2">
+                <div
+                  class="w-2 h-2 rounded-full transition-colors duration-300"
+                  :class="executionResult.status === 'error' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'"
+                ></div>
+                <div class="text-xs font-medium capitalize text-foreground">{{ executionResult.status }}</div>
+              </div>
             </div>
-            <div class="p-2 bg-muted/20 rounded border border-border/50">
-              <div class="text-[10px] text-muted-foreground uppercase">Duration</div>
-              <div class="text-xs font-medium">{{ executionResult.metrics?.duration || 0 }}ms</div>
+
+            <!-- Metrics -->
+            <div class="grid grid-cols-2 gap-2">
+              <div class="p-2 bg-muted/20 rounded border border-border/50">
+                <div class="text-[10px] text-muted-foreground uppercase">Start Time</div>
+                <div class="text-xs font-medium">{{ formattedStartTime }}</div>
+              </div>
+              <div class="p-2 bg-muted/20 rounded border border-border/50">
+                <div class="text-[10px] text-muted-foreground uppercase">Duration</div>
+                <div class="text-xs font-medium">{{ executionResult.metrics?.duration || 0 }}ms</div>
+              </div>
             </div>
           </div>
 
