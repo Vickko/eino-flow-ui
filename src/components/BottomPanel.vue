@@ -51,10 +51,129 @@ const loadCanvasNodes = async (graphId) => {
   }
 };
 
+// 根据 JsonSchema 生成示例 JSON
+const generateSampleJson = (schema) => {
+  if (!schema) return '{}';
+
+  const generate = (s) => {
+    if (!s) return null;
+
+    // 处理 anyOf，选择第一个可用的 schema
+    if (s.anyOf && s.anyOf.length > 0) {
+      return generate(s.anyOf[0]);
+    }
+
+    // 如果没有明确的 type，但有 properties，假定为 object
+    if (!s.type && s.properties) {
+      s.type = 'object';
+    }
+
+    if (!s.type) return null;
+
+    switch (s.type) {
+      case 'string':
+        if (s.enum && s.enum.length > 0) {
+          return s.enum[0];
+        }
+        return s.default !== undefined ? s.default : '';
+
+      case 'number':
+        return s.default !== undefined ? s.default : 0;
+
+      case 'boolean':
+        return s.default !== undefined ? s.default : false;
+
+      case 'array':
+        if (s.items) {
+          const item = generate(s.items);
+          return item !== null ? [item] : [];
+        }
+        return [];
+
+      case 'object':
+        if (s.properties) {
+          const obj = {};
+          // 按 propertyOrder 排序（如果有）
+          const keys = s.propertyOrder || Object.keys(s.properties);
+          keys.forEach(key => {
+            if (s.properties[key]) {
+              const value = generate(s.properties[key]);
+              if (value !== null) {
+                obj[key] = value;
+              }
+            }
+          });
+          return obj;
+        }
+        if (s.additionalProperties) {
+          // 如果只有 additionalProperties，返回一个示例键值对
+          return { key: generate(s.additionalProperties) };
+        }
+        return {};
+
+      case 'interface':
+        // interface 类型通常代表复杂对象
+        if (s.properties) {
+          const obj = {};
+          const keys = s.propertyOrder || Object.keys(s.properties);
+          keys.forEach(key => {
+            if (s.properties[key]) {
+              const value = generate(s.properties[key]);
+              if (value !== null) {
+                obj[key] = value;
+              }
+            }
+          });
+          return obj;
+        }
+        return {};
+
+      case 'null':
+        return null;
+
+      default:
+        return null;
+    }
+  };
+
+  const sampleData = generate(schema);
+  return JSON.stringify(sampleData, null, 2);
+};
+
+// 根据选中的节点更新输入模板
+const updateInputTemplate = () => {
+  if (!selectedFromNode.value || !canvasNodes.value.length) {
+    return;
+  }
+
+  const node = canvasNodes.value.find(n => n.key === selectedFromNode.value);
+  if (!node) {
+    return;
+  }
+
+  // 优先使用 component_schema 的 input_type
+  let inputType = null;
+  if (node.component_schema && node.component_schema.input_type) {
+    inputType = node.component_schema.input_type;
+  } else if (node.graph_schema && node.graph_schema.input_type) {
+    // 如果是子图，使用 graph_schema 的 input_type
+    inputType = node.graph_schema.input_type;
+  }
+
+  if (inputType) {
+    inputJson.value = generateSampleJson(inputType);
+  }
+};
+
 // 监听图选择变化
 watch(selectedGraphId, (newId) => {
   loadCanvasNodes(newId);
 }, { immediate: true });
+
+// 监听节点选择变化，更新输入模板
+watch(selectedFromNode, () => {
+  updateInputTemplate();
+});
 
 const runDebug = async () => {
   if (!selectedGraphId.value) {
