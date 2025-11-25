@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useGraph } from '../composables/useGraph';
-import { createDebugThread, streamDebugRun } from '../api';
+import { createDebugThread, streamDebugRun, fetchGraphCanvas } from '../api';
 
 const { selectedGraphId } = useGraph();
 
@@ -10,6 +10,8 @@ const logs = ref([]);
 const isRunning = ref(false);
 const status = ref('Ready');
 const statusColor = ref('bg-green-500');
+const canvasNodes = ref([]);
+const selectedFromNode = ref('');
 
 const appendLog = (message) => {
   logs.value.push({
@@ -24,15 +26,50 @@ const clearLogs = () => {
   statusColor.value = 'bg-green-500';
 };
 
+// 加载图的 canvas 数据以获取节点列表
+const loadCanvasNodes = async (graphId) => {
+  if (!graphId) {
+    canvasNodes.value = [];
+    selectedFromNode.value = '';
+    return;
+  }
+
+  try {
+    const data = await fetchGraphCanvas(graphId);
+    if (data.code === 0 && data.data.canvas_info) {
+      const canvas = data.data.canvas_info;
+      canvasNodes.value = canvas.nodes || [];
+
+      // 自动选择起始节点（type 为 "start" 的节点）
+      const startNode = canvasNodes.value.find(node => node.type === 'start');
+      selectedFromNode.value = startNode ? startNode.key : (canvasNodes.value[0]?.key || '');
+    }
+  } catch (err) {
+    console.error('Failed to load canvas nodes:', err);
+    canvasNodes.value = [];
+    selectedFromNode.value = '';
+  }
+};
+
+// 监听图选择变化
+watch(selectedGraphId, (newId) => {
+  loadCanvasNodes(newId);
+}, { immediate: true });
+
 const runDebug = async () => {
   if (!selectedGraphId.value) {
     appendLog('Error: No graph selected');
     return;
   }
 
-  let parsedInput;
+  if (!selectedFromNode.value) {
+    appendLog('Error: No start node found. Please wait for canvas to load.');
+    return;
+  }
+
+  // 验证 JSON 输入
   try {
-    parsedInput = JSON.parse(inputJson.value);
+    JSON.parse(inputJson.value);
   } catch (e) {
     appendLog('Error: Invalid JSON input');
     return;
@@ -47,28 +84,29 @@ const runDebug = async () => {
   try {
     // 1. Create Thread
     appendLog('Creating debug thread...');
-    const threadRes = await createDebugThread(selectedGraphId.value, parsedInput);
-    
+    const threadRes = await createDebugThread(selectedGraphId.value, {});
+
     if (threadRes.code !== 0) {
       throw new Error(threadRes.msg || 'Failed to create thread');
     }
-    
+
     const threadId = threadRes.data.thread_id;
     appendLog(`Thread created: ${threadId}`);
 
-    // 2. Stream Run
+    // 2. 构建符合 API 文档的 DebugRunRequest
+    const debugRequest = {
+      from_node: selectedFromNode.value,
+      input: inputJson.value, // 保持为 JSON 字符串
+      log_id: `debug-${Date.now()}` // 生成一个唯一的 log_id
+    };
+
+    appendLog(`Starting from node: ${selectedFromNode.value}`);
     appendLog('Streaming execution...');
-    await streamDebugRun(selectedGraphId.value, threadId, parsedInput, (chunk) => {
-      // Try to format chunk if it's JSON, otherwise just append
-      try {
-        // Sometimes chunks might be multiple JSON objects concatenated or partial
-        // For simplicity, we just append the raw chunk text for now, 
-        // or you could try to parse SSE events if the backend sends them that way.
-        // Assuming raw text or line-delimited JSON for now based on typical stream implementations.
-        appendLog(chunk);
-      } catch (e) {
-        appendLog(chunk);
-      }
+
+    // 3. Stream Run
+    await streamDebugRun(selectedGraphId.value, threadId, debugRequest, (chunk) => {
+      // 直接追加 SSE 数据块
+      appendLog(chunk);
     });
 
     appendLog('Execution finished.');
@@ -121,7 +159,27 @@ const runDebug = async () => {
     <div class="flex-1 flex overflow-hidden px-2 pb-2 pt-0 gap-2">
       <!-- Input Area -->
       <div class="w-1/2 flex flex-col rounded-lg border border-border/30 bg-muted/20 overflow-hidden">
-        <div class="bg-muted/20 px-3 py-2 border-b border-border/10 text-xs text-muted-foreground font-mono font-medium">Input (JSON)</div>
+        <div class="bg-muted/20 px-3 py-2 border-b border-border/10 flex items-center justify-between">
+          <span class="text-xs text-muted-foreground font-mono font-medium">Input (JSON)</span>
+          <!-- Node Selector -->
+          <div class="flex items-center gap-2">
+            <label class="text-[10px] text-muted-foreground font-medium">From Node:</label>
+            <select
+              v-model="selectedFromNode"
+              class="text-[10px] px-2 py-0.5 rounded bg-muted border border-border/30 text-foreground font-mono focus:outline-none focus:border-primary/50 transition-colors"
+              :disabled="!canvasNodes.length"
+            >
+              <option v-if="!canvasNodes.length" value="">--</option>
+              <option
+                v-for="node in canvasNodes"
+                :key="node.key"
+                :value="node.key"
+              >
+                {{ node.key }} ({{ node.type }})
+              </option>
+            </select>
+          </div>
+        </div>
         <textarea
           v-model="inputJson"
           class="flex-1 w-full p-3 font-mono text-xs text-foreground bg-transparent resize-none focus:outline-none focus:bg-muted/10 transition-colors placeholder:text-muted-foreground/40"
