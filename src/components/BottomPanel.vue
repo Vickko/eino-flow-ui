@@ -176,7 +176,6 @@ watch(selectedFromNode, () => {
 });
 
 const runDebug = async () => {
-  console.log('[BottomPanel] Run button clicked');
   if (!selectedGraphId.value) {
     appendLog('Error: No graph selected');
     return;
@@ -225,38 +224,89 @@ const runDebug = async () => {
     appendLog('Streaming execution...');
 
     // 3. Stream Run
+    let sseBuffer = ''; // 用于累积 SSE 数据
     await streamDebugRun(selectedGraphId.value, threadId, debugRequest, (chunk) => {
       // 直接追加 SSE 数据块
       appendLog(chunk);
 
-      // 解析 SSE 数据以更新节点状态
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        console.log('[BottomPanel] Processing line:', line);
-        if (line.startsWith('data: ')) {
-          try {
-            const jsonStr = line.substring(6);
-            const data = JSON.parse(jsonStr);
-            console.log('[BottomPanel] Parsed data:', data);
-            
-            // 检查是否包含节点执行信息
-            // 数据结构：{ type: 'data', content: { node_key, input, output, metrics } }
-            if (data.type === 'data' && data.content && data.content.node_key) {
-              const nodeData = data.content;
-              console.log('[BottomPanel] Setting execution result for:', nodeData.node_key);
-              setNodeExecutionResult(nodeData.node_key, {
-                status: nodeData.status || (nodeData.error ? 'error' : 'success'),
-                input: nodeData.input,
-                output: nodeData.output,
-                error: nodeData.error,
-                metrics: nodeData.metrics || {},
-                timestamp: new Date().toISOString()
-              });
-            }
-          } catch (e) {
-            // 忽略解析错误，因为可能不是 JSON 数据
-            console.debug('Failed to parse SSE data:', e);
+      // 累积数据到缓冲区
+      sseBuffer += chunk;
+
+      // 按 SSE 事件分割（事件之间用双换行符分隔）
+      const events = sseBuffer.split('\n\n');
+
+      // 保留最后一个不完整的事件在缓冲区中
+      sseBuffer = events.pop() || '';
+
+      // 处理每个完整的 SSE 事件
+      for (const event of events) {
+        if (!event.trim()) continue;
+
+        // 提取 data 行
+        const lines = event.split('\n');
+        let dataContent = '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            dataContent += line.substring(6);
+          } else if (line.startsWith('data:')) {
+            dataContent += line.substring(5);
+          } else if (dataContent && line.startsWith(':')) {
+            // 继续前一行的 data
+            dataContent += line.substring(1);
           }
+        }
+
+        if (!dataContent) continue;
+
+        try {
+          const data = JSON.parse(dataContent);
+
+          // 检查是否包含节点执行信息
+          // 数据结构：{ type: 'data', content: { node_key, input, output, metrics } }
+          if (data.type === 'data' && data.content && data.content.node_key) {
+            const nodeData = data.content;
+
+            // 解析 input、output 和 error（它们可能是 JSON 字符串）
+            let parsedInput = nodeData.input;
+            let parsedOutput = nodeData.output;
+            let parsedError = nodeData.error;
+
+            try {
+              if (typeof nodeData.input === 'string') {
+                parsedInput = JSON.parse(nodeData.input);
+              }
+            } catch (e) {
+              // 解析失败，保留原始值
+            }
+
+            try {
+              if (typeof nodeData.output === 'string') {
+                parsedOutput = JSON.parse(nodeData.output);
+              }
+            } catch (e) {
+              // 解析失败，保留原始值
+            }
+
+            try {
+              if (typeof nodeData.error === 'string') {
+                parsedError = JSON.parse(nodeData.error);
+              }
+            } catch (e) {
+              // 解析失败，保留原始字符串
+            }
+
+            setNodeExecutionResult(nodeData.node_key, {
+              status: nodeData.status || (nodeData.error ? 'error' : 'success'),
+              input: parsedInput,
+              output: parsedOutput,
+              error: parsedError,
+              metrics: nodeData.metrics || {},
+              timestamp: new Date().toISOString()
+            });
+          }
+        } catch (e) {
+          // 忽略 SSE 解析错误
         }
       }
     });

@@ -9,21 +9,47 @@ const activeTab = ref('config');
 const executionResult = computed(() => {
   if (!selectedNode.value) return null;
   const result = nodeExecutionResults.value[selectedNode.value.key];
-  console.log('[Inspector] executionResult computed:', {
-    nodeKey: selectedNode.value.key,
-    result
-  });
   return result;
 });
 
 const formattedInput = computed(() => {
   if (!executionResult.value?.input) return '';
-  return JSON.stringify(executionResult.value.input, null, 2);
+  try {
+    // 如果已经是对象，直接格式化；如果是字符串，先解析再格式化
+    const input = typeof executionResult.value.input === 'string'
+      ? JSON.parse(executionResult.value.input)
+      : executionResult.value.input;
+    return JSON.stringify(input, null, 2);
+  } catch (e) {
+    // 如果解析失败，直接返回原始值
+    return executionResult.value.input;
+  }
 });
 
 const formattedOutput = computed(() => {
   if (!executionResult.value?.output) return '';
-  return JSON.stringify(executionResult.value.output, null, 2);
+  try {
+    // 如果已经是对象，直接格式化；如果是字符串，先解析再格式化
+    const output = typeof executionResult.value.output === 'string'
+      ? JSON.parse(executionResult.value.output)
+      : executionResult.value.output;
+    return JSON.stringify(output, null, 2);
+  } catch (e) {
+    // 如果解析失败，直接返回原始值
+    return executionResult.value.output;
+  }
+});
+
+const parsedError = computed(() => {
+  if (!executionResult.value?.error) return null;
+  try {
+    const err = typeof executionResult.value.error === 'string'
+      ? JSON.parse(executionResult.value.error)
+      : executionResult.value.error;
+    return (typeof err === 'object' && err !== null) ? err : null;
+  } catch (e) {
+    return null;
+  }
 });
 
 const nodeTypeColor = computed(() => {
@@ -166,9 +192,35 @@ const formattedConfig = computed(() => {
           </div>
 
           <!-- Error -->
-          <div v-if="executionResult.error" class="space-y-2">
-            <div class="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Error</div>
-            <div class="p-2 bg-red-500/10 rounded-lg border border-red-500/20 text-xs text-red-500 font-mono break-all">{{ executionResult.error }}</div>
+          <div v-if="executionResult.error" class="space-y-3">
+            <template v-if="parsedError">
+              <div class="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Error Details</div>
+              
+              <!-- Surface View: Key-Value List -->
+              <div class="bg-red-500/5 rounded-lg border border-red-500/20 overflow-hidden">
+                <div v-for="(value, key) in parsedError" :key="key" class="flex border-b border-red-500/10 last:border-0">
+                  <div class="w-1/3 p-2 border-r border-red-500/10 bg-red-500/10 text-[10px] font-medium text-red-600 truncate" :title="key">
+                    {{ key }}
+                  </div>
+                  <div class="w-2/3 p-2 text-xs font-mono text-red-600/90 break-all">
+                    {{ typeof value === 'object' ? JSON.stringify(value) : value }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Deep View: Raw JSON -->
+              <div class="space-y-1">
+                <div class="text-[10px] font-semibold text-red-500/70 uppercase tracking-wider">Raw Data</div>
+                <div class="p-2 bg-red-500/5 rounded-lg border border-red-500/20 text-xs text-red-500 font-mono overflow-x-auto whitespace-pre custom-scrollbar">
+                  {{ JSON.stringify(parsedError, null, 2) }}
+                </div>
+              </div>
+            </template>
+
+            <template v-else>
+              <div class="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Error</div>
+              <div class="p-2 bg-red-500/10 rounded-lg border border-red-500/20 text-xs text-red-500 font-mono break-all">{{ executionResult.error }}</div>
+            </template>
           </div>
         </div>
       </div>

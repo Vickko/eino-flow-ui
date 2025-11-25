@@ -20,7 +20,6 @@ export function useGraph() {
       ...nodeExecutionResults.value,
       [nodeKey]: result
     };
-    console.log('[useGraph] setNodeExecutionResult:', nodeKey, result);
   };
 
   const clearExecutionResults = () => {
