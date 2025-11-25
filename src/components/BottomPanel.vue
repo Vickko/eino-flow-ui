@@ -3,7 +3,7 @@ import { ref, watch } from 'vue';
 import { useGraph } from '../composables/useGraph';
 import { createDebugThread, streamDebugRun, fetchGraphCanvas } from '../api';
 
-const { selectedGraphId } = useGraph();
+const { selectedGraphId, setNodeExecutionResult, clearExecutionResults } = useGraph();
 
 const inputJson = ref('{\n  "query": "hello"\n}');
 const logs = ref([]);
@@ -176,6 +176,7 @@ watch(selectedFromNode, () => {
 });
 
 const runDebug = async () => {
+  console.log('[BottomPanel] Run button clicked');
   if (!selectedGraphId.value) {
     appendLog('Error: No graph selected');
     return;
@@ -198,6 +199,7 @@ const runDebug = async () => {
   status.value = 'Running...';
   statusColor.value = 'bg-amber-500 animate-pulse';
   logs.value = []; // Clear previous logs on new run
+  clearExecutionResults(); // Clear previous execution results
   appendLog('Starting debug session...');
 
   try {
@@ -226,6 +228,37 @@ const runDebug = async () => {
     await streamDebugRun(selectedGraphId.value, threadId, debugRequest, (chunk) => {
       // 直接追加 SSE 数据块
       appendLog(chunk);
+
+      // 解析 SSE 数据以更新节点状态
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        console.log('[BottomPanel] Processing line:', line);
+        if (line.startsWith('data: ')) {
+          try {
+            const jsonStr = line.substring(6);
+            const data = JSON.parse(jsonStr);
+            console.log('[BottomPanel] Parsed data:', data);
+            
+            // 检查是否包含节点执行信息
+            // 数据结构：{ type: 'data', content: { node_key, input, output, metrics } }
+            if (data.type === 'data' && data.content && data.content.node_key) {
+              const nodeData = data.content;
+              console.log('[BottomPanel] Setting execution result for:', nodeData.node_key);
+              setNodeExecutionResult(nodeData.node_key, {
+                status: nodeData.status || (nodeData.error ? 'error' : 'success'),
+                input: nodeData.input,
+                output: nodeData.output,
+                error: nodeData.error,
+                metrics: nodeData.metrics || {},
+                timestamp: new Date().toISOString()
+              });
+            }
+          } catch (e) {
+            // 忽略解析错误，因为可能不是 JSON 数据
+            console.debug('Failed to parse SSE data:', e);
+          }
+        }
+      }
     });
 
     appendLog('Execution finished.');

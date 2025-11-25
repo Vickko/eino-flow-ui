@@ -2,6 +2,7 @@ import { ref } from 'vue';
 
 const selectedGraphId = ref(null);
 const selectedNode = ref(null);
+const nodeExecutionResults = ref({});
 
 export function useGraph() {
   const setSelectedGraphId = (id) => {
@@ -13,10 +14,26 @@ export function useGraph() {
     selectedNode.value = node;
   };
 
+  const setNodeExecutionResult = (nodeKey, result) => {
+    // 创建新对象以确保触发响应性
+    nodeExecutionResults.value = {
+      ...nodeExecutionResults.value,
+      [nodeKey]: result
+    };
+    console.log('[useGraph] setNodeExecutionResult:', nodeKey, result);
+  };
+
+  const clearExecutionResults = () => {
+    nodeExecutionResults.value = {};
+  };
+
   return {
     selectedGraphId,
     setSelectedGraphId,
     selectedNode,
     setSelectedNode,
+    nodeExecutionResults,
+    setNodeExecutionResult,
+    clearExecutionResults,
   };
 }
