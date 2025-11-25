@@ -35,6 +35,7 @@ export function useServerStatus() {
   startHeartbeat();
 
   return {
-    isOnline
+    isOnline,
+    checkHeartbeat
   };
 }

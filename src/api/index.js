@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:52538/eino/devops';
+let API_BASE = 'http://localhost:52538/eino/devops';
 
 const apiClient = axios.create({
   baseURL: API_BASE,
@@ -8,6 +8,13 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+export const setBaseUrl = (url) => {
+  API_BASE = url;
+  apiClient.defaults.baseURL = url;
+};
+
+export const getBaseUrl = () => API_BASE;
 export const ping = async () => {
   try {
     const response = await apiClient.get('/ping');

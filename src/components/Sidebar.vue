@@ -1,16 +1,41 @@
 <script setup>
-import { ref } from 'vue';
-import { Sun, Moon, Monitor } from 'lucide-vue-next';
+import { ref, nextTick } from 'vue';
+import { Sun, Moon, Monitor, Settings, Check, X } from 'lucide-vue-next';
 import { useGraph } from '@/composables/useGraph';
 import { useTheme } from '@/composables/useTheme';
 import { useServerStatus } from '@/composables/useServerStatus';
+import { useApiConfig } from '@/composables/useApiConfig';
 import GraphList from '@/components/GraphList.vue';
 import Logo from '@/components/Logo.vue';
 
 const { selectedGraphId, setSelectedGraphId } = useGraph();
 const { theme, cycleTheme } = useTheme();
-const { isOnline } = useServerStatus();
+const { isOnline, checkHeartbeat } = useServerStatus();
+const { apiBaseUrl, updateApiBaseUrl } = useApiConfig();
 const searchQuery = ref('');
+
+const isEditingApi = ref(false);
+const tempApiUrl = ref('');
+const apiInput = ref(null);
+
+const startEditingApi = async () => {
+  tempApiUrl.value = apiBaseUrl.value;
+  isEditingApi.value = true;
+  await nextTick();
+  apiInput.value?.focus();
+};
+
+const saveApiUrl = async () => {
+  if (tempApiUrl.value) {
+    updateApiBaseUrl(tempApiUrl.value);
+    await checkHeartbeat();
+  }
+  isEditingApi.value = false;
+};
+
+const cancelEditingApi = () => {
+  isEditingApi.value = false;
+};
 </script>
 
 <template>
@@ -64,6 +89,43 @@ const searchQuery = ref('');
         :selected-id="selectedGraphId"
         @select="setSelectedGraphId"
       />
+    </div>
+
+    <!-- API Config -->
+    <div class="p-3 border-t border-border/40 bg-muted/10">
+      <div v-if="!isEditingApi" class="group flex flex-col gap-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">API Endpoint</span>
+          <button
+            @click="startEditingApi"
+            class="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-primary/10 rounded text-muted-foreground hover:text-primary"
+            title="Edit API URL"
+          >
+            <Settings class="w-3 h-3" />
+          </button>
+        </div>
+        <div class="text-xs text-muted-foreground truncate font-mono" :title="apiBaseUrl">{{ apiBaseUrl }}</div>
+      </div>
+
+      <div v-else class="flex flex-col gap-2">
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Edit API Endpoint</span>
+        <input
+          v-model="tempApiUrl"
+          type="text"
+          class="w-full h-7 bg-background border border-border rounded px-2 text-xs focus:outline-none focus:border-primary font-mono"
+          @keyup.enter="saveApiUrl"
+          @keyup.esc="cancelEditingApi"
+          ref="apiInput"
+        />
+        <div class="flex items-center gap-2 justify-end">
+          <button @click="cancelEditingApi" class="p-1 hover:bg-red-500/10 text-muted-foreground hover:text-red-500 rounded" title="Cancel">
+            <X class="w-3 h-3" />
+          </button>
+          <button @click="saveApiUrl" class="p-1 hover:bg-green-500/10 text-muted-foreground hover:text-green-500 rounded" title="Save">
+            <Check class="w-3 h-3" />
+          </button>
+        </div>
+      </div>
     </div>
 
   </aside>
