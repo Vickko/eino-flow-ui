@@ -3,7 +3,7 @@ import { ref, watch, nextTick } from 'vue';
 import { useGraph } from '../composables/useGraph';
 import { createDebugThread, streamDebugRun, fetchGraphCanvas } from '../api';
 
-const { selectedGraphId, setNodeExecutionResult, clearExecutionResults } = useGraph();
+const { selectedGraphId, selectedNode, setSelectedNode, setNodeExecutionResult, clearExecutionResults } = useGraph();
 
 const inputJson = ref('{\n  "query": "hello"\n}');
 const logs = ref([]);
@@ -15,6 +15,7 @@ const selectedFromNode = ref('');
 const logsContainer = ref(null);
 const typewriteQueue = ref([]);
 const isTyping = ref(false);
+const isInternalUpdate = ref(false); // 标志位：是否为内部自动更新
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -229,9 +230,50 @@ watch(selectedGraphId, (newId) => {
   loadCanvasNodes(newId);
 }, { immediate: true });
 
-// 监听节点选择变化，更新输入模板
+// 监听图中节点选择变化，更新 from node
+watch(selectedNode, (newNode) => {
+  // 如果是内部自动更新，跳过
+  if (isInternalUpdate.value) {
+    return;
+  }
+
+  if (newNode && newNode.key && canvasNodes.value.length > 0) {
+    // 只在节点存在于 canvasNodes 中且与当前值不同时更新
+    const nodeExists = canvasNodes.value.find(n => n.key === newNode.key);
+    if (nodeExists && selectedFromNode.value !== newNode.key) {
+      isInternalUpdate.value = true;
+      selectedFromNode.value = newNode.key;
+      // 使用 queueMicrotask 确保在同步代码执行完后重置
+      queueMicrotask(() => {
+        isInternalUpdate.value = false;
+      });
+    }
+  }
+});
+
+// 监听 from node 选择变化，更新输入模板并联动图节点选择
 watch(selectedFromNode, () => {
+  // 总是更新输入模板
   updateInputTemplate();
+
+  // 如果是内部自动更新，跳过图节点联动
+  if (isInternalUpdate.value) {
+    return;
+  }
+
+  // 同时更新 selectedNode 以联动 Inspector 和图
+  if (selectedFromNode.value && canvasNodes.value.length > 0) {
+    const node = canvasNodes.value.find(n => n.key === selectedFromNode.value);
+    // 只在节点不同时更新，避免循环
+    if (node && (!selectedNode.value || selectedNode.value.key !== node.key)) {
+      isInternalUpdate.value = true;
+      setSelectedNode(node);
+      // 使用 queueMicrotask 确保在同步代码执行完后重置
+      queueMicrotask(() => {
+        isInternalUpdate.value = false;
+      });
+    }
+  }
 });
 
 const runDebug = async () => {

@@ -181,7 +181,7 @@ import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
 import '@vue-flow/minimap/dist/style.css';
 
-const { selectedGraphId, setSelectedNode, canNavigateBack, navigateBack, graphNavigationStack } = useGraph();
+const { selectedGraphId, selectedNode, setSelectedNode, canNavigateBack, navigateBack, graphNavigationStack } = useGraph();
 const { showSidebar, showInspector, showBottomPanel } = useLayout();
 
 const vueFlowInstance = ref(null);
@@ -357,6 +357,10 @@ const adjustViewportPosition = (instance) => {
 };
 
 const onNodeClick = (event) => {
+  // 避免重复设置相同的节点
+  if (selectedNode.value && selectedNode.value.key === event.node.data.key) {
+    return;
+  }
   setSelectedNode(event.node.data);
 };
 
@@ -375,6 +379,19 @@ const onPaneReady = (instance) => {
 watch(selectedGraphId, (newId) => {
   loadGraphDetails(newId);
 });
+
+// 监听 selectedNode 变化，在图中高亮对应节点
+watch(selectedNode, (newNode) => {
+  // 确保图已加载完成，且有元素
+  if (!isGraphReady.value || elements.value.length === 0) {
+    return;
+  }
+
+  // 更新所有节点的选中状态
+  elements.value.forEach(el => {
+    el.selected = newNode && el.id === newNode.key;
+  });
+}, { immediate: false });
 </script>
 
 <style>
