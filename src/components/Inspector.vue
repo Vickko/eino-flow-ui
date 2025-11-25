@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useGraph } from '../composables/useGraph';
+import { Settings2, Activity } from 'lucide-vue-next';
 
 const { selectedNode, nodeExecutionResults } = useGraph();
 
@@ -82,7 +83,35 @@ const formattedStartTime = computed(() => {
       <!-- Header -->
       <div class="h-14 border-b border-border/40 flex items-center justify-between px-4 bg-muted/10">
         <h2 class="font-semibold text-sm tracking-tight text-foreground">Inspector</h2>
-        <div v-if="selectedNode" class="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono truncate max-w-[120px] border border-primary/20">{{ selectedNode.key }}</div>
+        
+        <!-- Toggle Switcher -->
+        <div
+          v-if="selectedNode"
+          class="relative flex items-center bg-muted/20 rounded-lg p-1 border border-border/50 h-8 w-20 cursor-pointer"
+          @click="activeTab = activeTab === 'config' ? 'trace' : 'config'"
+        >
+          <!-- Sliding Background -->
+          <div
+            class="absolute top-1 bottom-1 rounded-md bg-background shadow-sm transition-all duration-300 ease-out"
+            :class="activeTab === 'config' ? 'left-1 w-[calc(50%-4px)]' : 'left-[50%] w-[calc(50%-4px)]'"
+          ></div>
+          
+          <!-- Buttons -->
+          <div
+            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200"
+            :class="activeTab === 'config' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'"
+            title="Configuration"
+          >
+            <Settings2 class="w-4 h-4" />
+          </div>
+          <div
+            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200"
+            :class="activeTab === 'trace' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'"
+            title="Trace & Logs"
+          >
+            <Activity class="w-4 h-4" />
+          </div>
+        </div>
       </div>
 
     <!-- Empty State -->
@@ -94,31 +123,20 @@ const formattedStartTime = computed(() => {
     </div>
 
     <!-- Content -->
-    <div v-else class="flex-1 overflow-y-auto p-4 space-y-6">
+    <div v-else class="flex-1 overflow-y-auto p-4 space-y-6 [scrollbar-gutter:stable]">
       
       <!-- Node Identity -->
       <div class="space-y-3">
-        <div class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Node Type</div>
+        <div class="flex items-center justify-between">
+          <div class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Node Type</div>
+          <div class="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-mono truncate max-w-[150px] border border-primary/20">
+            {{ selectedNode.key }}
+          </div>
+        </div>
         <div class="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20">
           <span class="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)]" :class="nodeTypeColor"></span>
           <span class="text-sm font-medium text-foreground">{{ selectedNode.type }}</span>
         </div>
-      </div>
-
-      <!-- Tab Switcher -->
-      <div class="flex p-1 bg-muted/20 rounded-lg border border-border/50">
-        <button
-          @click="activeTab = 'config'"
-          :class="['flex-1 text-xs font-medium py-1.5 rounded-md transition-all', activeTab === 'config' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground']"
-        >
-          Config
-        </button>
-        <button
-          @click="activeTab = 'trace'"
-          :class="['flex-1 text-xs font-medium py-1.5 rounded-md transition-all', activeTab === 'trace' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground']"
-        >
-          Trace
-        </button>
       </div>
 
       <!-- Config Tab -->
