@@ -8,6 +8,15 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+export const ping = async () => {
+  try {
+    const response = await apiClient.get('/ping');
+    return response.data;
+  } catch (error) {
+    // Don't log error for ping to avoid console spam when offline
+    throw error;
+  }
+};
 
 export const fetchGraphs = async () => {
   try {

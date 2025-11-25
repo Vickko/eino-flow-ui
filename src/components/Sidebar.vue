@@ -1,42 +1,16 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref } from 'vue';
 import { Sun, Moon, Monitor } from 'lucide-vue-next';
-import { fetchGraphs } from '@/api';
 import { useGraph } from '@/composables/useGraph';
 import { useTheme } from '@/composables/useTheme';
+import { useServerStatus } from '@/composables/useServerStatus';
 import GraphList from '@/components/GraphList.vue';
 import Logo from '@/components/Logo.vue';
 
 const { selectedGraphId, setSelectedGraphId } = useGraph();
 const { theme, cycleTheme } = useTheme();
-const graphs = ref([]);
+const { isOnline } = useServerStatus();
 const searchQuery = ref('');
-const loading = ref(false);
-
-const filteredGraphs = computed(() => {
-  if (!searchQuery.value) return graphs.value;
-  return graphs.value.filter(g =>
-    g.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
-});
-
-const loadGraphs = async () => {
-  loading.value = true;
-  try {
-    const res = await fetchGraphs();
-    if (res.code === 0 && res.data?.graphs) {
-      graphs.value = res.data.graphs;
-    }
-  } catch (e) {
-    console.error('Failed to load graphs', e);
-  } finally {
-    loading.value = false;
-  }
-};
-
-onMounted(() => {
-  loadGraphs();
-});
 </script>
 
 <template>
@@ -45,7 +19,18 @@ onMounted(() => {
     <div class="p-4 border-b border-border/40 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <Logo />
-        <h1 class="font-bold tracking-tight text-lg text-foreground">Eino DevOps</h1>
+        <div class="flex flex-col">
+          <h1 class="font-bold tracking-tight text-lg text-foreground leading-none">Eino DevOps</h1>
+          <div class="flex items-center gap-1.5 mt-1">
+            <div 
+              class="w-2 h-2 rounded-full transition-colors duration-300" 
+              :class="isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500/50'"
+            ></div>
+            <span class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground transition-opacity duration-300" :class="{ 'opacity-50': !isOnline }">
+              {{ isOnline ? 'Online' : 'Offline' }}
+            </span>
+          </div>
+        </div>
       </div>
       <button
         @click="cycleTheme"
@@ -74,17 +59,8 @@ onMounted(() => {
     <div class="flex-1 overflow-y-auto overflow-x-hidden p-2">
       <div class="text-[10px] font-semibold text-muted-foreground px-3 py-2 uppercase tracking-wider opacity-80">Graphs</div>
       
-      <div v-if="loading" class="p-4 text-center text-sm text-muted-foreground">
-        Loading...
-      </div>
-      
-      <div v-else-if="filteredGraphs.length === 0" class="p-4 text-center text-sm text-muted-foreground">
-        No graphs found
-      </div>
-
       <GraphList
-        v-else
-        :graphs="filteredGraphs"
+        :search-query="searchQuery"
         :selected-id="selectedGraphId"
         @select="setSelectedGraphId"
       />

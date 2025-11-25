@@ -6,10 +6,12 @@ import BottomPanel from '@/components/BottomPanel.vue'
 import { useGraph } from '@/composables/useGraph'
 import { useTheme } from '@/composables/useTheme'
 import { useLayout } from '@/composables/useLayout'
+import { useServerStatus } from '@/composables/useServerStatus'
 
 const { selectedGraphId } = useGraph()
 const { initTheme } = useTheme()
 const { showSidebar, showInspector, showBottomPanel } = useLayout()
+const { isOnline } = useServerStatus()
 
 onMounted(() => {
   initTheme()
@@ -17,7 +19,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="relative h-screen w-screen overflow-hidden bg-background text-foreground font-sans">
+  <div
+    class="relative h-screen w-screen overflow-hidden bg-background text-foreground font-sans transition-all duration-500"
+    :class="{ 'grayscale-[0.5]': !isOnline }"
+  >
     
     <!-- 1. Graph Layer (Bottom Z-Index) -->
     <div class="absolute inset-0 z-0 bg-muted/20 overflow-hidden">
@@ -29,6 +34,23 @@ onMounted(() => {
            style="background-image: radial-gradient(currentColor 1px, transparent 1px); background-size: 20px 20px;">
       </div>
     </div>
+
+    <!-- Offline Overlay -->
+    <Transition
+      enter-active-class="transition-opacity duration-300"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-300"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="!isOnline" class="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
+        <div class="bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg font-medium text-sm flex items-center gap-2 backdrop-blur-sm">
+          <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+          Connection Lost
+        </div>
+      </div>
+    </Transition>
 
     <!-- 2. UI Overlay Layer (Top Z-Index, Pointer Events None) -->
     <div class="absolute inset-0 z-10 pointer-events-none flex flex-col p-3">
