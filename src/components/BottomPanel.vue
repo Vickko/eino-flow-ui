@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { useGraph } from '../composables/useGraph';
 import { createDebugThread, streamDebugRun, fetchGraphCanvas } from '../api';
 
@@ -12,12 +12,71 @@ const status = ref('Ready');
 const statusColor = ref('bg-green-500');
 const canvasNodes = ref([]);
 const selectedFromNode = ref('');
+const logsContainer = ref(null);
+const typewriteQueue = ref([]);
+const isTyping = ref(false);
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (logsContainer.value) {
+      logsContainer.value.scrollTop = logsContainer.value.scrollHeight;
+    }
+  });
+};
+
+const typewriteLog = (logEntry) => {
+  return new Promise((resolve) => {
+    let cursor = 0;
+    const totalLength = logEntry.fullMessage.length;
+    // "Very fast" effect: process multiple characters per frame
+    const charsPerFrame = 20;
+
+    const type = () => {
+      if (cursor < totalLength) {
+        const nextCursor = Math.min(cursor + charsPerFrame, totalLength);
+        logEntry.message += logEntry.fullMessage.substring(cursor, nextCursor);
+        cursor = nextCursor;
+
+        scrollToBottom();
+
+        if (cursor < totalLength) {
+          requestAnimationFrame(type);
+        } else {
+          resolve();
+        }
+      } else {
+        resolve();
+      }
+    };
+
+    requestAnimationFrame(type);
+  });
+};
+
+const processTypewriteQueue = async () => {
+  if (isTyping.value || typewriteQueue.value.length === 0) {
+    return;
+  }
+
+  isTyping.value = true;
+
+  while (typewriteQueue.value.length > 0) {
+    const logEntry = typewriteQueue.value.shift();
+    await typewriteLog(logEntry);
+  }
+
+  isTyping.value = false;
+};
 
 const appendLog = (message) => {
-  logs.value.push({
+  const logEntry = {
     timestamp: new Date().toLocaleTimeString(),
-    message: message
-  });
+    fullMessage: message,
+    message: ''
+  };
+  logs.value.push(logEntry);
+  typewriteQueue.value.push(logEntry);
+  processTypewriteQueue();
 };
 
 const clearLogs = () => {
@@ -396,7 +455,7 @@ const runDebug = async () => {
           <span>Output / Logs</span>
           <span v-if="logs.length" class="text-[10px] opacity-60 bg-muted/30 px-1.5 py-0.5 rounded-full">{{ logs.length }}</span>
         </div>
-        <div class="flex-1 p-3 font-mono text-xs text-muted-foreground overflow-y-auto space-y-1">
+        <div ref="logsContainer" class="flex-1 p-3 font-mono text-xs text-muted-foreground overflow-y-auto space-y-1">
           <div v-if="logs.length === 0" class="text-muted-foreground/50 italic px-1">Waiting for execution...</div>
           <div v-for="(log, index) in logs" :key="index" class="flex gap-2 hover:bg-muted/10 rounded px-2 py-0.5 -mx-1 transition-colors">
             <span class="text-muted-foreground/60 shrink-0 select-none">[{{ log.timestamp }}]</span>
