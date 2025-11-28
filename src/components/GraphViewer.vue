@@ -89,6 +89,18 @@
 
         <div class="h-3 w-px bg-border"></div>
 
+        <!-- Edge Type Toggle -->
+        <button
+          @click="toggleEdgeType"
+          class="flex items-center justify-center w-6 h-6 rounded-full hover:bg-muted transition-colors text-foreground cursor-pointer"
+          :title="edgeType === 'smoothstep' ? '切换为曲线' : '切换为折线'"
+        >
+          <Spline v-if="edgeType === 'default'" class="w-4 h-4" />
+          <Workflow v-else class="w-4 h-4" />
+        </button>
+
+        <div class="h-3 w-px bg-border"></div>
+
         <!-- Bottom Panel Toggle -->
         <button
           @click="showBottomPanel = !showBottomPanel"
@@ -168,7 +180,7 @@ import { VueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
-import { PanelLeft, PanelRight, PanelBottom, Loader2, ChevronLeft } from 'lucide-vue-next';
+import { PanelLeft, PanelRight, PanelBottom, Loader2, ChevronLeft, Spline, Workflow } from 'lucide-vue-next';
 import dagre from 'dagre';
 import { fetchGraphCanvas } from '../api';
 import CustomNode from './CustomNode.vue';
@@ -182,7 +194,7 @@ import '@vue-flow/controls/dist/style.css';
 import '@vue-flow/minimap/dist/style.css';
 
 const { selectedGraphId, selectedNode, setSelectedNode, canNavigateBack, navigateBack, graphNavigationStack } = useGraph();
-const { showSidebar, showInspector, showBottomPanel } = useLayout();
+const { showSidebar, showInspector, showBottomPanel, edgeType, toggleEdgeType } = useLayout();
 
 const vueFlowInstance = ref(null);
 const graphContainer = ref(null);
@@ -309,7 +321,7 @@ const loadGraphDetails = async (id) => {
         source: edge.source_node_key,
         target: edge.target_node_key,
         label: edge.name,
-        type: 'smoothstep',
+        type: edgeType.value,
         animated: true,
         style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 2 },
         labelStyle: { fontWeight: 700 }
@@ -392,6 +404,20 @@ watch(selectedNode, (newNode) => {
     el.selected = newNode && el.id === newNode.key;
   });
 }, { immediate: false });
+
+// 监听 edgeType 变化，更新所有边的类型
+watch(edgeType, (newType) => {
+  if (!isGraphReady.value || elements.value.length === 0) {
+    return;
+  }
+
+  elements.value.forEach(el => {
+    // 只更新边（有 source 和 target 的是边）
+    if (el.source && el.target) {
+      el.type = newType;
+    }
+  });
+});
 </script>
 
 <style>
