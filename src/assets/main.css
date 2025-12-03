@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -32,6 +34,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 }
+
+@plugin "@tailwindcss/typography";
 
 /* Custom Utilities */
 @utility shadow-panel {
@@ -162,3 +166,4 @@
   @apply fill-background;
   fill: hsl(var(--background)) !important;
 }
+
