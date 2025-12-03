@@ -20,10 +20,9 @@ onMounted(() => {
 
 <template>
   <div
-    class="relative h-screen w-screen overflow-hidden bg-background text-foreground font-sans transition-all duration-500"
-    :class="{ 'grayscale-[0.5]': !isOnline }"
+    class="relative h-screen w-screen overflow-hidden bg-background text-foreground font-sans"
   >
-    
+
     <!-- 1. Graph Layer (Bottom Z-Index) -->
     <div class="absolute inset-0 z-0 bg-muted/20 overflow-hidden">
       <!-- Slot for GraphViewer -->
@@ -35,22 +34,28 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Offline Overlay -->
+    <!-- Connection Lost Badge (animated, below grayscale) -->
     <Transition
-      enter-active-class="transition-opacity duration-300"
+      enter-active-class="transition-opacity duration-500"
       enter-from-class="opacity-0"
       enter-to-class="opacity-100"
-      leave-active-class="transition-opacity duration-300"
+      leave-active-class="transition-opacity duration-500"
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="!isOnline" class="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
-        <div class="bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg font-medium text-sm flex items-center gap-2 backdrop-blur-sm">
+      <div v-if="!isOnline" class="absolute inset-0 z-[99] pointer-events-none flex items-center justify-center">
+        <div class="bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg font-medium text-sm flex items-center gap-2">
           <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
           Connection Lost
         </div>
       </div>
     </Transition>
+
+    <!-- Offline Grayscale Overlay (instant) -->
+    <div
+      v-if="!isOnline"
+      class="absolute inset-0 z-[100] pointer-events-none backdrop-grayscale-[0.5]"
+    ></div>
 
     <!-- 2. UI Overlay Layer (Top Z-Index, Pointer Events None) -->
     <div class="absolute inset-0 z-10 pointer-events-none flex flex-col p-3">
