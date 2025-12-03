@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import Inspector from '@/components/Inspector.vue'
 import BottomPanel from '@/components/BottomPanel.vue'
+import GraphViewer from '@/components/GraphViewer.vue'
 import { useGraph } from '@/composables/useGraph'
 import { useTheme } from '@/composables/useTheme'
 import { useLayout } from '@/composables/useLayout'
@@ -25,8 +26,8 @@ onMounted(() => {
 
     <!-- 1. Graph Layer (Bottom Z-Index) -->
     <div class="absolute inset-0 z-0 bg-muted/20 overflow-hidden">
-      <!-- Slot for GraphViewer -->
-      <slot :selectedGraphId="selectedGraphId" />
+      <!-- GraphViewer -->
+      <GraphViewer :graph-id="selectedGraphId" />
       
       <!-- Grid Background Placeholder (Visual Aid) -->
       <div class="absolute inset-0 pointer-events-none opacity-[0.05]"
