@@ -1,41 +1,41 @@
-<script setup>
-import { ref, nextTick, computed } from 'vue';
-import { Sun, Moon, Monitor, Settings, Check, X, ChevronLeft } from 'lucide-vue-next';
-import { useGraph } from '@/composables/useGraph';
-import { useTheme } from '@/composables/useTheme';
-import { useServerStatus } from '@/composables/useServerStatus';
-import { useApiConfig } from '@/composables/useApiConfig';
-import GraphList from '@/components/GraphList.vue';
-import Logo from '@/components/Logo.vue';
+<script setup lang="ts">
+import { ref, nextTick } from 'vue'
+import { Sun, Moon, Monitor, Settings, Check, X } from 'lucide-vue-next'
+import { useGraph } from '@/composables/useGraph'
+import { useTheme } from '@/composables/useTheme'
+import { useServerStatus } from '@/composables/useServerStatus'
+import { useApiConfig } from '@/composables/useApiConfig'
+import GraphList from '@/components/GraphList.vue'
+import Logo from '@/components/Logo.vue'
 
-const { selectedGraphId, setSelectedGraphId, graphNavigationStack, canNavigateBack, navigateBack } = useGraph();
-const { theme, cycleTheme } = useTheme();
-const { isOnline, checkHeartbeat } = useServerStatus();
-const { apiBaseUrl, updateApiBaseUrl } = useApiConfig();
-const searchQuery = ref('');
+const { selectedGraphId, setSelectedGraphId } = useGraph()
+const { theme, cycleTheme } = useTheme()
+const { isOnline, checkHeartbeat } = useServerStatus()
+const { apiBaseUrl, updateApiBaseUrl } = useApiConfig()
+const searchQuery = ref('')
 
-const isEditingApi = ref(false);
-const tempApiUrl = ref('');
-const apiInput = ref(null);
+const isEditingApi = ref(false)
+const tempApiUrl = ref('')
+const apiInput = ref<HTMLInputElement | null>(null)
 
-const startEditingApi = async () => {
-  tempApiUrl.value = apiBaseUrl.value;
-  isEditingApi.value = true;
-  await nextTick();
-  apiInput.value?.focus();
-};
+const startEditingApi = async (): Promise<void> => {
+  tempApiUrl.value = apiBaseUrl.value
+  isEditingApi.value = true
+  await nextTick()
+  apiInput.value?.focus()
+}
 
-const saveApiUrl = async () => {
+const saveApiUrl = async (): Promise<void> => {
   if (tempApiUrl.value) {
-    updateApiBaseUrl(tempApiUrl.value);
-    await checkHeartbeat();
+    updateApiBaseUrl(tempApiUrl.value)
+    await checkHeartbeat()
   }
-  isEditingApi.value = false;
-};
+  isEditingApi.value = false
+}
 
-const cancelEditingApi = () => {
-  isEditingApi.value = false;
-};
+const cancelEditingApi = (): void => {
+  isEditingApi.value = false
+}
 </script>
 
 <template>
@@ -86,7 +86,7 @@ const cancelEditingApi = () => {
       
       <GraphList
         :search-query="searchQuery"
-        :selected-id="selectedGraphId"
+        :selected-id="selectedGraphId ?? undefined"
         @select="(id, name) => setSelectedGraphId(id, name)"
       />
     </div>

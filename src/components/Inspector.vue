@@ -1,92 +1,99 @@
-<script setup>
-import { computed, ref } from 'vue';
-import { useGraph } from '../composables/useGraph';
-import { Settings2, Activity } from 'lucide-vue-next';
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useGraph } from '../composables/useGraph'
+import { Settings2, Activity } from 'lucide-vue-next'
 
-const { selectedNode, nodeExecutionResults, navigateToSubgraph } = useGraph();
+const { selectedNode, nodeExecutionResults, navigateToSubgraph } = useGraph()
 
-const handleViewSubgraph = () => {
+const handleViewSubgraph = (): void => {
   if (selectedNode.value?.graph_schema) {
-    navigateToSubgraph(selectedNode.value.graph_schema);
+    navigateToSubgraph(selectedNode.value.graph_schema)
   }
-};
+}
 
-const activeTab = ref('config');
+const activeTab = ref<'config' | 'trace'>('config')
 
 const executionResult = computed(() => {
-  if (!selectedNode.value) return null;
-  const result = nodeExecutionResults.value[selectedNode.value.key];
-  return result;
-});
+  if (!selectedNode.value) return null
+  return nodeExecutionResults.value[selectedNode.value.key] ?? null
+})
 
-const formattedInput = computed(() => {
-  if (!executionResult.value?.input) return '';
+const formattedInput = computed((): string => {
+  if (!executionResult.value?.input) return ''
   try {
-    // 如果已经是对象，直接格式化；如果是字符串，先解析再格式化
-    const input = typeof executionResult.value.input === 'string'
-      ? JSON.parse(executionResult.value.input)
-      : executionResult.value.input;
-    return JSON.stringify(input, null, 2);
-  } catch (e) {
-    // 如果解析失败，直接返回原始值
-    return executionResult.value.input;
+    const input =
+      typeof executionResult.value.input === 'string'
+        ? JSON.parse(executionResult.value.input)
+        : executionResult.value.input
+    return JSON.stringify(input, null, 2)
+  } catch {
+    return String(executionResult.value.input)
   }
-});
+})
 
-const formattedOutput = computed(() => {
-  if (!executionResult.value?.output) return '';
+const formattedOutput = computed((): string => {
+  if (!executionResult.value?.output) return ''
   try {
-    // 如果已经是对象，直接格式化；如果是字符串，先解析再格式化
-    const output = typeof executionResult.value.output === 'string'
-      ? JSON.parse(executionResult.value.output)
-      : executionResult.value.output;
-    return JSON.stringify(output, null, 2);
-  } catch (e) {
-    // 如果解析失败，直接返回原始值
-    return executionResult.value.output;
+    const output =
+      typeof executionResult.value.output === 'string'
+        ? JSON.parse(executionResult.value.output)
+        : executionResult.value.output
+    return JSON.stringify(output, null, 2)
+  } catch {
+    return String(executionResult.value.output)
   }
-});
+})
 
-const parsedError = computed(() => {
-  if (!executionResult.value?.error) return null;
+const parsedError = computed((): Record<string, unknown> | null => {
+  if (!executionResult.value?.error) return null
   try {
-    const err = typeof executionResult.value.error === 'string'
-      ? JSON.parse(executionResult.value.error)
-      : executionResult.value.error;
-    return (typeof err === 'object' && err !== null) ? err : null;
-  } catch (e) {
-    return null;
+    const err =
+      typeof executionResult.value.error === 'string'
+        ? JSON.parse(executionResult.value.error)
+        : executionResult.value.error
+    return typeof err === 'object' && err !== null
+      ? (err as Record<string, unknown>)
+      : null
+  } catch {
+    return null
   }
-});
+})
 
-const nodeTypeColor = computed(() => {
-  // 如果节点包含子图，使用琥珀色
+const nodeTypeColor = computed((): string => {
   if (selectedNode.value?.graph_schema) {
-    return 'bg-amber-500';
+    return 'bg-amber-500'
   }
 
-  const type = selectedNode.value?.type?.toLowerCase() || '';
+  const type = selectedNode.value?.type?.toLowerCase() ?? ''
   switch (type) {
-    case 'start': return 'bg-emerald-500';
-    case 'end': return 'bg-rose-500';
-    case 'lambda': return 'bg-blue-500';
-    case 'chain': return 'bg-purple-500';
-    case 'chatmodel': return 'bg-indigo-500';
-    case 'tool': return 'bg-amber-500';
-    default: return 'bg-zinc-400';
+    case 'start':
+      return 'bg-emerald-500'
+    case 'end':
+      return 'bg-rose-500'
+    case 'lambda':
+      return 'bg-blue-500'
+    case 'chain':
+      return 'bg-purple-500'
+    case 'chatmodel':
+      return 'bg-indigo-500'
+    case 'tool':
+      return 'bg-amber-500'
+    default:
+      return 'bg-zinc-400'
   }
-});
+})
 
-const formattedConfig = computed(() => {
-  if (!selectedNode.value) return '{}';
-  // Filter out some internal keys if needed
-  const { component_schema, graph_schema, ...rest } = selectedNode.value;
-  return JSON.stringify(rest, null, 2);
-});
-const formattedStartTime = computed(() => {
-  if (!executionResult.value?.timestamp) return '-';
-  return new Date(executionResult.value.timestamp).toLocaleTimeString();
-});
+const formattedConfig = computed((): string => {
+  if (!selectedNode.value) return '{}'
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { component_schema, graph_schema, ...rest } = selectedNode.value
+  return JSON.stringify(rest, null, 2)
+})
+
+const formattedStartTime = computed((): string => {
+  if (!executionResult.value?.timestamp) return '-'
+  return new Date(executionResult.value.timestamp).toLocaleTimeString()
+})
 </script>
 
 <template>

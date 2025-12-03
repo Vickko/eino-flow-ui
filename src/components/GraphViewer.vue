@@ -174,149 +174,195 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue';
-import { VueFlow } from '@vue-flow/core';
-import { Background } from '@vue-flow/background';
-import { Controls } from '@vue-flow/controls';
-import { MiniMap } from '@vue-flow/minimap';
-import { PanelLeft, PanelRight, PanelBottom, Loader2, ChevronLeft, Spline, Workflow } from 'lucide-vue-next';
-import dagre from 'dagre';
-import { fetchGraphCanvas } from '../api';
-import CustomNode from './CustomNode.vue';
-import { useGraph } from '../composables/useGraph';
-import { useLayout } from '@/composables/useLayout';
+<script setup lang="ts">
+import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { VueFlow } from '@vue-flow/core'
+import { Background } from '@vue-flow/background'
+import { Controls } from '@vue-flow/controls'
+import { MiniMap } from '@vue-flow/minimap'
+import {
+  PanelLeft,
+  PanelRight,
+  PanelBottom,
+  Loader2,
+  ChevronLeft,
+  Spline,
+  Workflow,
+} from 'lucide-vue-next'
+import dagre from 'dagre'
+import { fetchGraphCanvas } from '../api'
+import CustomNode from './CustomNode.vue'
+import { useGraph } from '../composables/useGraph'
+import { useLayout } from '@/composables/useLayout'
+import type { CanvasNode as TCanvasNode, EdgeType } from '@/types'
 
-// Import styles
-import '@vue-flow/core/dist/style.css';
-import '@vue-flow/core/dist/theme-default.css';
-import '@vue-flow/controls/dist/style.css';
-import '@vue-flow/minimap/dist/style.css';
+interface FlowNodeInput {
+  id: string
+  label: string
+  type: string
+  data: TCanvasNode
+}
 
-const { selectedGraphId, selectedNode, setSelectedNode, canNavigateBack, navigateBack, graphNavigationStack } = useGraph();
-const { showSidebar, showInspector, showBottomPanel, edgeType, toggleEdgeType } = useLayout();
+interface FlowNode extends FlowNodeInput {
+  position: { x: number; y: number }
+  selected?: boolean
+}
 
-const vueFlowInstance = ref(null);
-const graphContainer = ref(null);
+interface FlowEdge {
+  id: string
+  source: string
+  target: string
+  label?: string
+  type: EdgeType
+  animated: boolean
+  style: Record<string, string | number>
+  labelStyle: Record<string, string | number>
+}
 
-const showToolbar = ref(false);
-let hideTimeout;
-const contentRef = ref(null);
+type FlowElement = FlowNode | FlowEdge
+
+import '@vue-flow/core/dist/style.css'
+import '@vue-flow/core/dist/theme-default.css'
+import '@vue-flow/controls/dist/style.css'
+import '@vue-flow/minimap/dist/style.css'
+
+interface NodeClickEvent {
+  node: {
+    data: TCanvasNode
+  }
+}
+
+interface VueFlowInstance {
+  fitView: (options?: { padding?: number; duration?: number }) => Promise<boolean>
+  getViewport: () => { x: number; y: number; zoom: number }
+  setViewport: (viewport: { x: number; y: number; zoom: number }, options?: { duration?: number }) => void
+}
+
+const {
+  selectedGraphId,
+  selectedNode,
+  setSelectedNode,
+  canNavigateBack,
+  navigateBack,
+  graphNavigationStack,
+} = useGraph()
+const { showSidebar, showInspector, showBottomPanel, edgeType, toggleEdgeType } = useLayout()
+
+const vueFlowInstance = ref<VueFlowInstance | null>(null)
+const graphContainer = ref<HTMLElement | null>(null)
+
+const showToolbar = ref(false)
+let hideTimeout: ReturnType<typeof setTimeout> | undefined
+const contentRef = ref<HTMLElement | null>(null)
 
 const minimapStyle = computed(() => {
-  const bottom = showBottomPanel.value ? 'calc(12px + 256px)' : '12px';
-  const right = showInspector.value ? 'calc(12px + 320px)' : '12px';
-  return {
-    bottom,
-    right,
-  };
-});
+  const bottom = showBottomPanel.value ? 'calc(12px + 256px)' : '12px'
+  const right = showInspector.value ? 'calc(12px + 320px)' : '12px'
+  return { bottom, right }
+})
 
 const controlsStyle = computed(() => {
-  const bottom = showBottomPanel.value ? 'calc(12px + 256px)' : '12px';
-  const left = showSidebar.value ? 'calc(12px + 256px)' : '12px';
-  return {
-    bottom,
-    left,
-  };
-});
-const wrapperWidth = ref('auto');
-let resizeObserver;
+  const bottom = showBottomPanel.value ? 'calc(12px + 256px)' : '12px'
+  const left = showSidebar.value ? 'calc(12px + 256px)' : '12px'
+  return { bottom, left }
+})
+
+const wrapperWidth = ref<number | string>('auto')
+let resizeObserver: ResizeObserver | undefined
 
 onMounted(() => {
   if (contentRef.value) {
     resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        wrapperWidth.value = entry.contentRect.width;
+        wrapperWidth.value = entry.contentRect.width
       }
-    });
-    resizeObserver.observe(contentRef.value);
+    })
+    resizeObserver.observe(contentRef.value)
   }
-});
+})
 
 onUnmounted(() => {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-  }
-});
+  resizeObserver?.disconnect()
+})
 
-const show = () => {
-  clearTimeout(hideTimeout);
-  showToolbar.value = true;
-};
+const show = (): void => {
+  clearTimeout(hideTimeout)
+  showToolbar.value = true
+}
 
-const hide = () => {
+const hide = (): void => {
   hideTimeout = setTimeout(() => {
-    showToolbar.value = false;
-  }, 300);
-};
+    showToolbar.value = false
+  }, 300)
+}
 
-const loading = ref(false);
-const error = ref(null);
-const graphName = ref('');
-const graphVersion = ref('');
-const elements = ref([]);
-const isGraphReady = ref(false);
+const loading = ref(false)
+const error = ref<string | null>(null)
+const graphName = ref('')
+const graphVersion = ref('')
+const elements = ref<FlowElement[]>([])
+const isGraphReady = ref(false)
 
-// Dagre layout function
-const getLayoutedElements = (nodes, edges, direction = 'LR') => {
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: direction });
+const getLayoutedElements = (
+  nodes: FlowNodeInput[],
+  edges: FlowEdge[],
+  direction = 'LR'
+): FlowElement[] => {
+  const dagreGraph = new dagre.graphlib.Graph()
+  dagreGraph.setDefaultEdgeLabel(() => ({}))
+  dagreGraph.setGraph({ rankdir: direction })
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: 240, height: 150 }); // Approximate size
-  });
+    dagreGraph.setNode(node.id, { width: 240, height: 150 })
+  })
 
   edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
-  });
+    dagreGraph.setEdge(edge.source, edge.target)
+  })
 
-  dagre.layout(dagreGraph);
+  dagre.layout(dagreGraph)
 
   return [
     ...nodes.map((node) => {
-      const nodeWithPosition = dagreGraph.node(node.id);
+      const nodeWithPosition = dagreGraph.node(node.id)
       return {
         ...node,
         position: { x: nodeWithPosition.x, y: nodeWithPosition.y },
-      };
+      }
     }),
     ...edges,
-  ];
-};
+  ]
+}
 
+const loadGraphDetails = async (id: string | null): Promise<void> => {
+  error.value = null
+  elements.value = []
+  setSelectedNode(null)
+  isGraphReady.value = false
 
-const loadGraphDetails = async (id) => {
-  // Reset state first
-  error.value = null;
-  elements.value = [];
-  setSelectedNode(null); // Clear selection
-  isGraphReady.value = false;
-  
   if (!id) {
-    graphName.value = '';
-    graphVersion.value = '';
-    return;
+    graphName.value = ''
+    graphVersion.value = ''
+    return
   }
-  
-  loading.value = true;
+
+  loading.value = true
 
   try {
-    const data = await fetchGraphCanvas(id);
+    const data = await fetchGraphCanvas(id)
     if (data.code === 0 && data.data.canvas_info) {
-      const canvas = data.data.canvas_info;
-      graphName.value = canvas.name;
-      graphVersion.value = canvas.version;
+      const canvas = data.data.canvas_info
+      graphName.value = canvas.name
+      graphVersion.value = canvas.version
 
-      const nodes = canvas.nodes.map(node => ({
+      const nodes: FlowNodeInput[] = canvas.nodes.map((node) => ({
         id: node.key,
         label: node.key,
         type: 'custom',
         data: { ...node },
-      }));
+      }))
 
-      const edges = canvas.edges.map(edge => ({
+      const edges: FlowEdge[] = canvas.edges.map((edge) => ({
         id: edge.id,
         source: edge.source_node_key,
         target: edge.target_node_key,
@@ -324,100 +370,95 @@ const loadGraphDetails = async (id) => {
         type: edgeType.value,
         animated: true,
         style: { stroke: 'hsl(var(--muted-foreground))', strokeWidth: 2 },
-        labelStyle: { fontWeight: 700 }
-      }));
+        labelStyle: { fontWeight: 700 },
+      }))
 
-      elements.value = getLayoutedElements(nodes, edges);
+      elements.value = getLayoutedElements(nodes, edges)
 
-      // Wait for DOM update then fit view
-      await nextTick();
-      
-      // Give Vue Flow a moment to render nodes and calculate dimensions
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await nextTick()
+      await new Promise((resolve) => setTimeout(resolve, 50))
 
       if (vueFlowInstance.value) {
-        await vueFlowInstance.value.fitView({ padding: 0.3, duration: 0 });
-
-        // Adjust viewport to move content upward (for graph switching)
-        adjustViewportPosition(vueFlowInstance.value);
+        await vueFlowInstance.value.fitView({ padding: 0.3, duration: 0 })
+        adjustViewportPosition(vueFlowInstance.value)
       }
 
-      // Use requestAnimationFrame to ensure the fitView has been applied before showing
       requestAnimationFrame(() => {
-        isGraphReady.value = true;
-      });
+        isGraphReady.value = true
+      })
     } else {
-      error.value = 'Failed to load graph details';
+      error.value = 'Failed to load graph details'
     }
   } catch (err) {
-    error.value = `Error: ${err.message}`;
+    error.value = `Error: ${err instanceof Error ? err.message : String(err)}`
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
-// Helper function to adjust viewport position upward
-const adjustViewportPosition = (instance) => {
-  const viewport = instance.getViewport();
-  const upwardOffset = 160; // Fixed pixel offset upward
+const adjustViewportPosition = (instance: VueFlowInstance): void => {
+  const viewport = instance.getViewport()
+  const upwardOffset = 160
 
-  instance.setViewport({
-    x: viewport.x,
-    y: viewport.y - upwardOffset,
-    zoom: viewport.zoom
-  }, { duration: 0 });
-};
+  instance.setViewport(
+    {
+      x: viewport.x,
+      y: viewport.y - upwardOffset,
+      zoom: viewport.zoom,
+    },
+    { duration: 0 }
+  )
+}
 
-const onNodeClick = (event) => {
-  // 避免重复设置相同的节点
+const onNodeClick = (event: NodeClickEvent): void => {
   if (selectedNode.value && selectedNode.value.key === event.node.data.key) {
-    return;
+    return
   }
-  setSelectedNode(event.node.data);
-};
+  setSelectedNode(event.node.data)
+}
 
-const onPaneReady = (instance) => {
-  vueFlowInstance.value = instance;
+const onPaneReady = (instance: VueFlowInstance): void => {
+  vueFlowInstance.value = instance
 
-  // Adjust viewport on initial load
   setTimeout(() => {
     if (elements.value.length > 0) {
-      instance.fitView({ padding: 0.3, duration: 0 });
-      adjustViewportPosition(instance);
+      instance.fitView({ padding: 0.3, duration: 0 })
+      adjustViewportPosition(instance)
     }
-  }, 100);
-};
+  }, 100)
+}
 
 watch(selectedGraphId, (newId) => {
-  loadGraphDetails(newId);
-});
+  loadGraphDetails(newId)
+})
 
-// 监听 selectedNode 变化，在图中高亮对应节点
-watch(selectedNode, (newNode) => {
-  // 确保图已加载完成，且有元素
-  if (!isGraphReady.value || elements.value.length === 0) {
-    return;
-  }
+watch(
+  selectedNode,
+  (newNode) => {
+    if (!isGraphReady.value || elements.value.length === 0) {
+      return
+    }
 
-  // 更新所有节点的选中状态
-  elements.value.forEach(el => {
-    el.selected = newNode && el.id === newNode.key;
-  });
-}, { immediate: false });
+    elements.value.forEach((el) => {
+      if ('data' in el) {
+        ;(el as FlowNode).selected = newNode !== null && el.id === newNode.key
+      }
+    })
+  },
+  { immediate: false }
+)
 
-// 监听 edgeType 变化，更新所有边的类型
 watch(edgeType, (newType) => {
   if (!isGraphReady.value || elements.value.length === 0) {
-    return;
+    return
   }
 
-  elements.value.forEach(el => {
-    // 只更新边（有 source 和 target 的是边）
-    if (el.source && el.target) {
-      el.type = newType;
+  elements.value.forEach((el) => {
+    if ('source' in el && 'target' in el) {
+      ;(el as FlowEdge).type = newType
     }
-  });
-});
+  })
+})
 </script>
 
 <style>

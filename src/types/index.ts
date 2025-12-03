@@ -1,0 +1,135 @@
+// API 响应类型
+export interface ApiResponse<T = unknown> {
+  code: number
+  msg?: string
+  data: T
+}
+
+// Graph 相关类型
+export interface Graph {
+  id: string
+  name: string
+}
+
+export interface GraphListResponse {
+  graphs: Graph[]
+}
+
+// Canvas 相关类型
+export interface ComponentSchema {
+  input_type?: {
+    type: string
+  }
+  output_type?: {
+    type: string
+  }
+}
+
+export interface GraphSchema {
+  id: string
+  name?: string
+  input_type?: JsonSchema
+}
+
+export interface CanvasNode {
+  key: string
+  type: string
+  component_schema?: ComponentSchema
+  graph_schema?: GraphSchema
+}
+
+export interface CanvasEdge {
+  id: string
+  source_node_key: string
+  target_node_key: string
+  name?: string
+}
+
+export interface CanvasInfo {
+  name: string
+  version: string
+  nodes: CanvasNode[]
+  edges: CanvasEdge[]
+}
+
+export interface GraphCanvasResponse {
+  canvas_info: CanvasInfo
+}
+
+// Debug 相关类型
+export interface DebugThreadResponse {
+  thread_id: string
+}
+
+export interface DebugRunRequest {
+  from_node: string
+  input: string
+  log_id: string
+}
+
+// 执行结果类型
+export interface ExecutionMetrics {
+  duration?: number
+}
+
+export interface NodeExecutionResult {
+  status: 'success' | 'error'
+  input: unknown
+  output: unknown
+  error?: unknown
+  metrics: ExecutionMetrics
+  timestamp: string
+}
+
+// 导航栈类型
+export interface GraphNavigationItem {
+  id: string
+  name: string
+}
+
+// Theme 类型
+export type ThemeMode = 'light' | 'dark' | 'system'
+
+// Edge 类型
+export type EdgeType = 'smoothstep' | 'default'
+
+// JSON Schema 类型（简化版）
+export interface JsonSchema {
+  type?: string
+  properties?: Record<string, JsonSchema>
+  items?: JsonSchema
+  anyOf?: JsonSchema[]
+  enum?: string[]
+  default?: unknown
+  propertyOrder?: string[]
+  additionalProperties?: JsonSchema
+}
+
+// Input Types 响应
+export interface InputTypesResponse {
+  types: string[]
+}
+
+// SSE 数据类型
+export interface SSEDataContent {
+  node_key: string
+  status?: string
+  input?: unknown
+  output?: unknown
+  error?: unknown
+  metrics?: ExecutionMetrics
+}
+
+export interface SSEData {
+  type: string
+  content: SSEDataContent
+}
+
+// Vue Flow 相关类型 - 已迁移到各组件中使用 @vue-flow/core 的原生类型
+
+// Log 类型
+export interface LogEntry {
+  timestamp: string
+  fullMessage: string
+  message: string
+}

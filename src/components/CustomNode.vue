@@ -1,41 +1,41 @@
-<script setup>
-import { computed } from 'vue';
-import { Handle } from '@vue-flow/core';
+<script setup lang="ts">
+import { computed } from 'vue'
+import { Handle, Position } from '@vue-flow/core'
+import type { CanvasNode } from '@/types'
 
-const props = defineProps({
-  data: {
-    type: Object,
-    required: true,
-  },
-  selected: {
-    type: Boolean,
-    default: false,
-  }
-});
+const props = defineProps<{
+  data: CanvasNode
+  selected?: boolean
+}>()
 
 const statusColor = computed(() => {
-  // 如果节点包含子图，使用琥珀色
   if (props.data.graph_schema) {
-    return 'bg-amber-500';
+    return 'bg-amber-500'
   }
 
-  const type = props.data.type?.toLowerCase() || '';
+  const type = props.data.type?.toLowerCase() ?? ''
   switch (type) {
-    case 'start': return 'bg-emerald-500';
-    case 'end': return 'bg-rose-500';
-    case 'lambda': return 'bg-blue-500';
-    case 'chain': return 'bg-purple-500';
-    case 'chatmodel': return 'bg-indigo-500';
-    case 'tool': return 'bg-amber-500';
-    default: return 'bg-zinc-400';
+    case 'start':
+      return 'bg-emerald-500'
+    case 'end':
+      return 'bg-rose-500'
+    case 'lambda':
+      return 'bg-blue-500'
+    case 'chain':
+      return 'bg-purple-500'
+    case 'chatmodel':
+      return 'bg-indigo-500'
+    case 'tool':
+      return 'bg-amber-500'
+    default:
+      return 'bg-zinc-400'
   }
-});
+})
 
-const formatType = (type) => {
-  if (!type) return 'N/A';
-  // Simple truncation or formatting if needed
-  return type.split('.').pop();
-};
+const formatType = (type: string | undefined): string => {
+  if (!type) return 'N/A'
+  return type.split('.').pop() ?? 'N/A'
+}
 </script>
 
 <template>
@@ -46,7 +46,7 @@ const formatType = (type) => {
     ]"
   >
     <!-- Handles -->
-    <Handle type="target" position="left" class="!w-3 !h-3 !bg-muted-foreground !border-2 !border-background transition-colors group-hover:!bg-primary" />
+    <Handle type="target" :position="Position.Left" class="!w-3 !h-3 !bg-muted-foreground !border-2 !border-background transition-colors group-hover:!bg-primary" />
     
     <!-- Header -->
     <div class="px-3 py-2 border-b border-border flex items-center justify-between bg-muted/30 rounded-t-lg">
@@ -85,6 +85,6 @@ const formatType = (type) => {
       </div>
     </div>
 
-    <Handle type="source" position="right" class="!w-3 !h-3 !bg-muted-foreground !border-2 !border-background transition-colors group-hover:!bg-primary" />
+    <Handle type="source" :position="Position.Right" class="!w-3 !h-3 !bg-muted-foreground !border-2 !border-background transition-colors group-hover:!bg-primary" />
   </div>
 </template>

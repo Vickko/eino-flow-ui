@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import MainLayout from '@/layout/MainLayout.vue'
 import GraphViewer from '@/components/GraphViewer.vue'
 </script>

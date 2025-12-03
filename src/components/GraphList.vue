@@ -1,62 +1,63 @@
-<script setup>
-import { ref, computed, watch, onMounted } from 'vue';
-import { fetchGraphs } from '@/api';
-import { useServerStatus } from '@/composables/useServerStatus';
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
+import { fetchGraphs } from '@/api'
+import { useServerStatus } from '@/composables/useServerStatus'
+import type { Graph } from '@/types'
 
-const props = defineProps({
-  searchQuery: {
-    type: String,
-    default: ''
-  },
-  selectedId: {
-    type: String,
-    default: ''
+const props = withDefaults(
+  defineProps<{
+    searchQuery?: string
+    selectedId?: string
+  }>(),
+  {
+    searchQuery: '',
+    selectedId: '',
+  }
+)
+
+const emit = defineEmits<{
+  select: [id: string, name: string]
+}>()
+
+const { isOnline } = useServerStatus()
+const graphs = ref<Graph[]>([])
+const loading = ref(false)
+
+const loadGraphs = async (): Promise<void> => {
+  if (!isOnline.value) return
+  loading.value = true
+  try {
+    const res = await fetchGraphs()
+    if (res.code === 0 && res.data?.graphs) {
+      graphs.value = res.data.graphs
+    }
+  } catch (e) {
+    console.error('Failed to load graphs', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+watch(isOnline, (newVal) => {
+  if (newVal) {
+    loadGraphs()
+  } else {
+    graphs.value = []
   }
 })
 
-const emit = defineEmits(['select'])
-
-const { isOnline } = useServerStatus();
-const graphs = ref([]);
-const loading = ref(false);
-
-const loadGraphs = async () => {
-  if (!isOnline.value) return;
-  loading.value = true;
-  try {
-    const res = await fetchGraphs();
-    if (res.code === 0 && res.data?.graphs) {
-      graphs.value = res.data.graphs;
-    }
-  } catch (e) {
-    console.error('Failed to load graphs', e);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// Watch online status
-watch(isOnline, (newVal) => {
-  if (newVal) {
-    loadGraphs();
-  } else {
-    graphs.value = [];
-  }
-});
-
-// Initial load
 onMounted(() => {
   if (isOnline.value) {
-    loadGraphs();
+    loadGraphs()
   }
-});
+})
 
 const filteredGraphs = computed(() => {
-  if (!props.searchQuery) return graphs.value;
-  return graphs.value.filter(g =>
+  if (!props.searchQuery) return graphs.value
+  return graphs.value.filter((g) =>
     g.name.toLowerCase().includes(props.searchQuery.toLowerCase())
-  );
-});
+  )
+})
 </script>
 
 <template>

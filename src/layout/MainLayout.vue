@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import Inspector from '@/components/Inspector.vue'
