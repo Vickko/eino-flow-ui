@@ -42,29 +42,29 @@ const handleKeydown = (e: KeyboardEvent) => {
 </script>
 
 <template>
-  <div class="p-4 bg-background/80 backdrop-blur-xl border-t border-border/40">
-    <div class="relative flex items-end gap-2 p-2 bg-muted/30 backdrop-blur-md rounded-xl border border-border/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200">
+  <div class="p-4">
+    <div class="relative flex items-end gap-2 group">
       <textarea
         ref="textareaRef"
         v-model="input"
         rows="1"
-        class="flex-1 bg-transparent border-0 focus:ring-0 resize-none py-3 px-3 max-h-40 min-h-[44px] leading-relaxed text-sm placeholder:text-muted-foreground/70 scrollbar-hide"
+        class="flex-1 bg-muted/20 border border-border/50 rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all group-hover:border-border/80 resize-none max-h-40 min-h-[36px] leading-relaxed scrollbar-hide"
         placeholder="Type a message..."
         @input="handleInput"
         @keydown="handleKeydown"
       ></textarea>
-      
+
       <button
         @click="handleSend"
         :disabled="!isValid"
         :class="cn(
-          'p-2 mb-1 rounded-lg transition-all duration-200 flex items-center justify-center',
-          isValid 
-            ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm' 
+          'p-2 rounded-md transition-all duration-200 flex items-center justify-center shrink-0',
+          isValid
+            ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
             : 'bg-transparent text-muted-foreground hover:bg-muted cursor-not-allowed opacity-50'
         )"
       >
-        <Send class="w-5 h-5" />
+        <Send class="w-4 h-4" />
       </button>
     </div>
     <div class="text-center mt-2">

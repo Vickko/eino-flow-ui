@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { ChevronLeft } from 'lucide-vue-next';
 import { useChatMock } from '../composables/useChatMock';
 import ChatSidebar from '../components/chat/ChatSidebar.vue';
-import ChatArea from '../components/chat/ChatArea.vue';
+import ChatCard from '../components/chat/ChatCard.vue';
 
 const { 
   conversations, 
@@ -50,32 +50,32 @@ const handleBack = () => {
     </div>
 
     <!-- Chat Area -->
-    <div 
-      class="flex-1 flex-col h-full relative bg-background"
+    <div
+      class="flex-1 flex-col h-full relative p-3"
       :class="[
         activeConversationId ? 'flex' : 'hidden md:flex'
       ]"
     >
       <template v-if="activeConversationId">
         <!-- Mobile Back Button Overlay -->
-        <div class="md:hidden absolute top-3 left-2 z-50">
-          <button 
-            @click="handleBack" 
+        <div class="md:hidden absolute top-6 left-5 z-50">
+          <button
+            @click="handleBack"
             class="p-2 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:bg-muted transition-colors"
           >
             <ChevronLeft class="w-5 h-5" />
           </button>
         </div>
 
-        <ChatArea 
+        <ChatCard
           :messages="currentMessages"
           :conversation-title="activeConversation?.title"
           @send="sendMessage"
           class="w-full h-full"
         />
       </template>
-      
-      <div v-else class="flex-1 flex items-center justify-center text-muted-foreground bg-muted/10">
+
+      <div v-else class="flex-1 flex items-center justify-center text-muted-foreground rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-panel">
         <div class="text-center">
           <h3 class="text-lg font-medium">Welcome to Chat</h3>
           <p class="text-sm opacity-70">Select a conversation to start messaging</p>
