@@ -39,21 +39,12 @@ const handleScroll = () => {
   if (!scrollAreaRef.value) return;
 
   const currentScrollTop = scrollAreaRef.value.scrollTop;
-  const scrollHeight = scrollAreaRef.value.scrollHeight;
-  const clientHeight = scrollAreaRef.value.clientHeight;
-  const maxScroll = scrollHeight - clientHeight;
 
   // 在顶部附近时始终显示 header
   if (currentScrollTop < 50) {
     isHeaderCollapsed.value = false;
     lastScrollTop = currentScrollTop;
     scrollDelta = 0;
-    return;
-  }
-
-  // 在底部附近时不改变状态，避免抖动
-  if (currentScrollTop >= maxScroll - 5) {
-    lastScrollTop = currentScrollTop;
     return;
   }
 
@@ -130,43 +121,41 @@ const handleSend = (text: string) => {
 </script>
 
 <template>
-  <div class="h-full rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl flex flex-col shadow-panel overflow-hidden">
-    <!-- Header -->
+  <div class="h-full flex flex-col overflow-hidden rounded-xl">
+    <!-- Header (底层卡片露出的顶部) -->
     <div
-      class="flex items-center justify-between px-6 bg-muted/10 border-b border-border/40 transition-all duration-300 ease-in-out overflow-hidden"
-      :class="isHeaderCollapsed ? 'h-0 py-0 border-b-0 opacity-0' : 'h-14 py-3 opacity-100'"
+      class="flex items-center justify-between px-4 bg-muted/30 rounded-t-xl border border-border/40 border-b-0 overflow-hidden shrink-0 h-10 py-2"
     >
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-semibold text-lg">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-semibold text-xs">
           {{ conversationTitle?.charAt(0) || 'C' }}
         </div>
-        <div>
-          <h3 class="font-semibold text-sm">{{ conversationTitle || 'Chat' }}</h3>
-          <div class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span class="text-xs text-muted-foreground">Online</span>
-          </div>
-        </div>
+        <h3 class="font-semibold text-sm">{{ conversationTitle || 'Chat' }}</h3>
       </div>
 
-      <div class="flex items-center gap-2 text-muted-foreground">
-        <button class="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-          <Phone class="w-5 h-5" />
+      <div class="flex items-center gap-1 text-muted-foreground">
+        <button class="p-1.5 rounded-lg hover:bg-muted/50 transition-colors">
+          <Phone class="w-4 h-4" />
         </button>
-        <button class="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-          <Video class="w-5 h-5" />
+        <button class="p-1.5 rounded-lg hover:bg-muted/50 transition-colors">
+          <Video class="w-4 h-4" />
         </button>
-        <button class="p-2 rounded-lg hover:bg-muted/50 transition-colors">
-          <MoreVertical class="w-5 h-5" />
+        <button class="p-1.5 rounded-lg hover:bg-muted/50 transition-colors">
+          <MoreVertical class="w-4 h-4" />
         </button>
       </div>
     </div>
 
-    <!-- Messages Area -->
+    <!-- Main Content (上层卡片，覆盖在顶栏之上) -->
     <div
-      ref="scrollAreaRef"
-      class="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth custom-scrollbar"
+      class="flex-1 flex flex-col rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-panel overflow-hidden relative z-10 transition-[margin] duration-300 ease-in-out"
+      :class="isHeaderCollapsed ? '-mt-10' : '-mt-1'"
     >
+      <!-- Messages Area -->
+      <div
+        ref="scrollAreaRef"
+        class="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth custom-scrollbar"
+      >
       <div v-if="messages.length === 0" class="h-full flex flex-col items-center justify-center text-muted-foreground opacity-50">
         <p>No messages yet</p>
         <p class="text-sm">Start the conversation!</p>
@@ -186,12 +175,13 @@ const handleSend = (text: string) => {
           <span class="w-1.5 h-1.5 bg-foreground/40 rounded-full animate-bounce"></span>
         </div>
       </div>
-    </div>
+      </div>
 
-    <!-- Input Area -->
-    <ChatInput @send="handleSend" />
-    <div class="text-center pb-1">
-      <span class="text-[10px] text-muted-foreground/50">Press Enter to send, Shift + Enter for new line</span>
+      <!-- Input Area -->
+      <ChatInput @send="handleSend" />
+      <div class="text-center pb-1">
+        <span class="text-[10px] text-muted-foreground/50">Press Enter to send, Shift + Enter for new line</span>
+      </div>
     </div>
   </div>
 </template>
