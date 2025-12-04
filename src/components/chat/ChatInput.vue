@@ -42,7 +42,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="px-4 pt-1 pb-0.5">
     <div class="relative flex items-end gap-2 group">
       <textarea
         ref="textareaRef"
@@ -66,9 +66,6 @@ const handleKeydown = (e: KeyboardEvent) => {
       >
         <Send class="w-4 h-4" />
       </button>
-    </div>
-    <div class="text-center mt-2">
-      <span class="text-[10px] text-muted-foreground/50">Press Enter to send, Shift + Enter for new line</span>
     </div>
   </div>
 </template>

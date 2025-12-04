@@ -18,6 +18,10 @@ const emit = defineEmits<{
 const scrollAreaRef = ref<HTMLDivElement | null>(null);
 const isHeaderCollapsed = ref(false);
 
+// 追踪新消息的 ID（用于播放动画）
+const newMessageIds = ref<Set<string>>(new Set());
+const isInitialLoad = ref(true);
+
 // 滚动检测相关状态
 let lastScrollTop = 0;
 let scrollDelta = 0;
@@ -82,13 +86,38 @@ const handleScroll = () => {
   }
 };
 
-watch(() => props.messages.length, () => {
+watch(() => props.messages.length, (newLen, oldLen) => {
+  // 页面初次加载不标记新消息
+  if (isInitialLoad.value) {
+    scrollToBottom();
+    return;
+  }
+
+  // 检测新增的消息
+  if (newLen > oldLen) {
+    const newMessages = props.messages.slice(oldLen);
+    newMessages.forEach(msg => {
+      newMessageIds.value.add(msg.id);
+      // 动画结束后移除标记
+      setTimeout(() => {
+        newMessageIds.value.delete(msg.id);
+      }, 600);
+    });
+  }
+
   scrollToBottom();
 });
+
+// 判断消息是否为新消息
+const isNewMessage = (msgId: string) => newMessageIds.value.has(msgId);
 
 onMounted(() => {
   scrollToBottom();
   scrollAreaRef.value?.addEventListener('scroll', handleScroll, { passive: true });
+  // 初次加载完成后标记为非初始状态
+  nextTick(() => {
+    isInitialLoad.value = false;
+  });
 });
 
 onUnmounted(() => {
@@ -147,6 +176,7 @@ const handleSend = (text: string) => {
         v-for="msg in messages"
         :key="msg.id"
         :message="msg"
+        :is-new="isNewMessage(msg.id)"
       />
 
       <div v-if="loading" class="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -160,6 +190,9 @@ const handleSend = (text: string) => {
 
     <!-- Input Area -->
     <ChatInput @send="handleSend" />
+    <div class="text-center pb-1">
+      <span class="text-[10px] text-muted-foreground/50">Press Enter to send, Shift + Enter for new line</span>
+    </div>
   </div>
 </template>
 

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { MessageCircle } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
 import Sidebar from '@/components/Sidebar.vue'
 import Inspector from '@/components/Inspector.vue'
 import BottomPanel from '@/components/BottomPanel.vue'
@@ -91,6 +93,15 @@ onMounted(() => {
       </div>
 
     </div>
+
+    <!-- Nav Switch Button (Bottom Left) -->
+    <RouterLink
+      to="/chat"
+      class="absolute left-3 bottom-3 z-50 p-3 rounded-full bg-background/60 backdrop-blur-xl border border-border/40 shadow-panel hover:bg-muted/50 transition-colors"
+      title="Chat"
+    >
+      <MessageCircle class="w-5 h-5 text-foreground" />
+    </RouterLink>
   </div>
 </template>
 

@@ -1,19 +1,27 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { ChevronLeft } from 'lucide-vue-next';
+import { computed, onMounted } from 'vue';
+import { ChevronLeft, LayoutGrid } from 'lucide-vue-next';
+import { RouterLink } from 'vue-router';
 import { useChatMock } from '../composables/useChatMock';
+import { useTheme } from '../composables/useTheme';
 import ChatSidebar from '../components/chat/ChatSidebar.vue';
 import ChatCard from '../components/chat/ChatCard.vue';
 
-const { 
-  conversations, 
-  messages, 
-  activeConversationId, 
-  sendMessage, 
-  createConversation 
+const {
+  conversations,
+  messages,
+  activeConversationId,
+  sendMessage,
+  createConversation
 } = useChatMock();
 
-const activeConversation = computed(() => 
+const { initTheme } = useTheme();
+
+onMounted(() => {
+  initTheme();
+});
+
+const activeConversation = computed(() =>
   conversations.value.find(c => c.id === activeConversationId.value)
 );
 
@@ -82,5 +90,14 @@ const handleBack = () => {
         </div>
       </div>
     </div>
+
+    <!-- Nav Switch Button (Bottom Left) -->
+    <RouterLink
+      to="/"
+      class="absolute left-3 bottom-3 z-50 p-3 rounded-full bg-background/60 backdrop-blur-xl border border-border/40 shadow-panel hover:bg-muted/50 transition-colors"
+      title="Graph"
+    >
+      <LayoutGrid class="w-5 h-5 text-foreground" />
+    </RouterLink>
   </div>
 </template>
