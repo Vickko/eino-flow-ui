@@ -14,6 +14,7 @@ export interface Message {
   content: string;
   timestamp: number;
   status?: 'sending' | 'sent' | 'error';
+  model?: string;
 }
 
 export interface Conversation {
@@ -78,7 +79,8 @@ const INITIAL_MESSAGES: Record<string, Message[]> = {
       role: 'assistant',
       content: 'Sure, let\'s discuss the project roadmap.',
       timestamp: Date.now(),
-      status: 'sent'
+      status: 'sent',
+      model: 'GPT-4o'
     }
   ],
   c2: [
@@ -88,7 +90,8 @@ const INITIAL_MESSAGES: Record<string, Message[]> = {
       role: 'assistant',
       content: 'I found a few issues in the PR.',
       timestamp: Date.now() - 86400000,
-      status: 'sent'
+      status: 'sent',
+      model: 'Claude 3.5 Sonnet'
     }
   ]
 };
@@ -145,7 +148,8 @@ export function useChatMock() {
           role: 'assistant',
           content: `I received your message: "${text}". This is a mock response.`,
           timestamp: Date.now(),
-          status: 'sent'
+          status: 'sent',
+          model: 'GPT-4o'
         };
         
         if (messages.value[conversationId]) {

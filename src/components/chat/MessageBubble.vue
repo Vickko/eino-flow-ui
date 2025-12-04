@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { Bot } from 'lucide-vue-next';
 import MarkdownIt from 'markdown-it';
 import type { Message } from '../../composables/useChatMock';
 import { cn } from '../../lib/utils';
@@ -27,8 +28,8 @@ const bubbleClass = computed(() => {
 
 const containerClass = computed(() => {
   return cn(
-    'flex w-full mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300',
-    isUser.value ? 'justify-end' : 'justify-start'
+    'flex flex-col w-full mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300',
+    isUser.value ? 'items-end' : 'items-start'
   );
 });
 
@@ -46,13 +47,19 @@ const timeString = computed(() => {
 
 <template>
   <div :class="containerClass">
+    <!-- Model Label (only for assistant messages) -->
+    <div v-if="!isUser && message.model" class="flex items-center gap-1.5 mb-1 ml-1">
+      <Bot class="w-3 h-3 text-muted-foreground/70" />
+      <span class="text-[10px] text-muted-foreground/70 font-medium">{{ message.model }}</span>
+    </div>
+
     <div :class="bubbleClass">
       <!-- Content Area -->
       <div
         :class="contentClass"
         v-html="renderedContent"
       ></div>
-      
+
       <!-- Timestamp -->
       <div
         class="mt-1 text-[10px] opacity-70 text-right select-none"
