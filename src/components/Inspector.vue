@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useGraph } from '../composables/useGraph'
 import { Settings2, Activity, MessageSquare } from 'lucide-vue-next'
 import { formatSchemaType } from '@/utils/schema'
@@ -15,6 +15,25 @@ const handleViewSubgraph = (): void => {
 }
 
 const activeTab = ref<'config' | 'trace' | 'chat'>('config')
+const playChatAnimation = ref(false)
+const playTraceAnimation = ref(false)
+
+// 监听 tab 切换，当切换到 chat/trace tab 时播放动画
+watch(activeTab, (newTab, oldTab) => {
+  if (newTab === 'chat' && oldTab !== 'chat') {
+    playChatAnimation.value = true
+    setTimeout(() => {
+      playChatAnimation.value = false
+    }, 500) // 动画持续时间
+  }
+
+  if (newTab === 'trace' && oldTab !== 'trace') {
+    playTraceAnimation.value = true
+    setTimeout(() => {
+      playTraceAnimation.value = false
+    }, 200) // 动画持续时间
+  }
+})
 
 const executionResult = computed(() => {
   if (!selectedNode.value) return null
@@ -188,7 +207,7 @@ const chatMessages = computed((): Message[] => {
         >
           <!-- Sliding Background -->
           <div
-            class="absolute top-1 bottom-1 rounded-md bg-background shadow-sm transition-all duration-300 ease-out"
+            class="absolute top-1 bottom-1 rounded-md bg-background shadow-sm transition-all duration-300 ease-in-out"
             :class="
               shouldShowChatTab
                 ? activeTab === 'config'
@@ -204,29 +223,35 @@ const chatMessages = computed((): Message[] => {
 
           <!-- Buttons -->
           <div
-            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200 hover:opacity-75"
+            class="relative z-10 flex-1 flex items-center justify-center h-full transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
             :class="activeTab === 'config' ? 'text-foreground' : 'text-muted-foreground'"
             title="Configuration"
             @click="activeTab = 'config'"
           >
-            <Settings2 class="w-4 h-4" />
+            <Settings2 class="w-4 h-4 transition-transform duration-200" :class="activeTab === 'config' ? 'rotate-90' : ''" />
           </div>
           <div
-            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200 hover:opacity-75"
+            class="relative z-10 flex-1 flex items-center justify-center h-full transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
             :class="activeTab === 'trace' ? 'text-foreground' : 'text-muted-foreground'"
             title="Trace & Logs"
             @click="activeTab = 'trace'"
           >
-            <Activity class="w-4 h-4" />
+            <div v-if="activeTab === 'trace'" class="ecg-wrapper">
+              <div class="ecg-container" :class="{ 'ecg-scroll': playTraceAnimation }">
+                <Activity class="w-4 h-4 ecg-wave" />
+                <Activity class="w-4 h-4 ecg-wave" />
+              </div>
+            </div>
+            <Activity v-else class="w-4 h-4 transition-transform duration-200" />
           </div>
           <div
             v-if="shouldShowChatTab"
-            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200 hover:opacity-75"
+            class="relative z-10 flex-1 flex items-center justify-center h-full transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
             :class="activeTab === 'chat' ? 'text-foreground' : 'text-muted-foreground'"
             title="Chat Messages"
             @click="activeTab = 'chat'"
           >
-            <MessageSquare class="w-4 h-4" />
+            <MessageSquare class="w-4 h-4 transition-transform duration-200" :class="{ 'animate-wiggle': playChatAnimation }" />
           </div>
         </div>
       </div>
@@ -410,3 +435,52 @@ const chatMessages = computed((): Message[] => {
     </div>
   </aside>
 </template>
+
+<style scoped>
+@keyframes wiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-12deg) scale(1.1);
+  }
+  75% {
+    transform: rotate(12deg) scale(1.1);
+  }
+}
+
+@keyframes ecg-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+.ecg-wrapper {
+  width: 1rem;
+  height: 1rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.ecg-container {
+  display: flex;
+  gap: 0;
+  will-change: transform;
+}
+
+.ecg-scroll {
+  animation: ecg-scroll 0.2s ease-in-out;
+}
+
+.ecg-wave {
+  flex-shrink: 0;
+}
+</style>
