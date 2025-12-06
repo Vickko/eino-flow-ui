@@ -17,12 +17,8 @@ export interface GraphListResponse {
 
 // Canvas 相关类型
 export interface ComponentSchema {
-  input_type?: {
-    type: string
-  }
-  output_type?: {
-    type: string
-  }
+  input_type?: JsonSchema
+  output_type?: JsonSchema
 }
 
 export interface GraphSchema {
@@ -93,9 +89,22 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 // Edge 类型
 export type EdgeType = 'smoothstep' | 'default'
 
-// JSON Schema 类型（简化版）
+// JSON Schema 类型（完整版）
+export interface GoDefinition {
+  typeName?: string
+  kind?: string
+  isPtr?: boolean
+  libraryRef?: {
+    module?: string
+    pkgPath?: string
+    version?: string
+  }
+}
+
 export interface JsonSchema {
   type?: string
+  title?: string
+  description?: string
   properties?: Record<string, JsonSchema>
   items?: JsonSchema
   anyOf?: JsonSchema[]
@@ -103,6 +112,8 @@ export interface JsonSchema {
   default?: unknown
   propertyOrder?: string[]
   additionalProperties?: JsonSchema
+  required?: string[]
+  goDefinition?: GoDefinition
 }
 
 // Input Types 响应

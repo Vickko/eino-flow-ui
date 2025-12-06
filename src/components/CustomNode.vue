@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import type { CanvasNode } from '@/types'
+import { formatSchemaType } from '@/utils/schema'
 
 const props = defineProps<{
   data: CanvasNode
@@ -31,11 +32,6 @@ const statusColor = computed(() => {
       return 'bg-zinc-400'
   }
 })
-
-const formatType = (type: string | undefined): string => {
-  if (!type) return 'N/A'
-  return type.split('.').pop() ?? 'N/A'
-}
 </script>
 
 <template>
@@ -68,11 +64,11 @@ const formatType = (type: string | undefined): string => {
       <div v-if="data.component_schema" class="space-y-1">
         <div class="flex items-center justify-between text-[10px] text-muted-foreground">
           <span>In:</span>
-          <span class="font-mono text-foreground bg-muted px-1.5 py-0.5 rounded">{{ formatType(data.component_schema.input_type?.type) }}</span>
+          <span class="font-mono text-foreground bg-muted px-1.5 py-0.5 rounded">{{ formatSchemaType(data.component_schema.input_type) }}</span>
         </div>
         <div class="flex items-center justify-between text-[10px] text-muted-foreground">
           <span>Out:</span>
-          <span class="font-mono text-foreground bg-muted px-1.5 py-0.5 rounded">{{ formatType(data.component_schema.output_type?.type) }}</span>
+          <span class="font-mono text-foreground bg-muted px-1.5 py-0.5 rounded">{{ formatSchemaType(data.component_schema.output_type) }}</span>
         </div>
       </div>
 

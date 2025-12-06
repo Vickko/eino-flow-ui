@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useGraph } from '../composables/useGraph'
 import { Settings2, Activity } from 'lucide-vue-next'
+import { formatSchemaType } from '@/utils/schema'
 
 const { selectedNode, nodeExecutionResults, navigateToSubgraph } = useGraph()
 
@@ -172,14 +173,14 @@ const formattedStartTime = computed((): string => {
           <div class="space-y-2">
             <div class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Input Schema</div>
             <div class="p-2.5 bg-muted/20 rounded-lg border border-border/50 text-xs text-muted-foreground font-mono break-all">
-              {{ selectedNode.component_schema.input_type?.type || 'Any' }}
+              {{ formatSchemaType(selectedNode.component_schema.input_type) }}
             </div>
           </div>
-          
+
           <div class="space-y-2">
             <div class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Output Schema</div>
             <div class="p-2.5 bg-muted/20 rounded-lg border border-border/50 text-xs text-muted-foreground font-mono break-all">
-              {{ selectedNode.component_schema.output_type?.type || 'Any' }}
+              {{ formatSchemaType(selectedNode.component_schema.output_type) }}
             </div>
           </div>
         </div>
