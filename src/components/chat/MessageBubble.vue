@@ -14,6 +14,7 @@ const md = new MarkdownIt();
 const props = defineProps<{
   message: Message;
   isNew?: boolean; // 是否是新消息，用于控制动画
+  hideTimestamp?: boolean; // 是否隐藏时间戳
 }>();
 
 // 判断是否应该播放动画（只有新消息才播放）
@@ -82,6 +83,7 @@ const timeString = computed(() => {
 
       <!-- Timestamp -->
       <div
+        v-if="!hideTimestamp"
         class="mt-1 text-[10px] opacity-70 text-right select-none"
         :class="isUser ? 'text-primary-foreground/80' : 'text-muted-foreground'"
       >

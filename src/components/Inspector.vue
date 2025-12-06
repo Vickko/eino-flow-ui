@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGraph } from '../composables/useGraph'
-import { Settings2, Activity } from 'lucide-vue-next'
+import { Settings2, Activity, MessageSquare } from 'lucide-vue-next'
 import { formatSchemaType } from '@/utils/schema'
+import type { Message } from '../composables/useChatMock'
+import MessageBubble from './chat/MessageBubble.vue'
 
 const { selectedNode, nodeExecutionResults, navigateToSubgraph } = useGraph()
 
@@ -12,7 +14,7 @@ const handleViewSubgraph = (): void => {
   }
 }
 
-const activeTab = ref<'config' | 'trace'>('config')
+const activeTab = ref<'config' | 'trace' | 'chat'>('config')
 
 const executionResult = computed(() => {
   if (!selectedNode.value) return null
@@ -95,6 +97,81 @@ const formattedStartTime = computed((): string => {
   if (!executionResult.value?.timestamp) return '-'
   return new Date(executionResult.value.timestamp).toLocaleTimeString()
 })
+
+// 判断是否应该显示 chat tab
+const shouldShowChatTab = computed(() => {
+  if (!selectedNode.value?.component_schema) return false
+
+  const inputType = selectedNode.value.component_schema.input_type
+  const outputType = selectedNode.value.component_schema.output_type
+
+  // 检查 input 是否是 Message 数组
+  // 实际数据中类型信息存储在 title 字段，格式如 "[]*schema.Message"
+  const isInputMessageArray =
+    inputType?.type === 'array' &&
+    (inputType?.title?.includes('Message') || inputType?.items?.title?.includes('Message'))
+
+  // 检查 output 是否是 Message 指针
+  // 格式如 "*schema.Message"
+  const isOutputMessage =
+    outputType?.title?.includes('Message') ||
+    outputType?.goDefinition?.typeName?.includes('Message')
+
+  return isInputMessageArray && isOutputMessage
+})
+
+// 合并 input 和 output 成 Message 数组
+const chatMessages = computed((): Message[] => {
+  if (!executionResult.value || !shouldShowChatTab.value) return []
+
+  const messages: Message[] = []
+
+  // 解析 input（数组）
+  try {
+    const input = typeof executionResult.value.input === 'string'
+      ? JSON.parse(executionResult.value.input)
+      : executionResult.value.input
+
+    if (Array.isArray(input)) {
+      input.forEach((msg: any, index: number) => {
+        messages.push({
+          id: `input-${index}`,
+          conversationId: selectedNode.value?.key || 'unknown',
+          role: msg.role || 'user',
+          content: msg.content || '',
+          timestamp: 0, // 不使用时间戳
+          status: 'sent',
+          model: msg.name || undefined
+        })
+      })
+    }
+  } catch (error) {
+    console.error('Failed to parse input messages:', error)
+  }
+
+  // 解析 output（单个对象），添加到末尾
+  try {
+    const output = typeof executionResult.value.output === 'string'
+      ? JSON.parse(executionResult.value.output)
+      : executionResult.value.output
+
+    if (output && typeof output === 'object') {
+      messages.push({
+        id: 'output-0',
+        conversationId: selectedNode.value?.key || 'unknown',
+        role: output.role || 'assistant',
+        content: output.content || '',
+        timestamp: 0, // 不使用时间戳
+        status: 'sent',
+        model: output.name || undefined
+      })
+    }
+  } catch (error) {
+    console.error('Failed to parse output message:', error)
+  }
+
+  return messages
+})
 </script>
 
 <template>
@@ -102,33 +179,54 @@ const formattedStartTime = computed((): string => {
       <!-- Header -->
       <div class="h-14 border-b border-border/40 flex items-center justify-between px-4 bg-muted/10">
         <h2 class="font-semibold text-sm tracking-tight text-foreground">Inspector</h2>
-        
+
         <!-- Toggle Switcher -->
         <div
           v-if="selectedNode"
-          class="relative flex items-center bg-muted/20 rounded-lg p-1 border border-border/50 h-8 w-20 cursor-pointer"
-          @click="activeTab = activeTab === 'config' ? 'trace' : 'config'"
+          class="relative flex items-center bg-muted/20 rounded-lg p-1 border border-border/50 h-8 cursor-pointer"
+          :class="shouldShowChatTab ? 'w-28' : 'w-20'"
         >
           <!-- Sliding Background -->
           <div
             class="absolute top-1 bottom-1 rounded-md bg-background shadow-sm transition-all duration-300 ease-out"
-            :class="activeTab === 'config' ? 'left-1 w-[calc(50%-4px)]' : 'left-[50%] w-[calc(50%-4px)]'"
+            :class="
+              shouldShowChatTab
+                ? activeTab === 'config'
+                  ? 'left-1 w-[calc(33.333%-4px)]'
+                  : activeTab === 'trace'
+                  ? 'left-[33.333%] w-[calc(33.333%-4px)]'
+                  : 'left-[66.666%] w-[calc(33.333%-4px)]'
+                : activeTab === 'config'
+                ? 'left-1 w-[calc(50%-4px)]'
+                : 'left-[50%] w-[calc(50%-4px)]'
+            "
           ></div>
-          
+
           <!-- Buttons -->
           <div
-            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200"
-            :class="activeTab === 'config' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'"
+            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200 hover:opacity-75"
+            :class="activeTab === 'config' ? 'text-foreground' : 'text-muted-foreground'"
             title="Configuration"
+            @click="activeTab = 'config'"
           >
             <Settings2 class="w-4 h-4" />
           </div>
           <div
-            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200"
-            :class="activeTab === 'trace' ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'"
+            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200 hover:opacity-75"
+            :class="activeTab === 'trace' ? 'text-foreground' : 'text-muted-foreground'"
             title="Trace & Logs"
+            @click="activeTab = 'trace'"
           >
             <Activity class="w-4 h-4" />
+          </div>
+          <div
+            v-if="shouldShowChatTab"
+            class="relative z-10 flex-1 flex items-center justify-center h-full transition-colors duration-200 hover:opacity-75"
+            :class="activeTab === 'chat' ? 'text-foreground' : 'text-muted-foreground'"
+            title="Chat Messages"
+            @click="activeTab = 'chat'"
+          >
+            <MessageSquare class="w-4 h-4" />
           </div>
         </div>
       </div>
@@ -240,7 +338,7 @@ const formattedStartTime = computed((): string => {
           <div v-if="executionResult.error" class="space-y-3">
             <template v-if="parsedError">
               <div class="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Error Details</div>
-              
+
               <!-- Surface View: Key-Value List -->
               <div class="bg-red-500/5 rounded-lg border border-red-500/20 overflow-hidden">
                 <div v-for="(value, key) in parsedError" :key="key" class="flex border-b border-red-500/10 last:border-0">
@@ -267,6 +365,32 @@ const formattedStartTime = computed((): string => {
               <div class="p-2 bg-red-500/10 rounded-lg border border-red-500/20 text-xs text-red-500 font-mono break-all">{{ executionResult.error }}</div>
             </template>
           </div>
+        </div>
+      </div>
+
+      <!-- Chat Tab -->
+      <div v-else-if="activeTab === 'chat'" class="h-full flex flex-col">
+        <div v-if="!executionResult" class="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+          <svg class="w-8 h-8 mb-2 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          <p class="text-xs">No execution data available.</p>
+          <p class="text-[10px] opacity-70 mt-1">Run the graph to see messages.</p>
+        </div>
+        <div v-else-if="chatMessages.length === 0" class="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+          <svg class="w-8 h-8 mb-2 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          <p class="text-xs">No messages available.</p>
+        </div>
+        <div v-else class="flex-1 overflow-y-auto custom-scrollbar px-2">
+          <MessageBubble
+            v-for="msg in chatMessages"
+            :key="msg.id"
+            :message="msg"
+            :is-new="false"
+            :hide-timestamp="true"
+          />
         </div>
       </div>
 
