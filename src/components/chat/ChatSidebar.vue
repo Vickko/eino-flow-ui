@@ -43,15 +43,20 @@ const formatTime = (timestamp: number) => {
 <template>
   <div class="flex flex-col h-full bg-background/80 backdrop-blur-xl border-r border-border/40">
     <!-- Header -->
-    <div class="p-4 space-y-4">
+    <div class="p-4 flex-shrink-0">
       <!-- Title and New Button -->
-      <div class="flex items-center justify-between">
-        <h2 v-if="!collapsed" class="text-lg font-semibold tracking-tight">Messages</h2>
+      <div class="relative h-9 mb-4">
+        <!-- Title -->
+        <Transition name="fade-slide" mode="out-in">
+          <h2 v-if="!collapsed" key="title" class="absolute left-0 top-1/2 -translate-y-1/2 text-lg font-semibold tracking-tight">Messages</h2>
+        </Transition>
+
+        <!-- New Button -->
         <button
           @click="emit('create')"
           :class="cn(
-            'p-2 rounded-full hover:bg-muted transition-colors duration-200 text-primary',
-            collapsed ? 'mx-auto' : ''
+            'absolute top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-muted transition-all duration-300 text-primary',
+            collapsed ? 'left-1/2 -translate-x-1/2' : 'right-0'
           )"
           :title="collapsed ? 'New Chat' : ''"
         >
@@ -59,51 +64,59 @@ const formatTime = (timestamp: number) => {
         </button>
       </div>
 
-      <!-- Search -->
-      <div v-if="!collapsed" class="relative">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search conversations..."
-          class="w-full pl-9 pr-4 py-2 bg-muted/50 rounded-lg text-sm border-none focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground/70 transition-all"
-        />
-      </div>
+      <!-- Search Area - 固定高度容器 -->
+      <div class="relative h-10">
+        <Transition name="fade-slide" mode="out-in">
+          <!-- Expanded Search -->
+          <div v-if="!collapsed" key="search-input" class="absolute inset-0">
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search conversations..."
+              class="w-full h-full pl-9 pr-4 py-2 bg-muted/50 rounded-lg text-sm border-none focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground/70 transition-all"
+            />
+          </div>
 
-      <!-- Collapsed Search Icon -->
-      <button
-        v-else
-        class="w-full p-2 rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-center"
-        title="Search"
-      >
-        <Search class="w-5 h-5 text-muted-foreground" />
-      </button>
+          <!-- Collapsed Search Icon -->
+          <button
+            v-else
+            key="search-icon"
+            class="absolute inset-0 rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-center"
+            title="Search"
+          >
+            <Search class="w-5 h-5 text-muted-foreground" />
+          </button>
+        </Transition>
+      </div>
     </div>
 
     <!-- List -->
     <div class="flex-1 overflow-y-auto px-2 pb-2 space-y-1 custom-scrollbar">
-      <!-- Expanded View -->
-      <template v-if="!collapsed">
-        <div
-          v-for="conv in filteredConversations"
-          :key="conv.id"
-          @click="emit('select', conv.id)"
-          :class="cn(
-            'group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200',
-            activeId === conv.id
-              ? 'bg-accent/50 shadow-sm'
-              : 'hover:bg-muted/50'
-          )"
-        >
-          <!-- Avatar Placeholder -->
-          <div class="relative flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-            <MessageSquare class="w-5 h-5" />
-            <span v-if="conv.unreadCount > 0" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-background flex items-center justify-center text-[10px] text-white font-bold">
-              {{ conv.unreadCount }}
-            </span>
-          </div>
+      <div
+        v-for="conv in (collapsed ? conversations : filteredConversations)"
+        :key="conv.id"
+        @click="emit('select', conv.id)"
+        :class="cn(
+          'group flex items-center rounded-xl cursor-pointer transition-all duration-200',
+          collapsed ? 'justify-center p-3' : 'gap-3 p-3',
+          activeId === conv.id
+            ? 'bg-accent/50 shadow-sm'
+            : 'hover:bg-muted/50'
+        )"
+        :title="collapsed ? conv.title : undefined"
+      >
+        <!-- Avatar - 始终保持在左侧固定位置 -->
+        <div class="relative flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <MessageSquare class="w-5 h-5" />
+          <span v-if="conv.unreadCount > 0" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-background flex items-center justify-center text-[10px] text-white font-bold">
+            {{ conv.unreadCount }}
+          </span>
+        </div>
 
-          <div class="flex-1 min-w-0 text-left">
+        <!-- Text Content - 收起时隐藏 -->
+        <Transition name="fade-slide">
+          <div v-if="!collapsed" class="flex-1 min-w-0 text-left">
             <div class="flex items-center justify-between mb-0.5">
               <span :class="cn('font-medium text-sm truncate', activeId === conv.id ? 'text-foreground' : 'text-foreground/90')">
                 {{ conv.title }}
@@ -116,35 +129,12 @@ const formatTime = (timestamp: number) => {
               {{ conv.lastMessage?.content || 'No messages yet' }}
             </p>
           </div>
-        </div>
+        </Transition>
+      </div>
 
-        <div v-if="filteredConversations.length === 0" class="p-4 text-center text-muted-foreground text-sm">
-          No conversations found
-        </div>
-      </template>
-
-      <!-- Collapsed View -->
-      <template v-else>
-        <div
-          v-for="conv in conversations"
-          :key="conv.id"
-          @click="emit('select', conv.id)"
-          :class="cn(
-            'relative flex items-center justify-center p-3 rounded-xl cursor-pointer transition-all duration-200',
-            activeId === conv.id
-              ? 'bg-accent/50 shadow-sm'
-              : 'hover:bg-muted/50'
-          )"
-          :title="conv.title"
-        >
-          <div class="relative w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-            <MessageSquare class="w-5 h-5" />
-            <span v-if="conv.unreadCount > 0" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-background flex items-center justify-center text-[10px] text-white font-bold">
-              {{ conv.unreadCount }}
-            </span>
-          </div>
-        </div>
-      </template>
+      <div v-if="!collapsed && filteredConversations.length === 0" class="p-4 text-center text-muted-foreground text-sm">
+        No conversations found
+      </div>
     </div>
   </div>
 </template>
@@ -162,5 +152,27 @@ const formatTime = (timestamp: number) => {
 }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Transition for text content */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.fade-slide-enter-to,
+.fade-slide-leave-from {
+  opacity: 1;
+  transform: translateX(0);
 }
 </style>
