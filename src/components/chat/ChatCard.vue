@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { MoreVertical, Phone, Video } from 'lucide-vue-next';
+import { MoreVertical, Phone, Video, ChevronUp, Check } from 'lucide-vue-next';
 import type { Message } from '../../composables/useChatMock';
 import MessageBubble from './MessageBubble.vue';
 import ChatInput from './ChatInput.vue';
+
+// 导入模型图标
+import logoGPT from '../../assets/logo_GPT.svg';
+import logoClaude from '../../assets/logo_claude2.svg';
+import logoGemini from '../../assets/logo_gemini.svg';
 
 const props = defineProps<{
   messages: Message[];
@@ -123,6 +128,7 @@ const isNewMessage = (msgId: string) => newMessageIds.value.has(msgId);
 onMounted(() => {
   scrollToBottom();
   scrollAreaRef.value?.addEventListener('scroll', handleScroll, { passive: true });
+  document.addEventListener('click', handleClickOutside);
   // 初次加载完成后标记为非初始状态
   nextTick(() => {
     isInitialLoad.value = false;
@@ -131,10 +137,81 @@ onMounted(() => {
 
 onUnmounted(() => {
   scrollAreaRef.value?.removeEventListener('scroll', handleScroll);
+  document.removeEventListener('click', handleClickOutside);
 });
 
 const handleSend = (text: string) => {
   emit('send', text);
+};
+
+// 模型选择相关
+const showModelMenu = ref(false);
+const selectedModel = ref('GPT-4');
+const modelSelectorRef = ref<HTMLButtonElement | null>(null);
+const models = [
+  { id: 'gpt-4', name: 'GPT-4', description: 'Most capable model', icon: logoGPT },
+  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Fast and efficient', icon: logoGPT },
+  { id: 'claude-3', name: 'Claude 3', description: 'Anthropic\'s latest', icon: logoClaude },
+  { id: 'gemini-pro', name: 'Gemini Pro', description: 'Google\'s model', icon: logoGemini }
+];
+
+// 获取当前选中模型的图标
+const getCurrentModelIcon = () => {
+  const model = models.find(m => m.name === selectedModel.value);
+  return model?.icon || logoGPT;
+};
+
+const toggleModelMenu = () => {
+  showModelMenu.value = !showModelMenu.value;
+};
+
+const selectModel = (modelName: string) => {
+  if (!modelSelectorRef.value) {
+    selectedModel.value = modelName;
+    showModelMenu.value = false;
+    return;
+  }
+
+  // 记录当前宽度
+  const currentWidth = modelSelectorRef.value.offsetWidth;
+  modelSelectorRef.value.style.width = `${currentWidth}px`;
+
+  // 更新模型（触发重新渲染）
+  selectedModel.value = modelName;
+  showModelMenu.value = false;
+
+  // 在下一帧获取新的自然宽度
+  nextTick(() => {
+    if (!modelSelectorRef.value) return;
+
+    // 临时移除固定宽度以获取自然宽度
+    modelSelectorRef.value.style.width = 'auto';
+    const newWidth = modelSelectorRef.value.offsetWidth;
+
+    // 设置回当前宽度（避免跳变）
+    modelSelectorRef.value.style.width = `${currentWidth}px`;
+
+    // 强制重绘
+    modelSelectorRef.value.offsetHeight;
+
+    // 设置目标宽度，触发 CSS transition
+    modelSelectorRef.value.style.width = `${newWidth}px`;
+
+    // 动画完成后移除固定宽度
+    setTimeout(() => {
+      if (modelSelectorRef.value) {
+        modelSelectorRef.value.style.width = 'auto';
+      }
+    }, 500);
+  });
+};
+
+// 点击外部关闭菜单
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (!target.closest('.model-selector')) {
+    showModelMenu.value = false;
+  }
 };
 </script>
 
@@ -193,6 +270,65 @@ const handleSend = (text: string) => {
           <span class="w-1.5 h-1.5 bg-foreground/40 rounded-full animate-bounce"></span>
         </div>
       </div>
+      </div>
+
+      <!-- Model Selector -->
+      <div class="px-4 pb-3 relative z-20">
+        <div class="model-selector relative inline-block">
+          <button
+            ref="modelSelectorRef"
+            @click="toggleModelMenu"
+            class="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-background/40 hover:bg-background/60 border-[0.5px] border-transparent hover:border-border text-sm group shadow-sm hover:shadow-md backdrop-blur-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+          >
+            <div class="w-5 h-5 rounded-full overflow-hidden bg-muted/50 flex items-center justify-center border border-border/20 group-hover:scale-105 transition-transform duration-300 shrink-0">
+              <img :src="getCurrentModelIcon()" alt="model icon" class="w-full h-full object-cover transition-opacity duration-200" />
+            </div>
+            <span class="text-foreground/80 font-medium text-xs tracking-wide group-hover:text-foreground whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">{{ selectedModel }}</span>
+            <ChevronUp
+              class="w-3.5 h-3.5 text-muted-foreground/70 group-hover:text-primary/80 transition-transform duration-300 ease-out shrink-0"
+              :class="{ 'rotate-180': !showModelMenu }"
+            />
+          </button>
+
+          <!-- Model Menu -->
+          <Transition
+            enter-active-class="transition-all duration-400 ease-[cubic-bezier(0.19,1,0.22,1)]"
+            enter-from-class="opacity-0 scale-95 translate-y-2 blur-sm"
+            enter-to-class="opacity-100 scale-100 translate-y-0 blur-0"
+            leave-active-class="transition-all duration-400 ease-[cubic-bezier(0.19,1,0.22,1)]"
+            leave-from-class="opacity-100 scale-100 translate-y-0 blur-0"
+            leave-to-class="opacity-0 scale-95 translate-y-2 blur-sm"
+          >
+            <div
+              v-if="showModelMenu"
+              class="absolute bottom-full left-0 mb-3 w-48 bg-background/80 backdrop-blur-2xl border-[0.5px] border-border rounded-xl shadow-lg overflow-hidden origin-bottom-left"
+            >
+              <div class="p-1 space-y-0.5">
+                <button
+                  v-for="model in models"
+                  :key="model.id"
+                  @click="selectModel(model.name)"
+                  class="w-full px-3 py-1.5 text-left rounded-lg transition-all duration-200 group relative overflow-hidden"
+                  :class="selectedModel === model.name ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/60'"
+                >
+                  <div class="flex items-center gap-2.5 relative z-10">
+                    <div class="w-5 h-5 rounded-full bg-background/50 border border-border/20 overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-300">
+                      <img :src="model.icon" alt="model icon" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium truncate" :class="selectedModel === model.name ? 'text-primary' : 'text-foreground'">
+                          {{ model.name }}
+                        </span>
+                        <Check v-if="selectedModel === model.name" class="w-3 h-3 text-primary" />
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </Transition>
+        </div>
       </div>
 
       <!-- Input Area -->
