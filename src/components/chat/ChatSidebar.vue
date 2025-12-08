@@ -98,8 +98,8 @@ const formatTime = (timestamp: number) => {
         :key="conv.id"
         @click="emit('select', conv.id)"
         :class="cn(
-          'group flex items-center rounded-xl cursor-pointer transition-all duration-200',
-          collapsed ? 'justify-center p-3' : 'gap-3 p-3',
+          'group flex items-center rounded-xl cursor-pointer transition-[background-color,box-shadow] duration-200',
+          collapsed ? 'p-3' : 'gap-3 p-3',
           activeId === conv.id
             ? 'bg-accent/50 shadow-sm'
             : 'hover:bg-muted/50'
@@ -115,21 +115,23 @@ const formatTime = (timestamp: number) => {
         </div>
 
         <!-- Text Content - 收起时隐藏 -->
-        <Transition name="fade-slide">
-          <div v-if="!collapsed" class="flex-1 min-w-0 text-left">
-            <div class="flex items-center justify-between mb-0.5">
-              <span :class="cn('font-medium text-sm truncate', activeId === conv.id ? 'text-foreground' : 'text-foreground/90')">
-                {{ conv.title }}
-              </span>
-              <span class="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-                {{ formatTime(conv.updatedAt) }}
-              </span>
+        <div :class="collapsed ? 'w-0' : 'flex-1 min-w-0'" class="overflow-hidden transition-[width] duration-0">
+          <Transition name="fade-slide">
+            <div v-if="!collapsed" class="text-left">
+              <div class="flex items-center justify-between mb-0.5">
+                <span :class="cn('font-medium text-sm truncate', activeId === conv.id ? 'text-foreground' : 'text-foreground/90')">
+                  {{ conv.title }}
+                </span>
+                <span class="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                  {{ formatTime(conv.updatedAt) }}
+                </span>
+              </div>
+              <p class="text-xs text-muted-foreground truncate">
+                {{ conv.lastMessage?.content || 'No messages yet' }}
+              </p>
             </div>
-            <p class="text-xs text-muted-foreground truncate">
-              {{ conv.lastMessage?.content || 'No messages yet' }}
-            </p>
-          </div>
-        </Transition>
+          </Transition>
+        </div>
       </div>
 
       <div v-if="!collapsed && filteredConversations.length === 0" class="p-4 text-center text-muted-foreground text-sm">
