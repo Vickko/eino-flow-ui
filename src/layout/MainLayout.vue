@@ -10,11 +10,13 @@ import { useGraph } from '@/composables/useGraph'
 import { useTheme } from '@/composables/useTheme'
 import { useLayout } from '@/composables/useLayout'
 import { useServerStatus } from '@/composables/useServerStatus'
+import { useNavButton } from '@/composables/useNavButton'
 
 const { selectedGraphId } = useGraph()
 const { initTheme } = useTheme()
 const { showSidebar, showInspector, showBottomPanel } = useLayout()
 const { isOnline } = useServerStatus()
+const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton()
 
 onMounted(() => {
   initTheme()
@@ -23,7 +25,7 @@ onMounted(() => {
 
 <template>
   <div
-    class="relative h-screen w-screen overflow-hidden bg-background text-foreground font-sans"
+    class="relative h-screen w-full overflow-hidden bg-background text-foreground font-sans"
   >
 
     <!-- 1. Graph Layer (Bottom Z-Index) -->
@@ -95,17 +97,40 @@ onMounted(() => {
     </div>
 
     <!-- Nav Switch Button (Bottom Left) -->
-    <RouterLink
-      to="/chat"
-      class="absolute left-3 bottom-3 z-50 p-3 rounded-full bg-background/60 backdrop-blur-xl border border-border/40 shadow-panel hover:bg-muted/50 transition-colors"
-      title="Chat"
+    <div
+      class="nav-switch-trigger absolute left-0 bottom-0 z-50 w-24 h-24 pointer-events-auto"
+      :class="{ expanded: isExpanded }"
+      @mouseenter="handleMouseEnter"
+      @mouseleave="handleMouseLeave"
     >
-      <MessageCircle class="w-5 h-5 text-foreground" />
-    </RouterLink>
+      <RouterLink
+        to="/chat"
+        class="nav-switch-btn absolute left-3 bottom-3 p-3 rounded-full bg-background/60 backdrop-blur-xl border border-border/40 shadow-panel hover:bg-muted/50 transition-all duration-300"
+        title="Chat"
+      >
+        <MessageCircle class="w-5 h-5 text-foreground" />
+      </RouterLink>
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* Nav Switch Button Auto-hide */
+.nav-switch-trigger {
+  pointer-events: none;
+}
+
+.nav-switch-trigger .nav-switch-btn {
+  pointer-events: auto;
+  transform: translate(-50%, 50%);
+  opacity: 0.3;
+}
+
+.nav-switch-trigger.expanded .nav-switch-btn {
+  transform: translate(0, 0);
+  opacity: 1;
+}
+
 /* Sidebar Transition */
 .slide-left-enter-active,
 .slide-left-leave-active {

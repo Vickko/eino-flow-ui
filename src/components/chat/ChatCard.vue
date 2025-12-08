@@ -21,6 +21,8 @@ const isHeaderCollapsed = ref(false);
 // 追踪新消息的 ID（用于播放动画）
 const newMessageIds = ref<Set<string>>(new Set());
 const isInitialLoad = ref(true);
+// 追踪上一次的消息列表，用于区分切换对话和新消息
+const previousMessageIds = ref<string[]>([]);
 
 // 滚动检测相关状态
 let lastScrollTop = 0;
@@ -80,20 +82,36 @@ const handleScroll = () => {
 watch(() => props.messages.length, (newLen, oldLen) => {
   // 页面初次加载不标记新消息
   if (isInitialLoad.value) {
+    previousMessageIds.value = props.messages.map(m => m.id);
     scrollToBottom();
     return;
   }
 
-  // 检测新增的消息
+  const currentMessageIds = props.messages.map(m => m.id);
+
+  // 检测是否是切换对话：如果之前的消息 ID 都不在当前列表中，说明是切换了对话
+  const isSwitchingConversation = previousMessageIds.value.length > 0 &&
+    !previousMessageIds.value.some(id => currentMessageIds.includes(id));
+
+  // 更新消息 ID 列表
+  previousMessageIds.value = currentMessageIds;
+
+  // 如果是切换对话，不触发动画
+  if (isSwitchingConversation) {
+    scrollToBottom();
+    return;
+  }
+
+  // 检测新增的消息，只标记最后一条
   if (newLen > oldLen) {
-    const newMessages = props.messages.slice(oldLen);
-    newMessages.forEach(msg => {
-      newMessageIds.value.add(msg.id);
+    const lastMessage = props.messages[props.messages.length - 1];
+    if (lastMessage) {
+      newMessageIds.value.add(lastMessage.id);
       // 动画结束后移除标记
       setTimeout(() => {
-        newMessageIds.value.delete(msg.id);
+        newMessageIds.value.delete(lastMessage.id);
       }, 600);
-    });
+    }
   }
 
   scrollToBottom();

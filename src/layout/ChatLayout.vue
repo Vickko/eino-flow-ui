@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { ChevronLeft, LayoutGrid } from 'lucide-vue-next';
+import { computed, onMounted, ref } from 'vue';
+import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-vue-next';
 import { RouterLink } from 'vue-router';
 import { useChatMock } from '../composables/useChatMock';
 import { useTheme } from '../composables/useTheme';
+import { useNavButton } from '../composables/useNavButton';
 import ChatSidebar from '../components/chat/ChatSidebar.vue';
 import ChatCard from '../components/chat/ChatCard.vue';
 
@@ -16,6 +17,10 @@ const {
 } = useChatMock();
 
 const { initTheme } = useTheme();
+const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton();
+
+// 侧边栏展开状态
+const showChatSidebar = ref(true);
 
 onMounted(() => {
   initTheme();
@@ -37,24 +42,43 @@ const handleSelectConversation = (id: string) => {
 const handleBack = () => {
   activeConversationId.value = null;
 };
+
+const toggleSidebar = () => {
+  showChatSidebar.value = !showChatSidebar.value;
+};
 </script>
 
 <template>
-  <div class="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-    <!-- Sidebar -->
-    <div 
-      class="h-full border-r border-border/40 bg-background/50 backdrop-blur-xl flex-shrink-0 transition-all duration-300"
+  <div class="flex h-screen w-full overflow-hidden bg-background text-foreground">
+    <!-- Sidebar with Collapse -->
+    <div
+      class="h-full border-r border-border/40 bg-background/50 backdrop-blur-xl flex-shrink-0 transition-all duration-300 relative sidebar-container z-30"
       :class="[
-        activeConversationId ? 'hidden md:flex md:w-80' : 'w-full flex'
+        activeConversationId
+          ? (showChatSidebar ? 'hidden md:flex md:w-80' : 'hidden md:flex md:w-20')
+          : 'w-full flex'
       ]"
     >
-      <ChatSidebar 
+      <!-- Sidebar Content -->
+      <ChatSidebar
         class="w-full"
         :conversations="conversations"
         :active-id="activeConversationId"
+        :collapsed="!showChatSidebar && activeConversationId !== null"
         @select="handleSelectConversation"
         @create="createConversation"
       />
+
+      <!-- Toggle Button (desktop only, protruding from right edge) -->
+      <button
+        v-if="activeConversationId"
+        @click="toggleSidebar"
+        class="toggle-btn hidden md:flex absolute top-1/2 -right-[21px] -translate-y-1/2 w-5 h-12 bg-background/80 backdrop-blur-md border-y border-r border-border/40 rounded-r-md items-center justify-center hover:bg-muted/50 transition-all duration-200 z-50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)]"
+        :title="showChatSidebar ? '收起侧边栏' : '展开侧边栏'"
+      >
+        <ChevronLeft v-if="showChatSidebar" class="w-3.5 h-3.5" />
+        <ChevronRight v-else class="w-3.5 h-3.5" />
+      </button>
     </div>
 
     <!-- Chat Area -->
@@ -92,12 +116,48 @@ const handleBack = () => {
     </div>
 
     <!-- Nav Switch Button (Bottom Left) -->
-    <RouterLink
-      to="/"
-      class="absolute left-3 bottom-3 z-50 p-3 rounded-full bg-background/60 backdrop-blur-xl border border-border/40 shadow-panel hover:bg-muted/50 transition-colors"
-      title="Graph"
+    <div
+      class="nav-switch-trigger absolute left-0 bottom-0 z-50 w-24 h-24 pointer-events-auto"
+      :class="{ expanded: isExpanded }"
+      @mouseenter="handleMouseEnter"
+      @mouseleave="handleMouseLeave"
     >
-      <LayoutGrid class="w-5 h-5 text-foreground" />
-    </RouterLink>
+      <RouterLink
+        to="/"
+        class="nav-switch-btn absolute left-3 bottom-3 p-3 rounded-full bg-background/60 backdrop-blur-xl border border-border/40 shadow-panel hover:bg-muted/50 transition-all duration-300"
+        title="Graph"
+      >
+        <LayoutGrid class="w-5 h-5 text-foreground" />
+      </RouterLink>
+    </div>
   </div>
 </template>
+
+<style scoped>
+/* Nav Switch Button Auto-hide */
+.nav-switch-trigger {
+  pointer-events: none;
+}
+
+.nav-switch-trigger .nav-switch-btn {
+  pointer-events: auto;
+  transform: translate(-50%, 50%);
+  opacity: 0.3;
+}
+
+.nav-switch-trigger.expanded .nav-switch-btn {
+  transform: translate(0, 0);
+  opacity: 1;
+}
+
+/* Sidebar Toggle Button Hover Effect */
+.sidebar-container .toggle-btn {
+  opacity: 0.4;
+  transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+.sidebar-container:hover .toggle-btn,
+.toggle-btn:hover {
+  opacity: 1;
+}
+</style>
