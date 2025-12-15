@@ -6,12 +6,22 @@ import type {
   InputTypesResponse,
   DebugThreadResponse,
   DebugRunRequest,
+  ChatMessageRequest,
+  ChatMessageResponse,
 } from '@/types'
 
 let API_BASE = 'http://localhost:52538/eino/devops'
+const CHAT_API_BASE = 'http://localhost:52538'
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+const chatApiClient: AxiosInstance = axios.create({
+  baseURL: CHAT_API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -115,3 +125,20 @@ export const streamDebugRun = async (
     throw error
   }
 }
+
+// Chat API
+export const sendChatMessage = async (
+  request: ChatMessageRequest
+): Promise<ChatMessageResponse> => {
+  try {
+    const response = await chatApiClient.post<ChatMessageResponse>(
+      '/api/v1/chat',
+      request
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error sending chat message:', error)
+    throw error
+  }
+}
+

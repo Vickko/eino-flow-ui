@@ -144,3 +144,43 @@ export interface LogEntry {
   fullMessage: string
   message: string
 }
+
+// Chat 相关类型
+export interface ChatMessageRequest {
+  session: string
+  role: 'user' | 'system' | 'assistant' | 'tool'
+  content: string
+  model?: string
+  client?: string
+  name?: string
+  tool_call_id?: string
+  tool_name?: string
+}
+
+export interface ToolCall {
+  id: string
+  type: string
+  function: {
+    name: string
+    arguments: string
+  }
+}
+
+export interface TokenUsage {
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+}
+
+export interface ResponseMeta {
+  finish_reason: string
+  usage?: TokenUsage
+}
+
+export interface ChatMessageResponse {
+  role: 'assistant'
+  content: string
+  tool_calls?: ToolCall[]
+  reasoning_content?: string
+  response_meta?: ResponseMeta
+}
