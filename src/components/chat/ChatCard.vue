@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { MoreVertical, Phone, Video, ChevronUp, Check } from 'lucide-vue-next';
+import { MoreVertical, Phone, Video, ChevronUp, Check, Settings } from 'lucide-vue-next';
 import type { Message } from '../../composables/useChat';
 import MessageBubble from './MessageBubble.vue';
 import ChatInput from './ChatInput.vue';
-
-// 导入模型图标
-import logoGPT from '../../assets/logo_GPT.svg';
-import logoClaude from '../../assets/logo_claude2.svg';
-import logoGemini from '../../assets/logo_gemini.svg';
+import ModelManagementDialog from './ModelManagementDialog.vue';
+import { useModelManagement } from '../../composables/useModelManagement';
 
 const props = defineProps<{
   messages: Message[];
@@ -142,25 +139,32 @@ onUnmounted(() => {
 
 const handleSend = (text: string) => {
   // 查找当前选中模型的 ID
-  const model = models.find(m => m.name === selectedModel.value);
+  const model = models.value.find(m => m.name === selectedModel.value);
   emit('send', { text, model: model?.id });
 };
 
+// 使用模型管理 composable
+const { models } = useModelManagement();
+
 // 模型选择相关
 const showModelMenu = ref(false);
-const selectedModel = ref('GPT-4');
+// 默认选中第一个模型，列表为空时显示 --
+const selectedModel = ref(models.value[0]?.name || '--');
 const modelSelectorRef = ref<HTMLButtonElement | null>(null);
-const models = [
-  { id: 'gpt-4', name: 'GPT-4', description: 'Most capable model', icon: logoGPT },
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Fast and efficient', icon: logoGPT },
-  { id: 'claude-3', name: 'Claude 3', description: 'Anthropic\'s latest', icon: logoClaude },
-  { id: 'gemini-pro', name: 'Gemini Pro', description: 'Google\'s model', icon: logoGemini }
-];
+
+// 模型管理对话框
+const showModelManagement = ref(false);
 
 // 获取当前选中模型的图标
 const getCurrentModelIcon = () => {
-  const model = models.find(m => m.name === selectedModel.value);
-  return model?.icon || logoGPT;
+  const model = models.value.find(m => m.name === selectedModel.value);
+  return model?.icon || models.value[0]?.icon;
+};
+
+// 打开模型管理对话框
+const openModelManagement = () => {
+  showModelMenu.value = false;
+  showModelManagement.value = true;
 };
 
 const toggleModelMenu = () => {
@@ -276,60 +280,71 @@ const handleClickOutside = (event: MouseEvent) => {
 
       <!-- Model Selector -->
       <div class="px-4 pb-3 relative z-20">
-        <div class="model-selector relative inline-block">
-          <button
-            ref="modelSelectorRef"
-            @click="toggleModelMenu"
-            class="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-background/40 hover:bg-background/60 border-[0.5px] border-transparent hover:border-border text-sm group shadow-sm hover:shadow-md backdrop-blur-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-          >
-            <div class="w-5 h-5 rounded-full overflow-hidden bg-muted/50 flex items-center justify-center border border-border/20 group-hover:scale-105 transition-transform duration-300 shrink-0">
-              <img :src="getCurrentModelIcon()" alt="model icon" class="w-full h-full object-cover transition-opacity duration-200" />
-            </div>
-            <span class="text-foreground/80 font-medium text-xs tracking-wide group-hover:text-foreground whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">{{ selectedModel }}</span>
-            <ChevronUp
-              class="w-3.5 h-3.5 text-muted-foreground/70 group-hover:text-primary/80 transition-transform duration-300 ease-out shrink-0"
-              :class="{ 'rotate-180': !showModelMenu }"
-            />
-          </button>
-
-          <!-- Model Menu -->
-          <Transition
-            enter-active-class="transition-all duration-400 ease-[cubic-bezier(0.19,1,0.22,1)]"
-            enter-from-class="opacity-0 scale-95 translate-y-2 blur-sm"
-            enter-to-class="opacity-100 scale-100 translate-y-0 blur-0"
-            leave-active-class="transition-all duration-400 ease-[cubic-bezier(0.19,1,0.22,1)]"
-            leave-from-class="opacity-100 scale-100 translate-y-0 blur-0"
-            leave-to-class="opacity-0 scale-95 translate-y-2 blur-sm"
-          >
-            <div
-              v-if="showModelMenu"
-              class="absolute bottom-full left-0 mb-3 w-48 bg-background/80 backdrop-blur-2xl border-[0.5px] border-border rounded-xl shadow-lg overflow-hidden origin-bottom-left"
+        <div class="flex items-center gap-2">
+          <div class="model-selector relative inline-block">
+            <button
+              ref="modelSelectorRef"
+              @click="toggleModelMenu"
+              class="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-background/40 hover:bg-background/60 border-[0.5px] border-transparent hover:border-border text-sm group shadow-sm hover:shadow-md backdrop-blur-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
             >
-              <div class="p-1 space-y-0.5">
-                <button
-                  v-for="model in models"
-                  :key="model.id"
-                  @click="selectModel(model.name)"
-                  class="w-full px-3 py-1.5 text-left rounded-lg transition-all duration-200 group relative overflow-hidden"
-                  :class="selectedModel === model.name ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/60'"
-                >
-                  <div class="flex items-center gap-2.5 relative z-10">
-                    <div class="w-5 h-5 rounded-full bg-background/50 border border-border/20 overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-300">
-                      <img :src="model.icon" alt="model icon" class="w-full h-full object-cover" />
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-medium truncate" :class="selectedModel === model.name ? 'text-primary' : 'text-foreground'">
-                          {{ model.name }}
-                        </span>
-                        <Check v-if="selectedModel === model.name" class="w-3 h-3 text-primary" />
+              <div class="w-5 h-5 rounded-full overflow-hidden bg-muted/50 flex items-center justify-center border border-border/20 group-hover:scale-105 transition-transform duration-300 shrink-0">
+                <img :src="getCurrentModelIcon()" alt="model icon" class="w-full h-full object-cover transition-opacity duration-200" />
+              </div>
+              <span class="text-foreground/80 font-medium text-xs tracking-wide group-hover:text-foreground whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">{{ selectedModel }}</span>
+              <ChevronUp
+                class="w-3.5 h-3.5 text-muted-foreground/70 group-hover:text-primary/80 transition-transform duration-300 ease-out shrink-0"
+                :class="{ 'rotate-180': !showModelMenu }"
+              />
+            </button>
+
+            <!-- Model Menu -->
+            <Transition
+              enter-active-class="transition-all duration-400 ease-[cubic-bezier(0.19,1,0.22,1)]"
+              enter-from-class="opacity-0 scale-95 translate-y-2 blur-sm"
+              enter-to-class="opacity-100 scale-100 translate-y-0 blur-0"
+              leave-active-class="transition-all duration-400 ease-[cubic-bezier(0.19,1,0.22,1)]"
+              leave-from-class="opacity-100 scale-100 translate-y-0 blur-0"
+              leave-to-class="opacity-0 scale-95 translate-y-2 blur-sm"
+            >
+              <div
+                v-if="showModelMenu"
+                class="absolute bottom-full left-0 mb-3 w-48 bg-background/80 backdrop-blur-2xl border-[0.5px] border-border rounded-xl shadow-lg overflow-hidden origin-bottom-left"
+              >
+                <div class="p-1 space-y-0.5">
+                  <button
+                    v-for="model in models"
+                    :key="model.id"
+                    @click="selectModel(model.name)"
+                    class="w-full px-3 py-1.5 text-left rounded-lg transition-all duration-200 group relative overflow-hidden"
+                    :class="selectedModel === model.name ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-muted/60'"
+                  >
+                    <div class="flex items-center gap-2.5 relative z-10">
+                      <div class="w-5 h-5 rounded-full bg-background/50 border border-border/20 overflow-hidden shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-300">
+                        <img :src="model.icon" alt="model icon" class="w-full h-full object-cover" />
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                          <span class="text-xs font-medium truncate" :class="selectedModel === model.name ? 'text-primary' : 'text-foreground'">
+                            {{ model.name }}
+                          </span>
+                          <Check v-if="selectedModel === model.name" class="w-3 h-3 text-primary" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                </div>
               </div>
-            </div>
-          </Transition>
+            </Transition>
+          </div>
+
+          <!-- Settings Button -->
+          <button
+            @click="openModelManagement"
+            class="p-1.5 rounded-full bg-background/40 hover:bg-background/60 border-[0.5px] border-transparent hover:border-border shadow-sm hover:shadow-md backdrop-blur-md transition-all duration-300 group"
+            title="管理模型"
+          >
+            <Settings class="w-4 h-4 text-muted-foreground/70 group-hover:text-primary/80 group-hover:rotate-90 transition-all duration-300" />
+          </button>
         </div>
       </div>
 
@@ -339,6 +354,13 @@ const handleClickOutside = (event: MouseEvent) => {
         <span class="text-[10px] text-muted-foreground/50">Press Enter to send, Shift + Enter for new line</span>
       </div>
     </div>
+
+    <!-- Model Management Dialog -->
+    <ModelManagementDialog
+      :is-open="showModelManagement"
+      @close="showModelManagement = false"
+      @update:isOpen="showModelManagement = $event"
+    />
   </div>
 </template>
 
