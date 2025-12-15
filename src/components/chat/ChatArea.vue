@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted } from 'vue';
 import { MoreVertical, Phone, Video } from 'lucide-vue-next';
-import type { Message } from '../../composables/useChatMock';
+import type { Message } from '../../composables/useChat';
 import MessageBubble from './MessageBubble.vue';
 import ChatInput from './ChatInput.vue';
 

@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { Bot } from 'lucide-vue-next';
 import MarkdownIt from 'markdown-it';
-import type { Message } from '../../composables/useChatMock';
+import type { Message } from '../../composables/useChat';
 import { cn } from '../../lib/utils';
 
 import logoGPT from '../../assets/logo_GPT.svg';

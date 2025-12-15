@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-vue-next';
 import { RouterLink } from 'vue-router';
-import { useChatMock } from '../composables/useChatMock';
+import { useChat } from '../composables/useChat';
 import { useTheme } from '../composables/useTheme';
 import { useNavButton } from '../composables/useNavButton';
 import ChatSidebar from '../components/chat/ChatSidebar.vue';
@@ -14,7 +14,7 @@ const {
   activeConversationId,
   sendMessage,
   createConversation
-} = useChatMock();
+} = useChat();
 
 const { initTheme } = useTheme();
 const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton();
@@ -102,7 +102,7 @@ const toggleSidebar = () => {
         <ChatCard
           :messages="currentMessages"
           :conversation-title="activeConversation?.title"
-          @send="sendMessage"
+          @send="({ text, model }) => sendMessage(text, model)"
           class="w-full h-full"
         />
       </template>

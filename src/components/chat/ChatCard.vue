@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { MoreVertical, Phone, Video, ChevronUp, Check } from 'lucide-vue-next';
-import type { Message } from '../../composables/useChatMock';
+import type { Message } from '../../composables/useChat';
 import MessageBubble from './MessageBubble.vue';
 import ChatInput from './ChatInput.vue';
 
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'send', text: string): void;
+  (e: 'send', payload: { text: string; model?: string }): void;
 }>();
 
 const scrollAreaRef = ref<HTMLDivElement | null>(null);
@@ -141,7 +141,9 @@ onUnmounted(() => {
 });
 
 const handleSend = (text: string) => {
-  emit('send', text);
+  // 查找当前选中模型的 ID
+  const model = models.find(m => m.name === selectedModel.value);
+  emit('send', { text, model: model?.id });
 };
 
 // 模型选择相关
