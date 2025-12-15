@@ -34,7 +34,8 @@ const handleSend = () => {
 };
 
 const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
+  // 检查是否处于输入法组合状态，避免在选择候选词时误发送
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault();
     handleSend();
   }
