@@ -67,9 +67,9 @@ const setupResizeObserver = () => {
     resizeObserver.disconnect();
   }
 
-  // 初始化：设置气泡为当前高度并启用过渡
+  // 初始化：设置气泡为当前尺寸并启用过渡
   const bubble = bubbleRef.value;
-  bubble.style.transition = 'height 0.15s ease-out';
+  bubble.style.transition = 'height 0.15s ease-out, width 0.2s ease-out';
 
   resizeObserver = new ResizeObserver(() => {
     if (!isStreaming.value || !bubbleRef.value) return;
@@ -83,19 +83,24 @@ const setupResizeObserver = () => {
       const bubble = bubbleRef.value;
       if (!bubble) return;
 
-      // 临时移除高度限制以获取真实高度
+      // 临时移除尺寸限制以获取真实尺寸
       const currentHeight = bubble.style.height;
+      const currentWidth = bubble.style.width;
       bubble.style.height = '';
+      bubble.style.width = '';
       const targetHeight = bubble.scrollHeight;
+      const targetWidth = bubble.scrollWidth;
 
-      // 如果之前有固定高度，恢复它然后动画到新高度
-      if (currentHeight) {
+      // 如果之前有固定尺寸，恢复它们然后动画到新尺寸
+      if (currentHeight || currentWidth) {
         bubble.style.height = currentHeight;
+        bubble.style.width = currentWidth;
         // 强制重排
         bubble.offsetHeight;
       }
 
       bubble.style.height = `${targetHeight}px`;
+      bubble.style.width = `${targetWidth}px`;
     });
   });
 
@@ -115,6 +120,7 @@ watch(() => props.message.status, (newStatus, oldStatus) => {
     if (bubbleRef.value) {
       bubbleRef.value.style.transition = '';
       bubbleRef.value.style.height = '';
+      bubbleRef.value.style.width = '';
     }
   }
 }, { immediate: true });
