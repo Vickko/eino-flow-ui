@@ -189,7 +189,14 @@ export const streamChatMessage = async (
           if (data === '[DONE]') {
             callbacks.onDone?.()
           } else {
-            callbacks.onChunk?.(data)
+            // SSE data 字段是 JSON 字符串格式，需要解析还原原始内容
+            try {
+              const parsed = JSON.parse(data) as string
+              callbacks.onChunk?.(parsed)
+            } catch {
+              // 解析失败时直接使用原始数据
+              callbacks.onChunk?.(data)
+            }
           }
         }
       }
@@ -201,7 +208,12 @@ export const streamChatMessage = async (
       if (trimmedLine.startsWith('data: ')) {
         const data = trimmedLine.slice(6)
         if (data !== '[DONE]') {
-          callbacks.onChunk?.(data)
+          try {
+            const parsed = JSON.parse(data) as string
+            callbacks.onChunk?.(parsed)
+          } catch {
+            callbacks.onChunk?.(data)
+          }
         }
       }
     }
