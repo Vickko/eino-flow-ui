@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Bot } from 'lucide-vue-next';
 import { MdPreview } from 'md-editor-v3';
 import 'md-editor-v3/lib/preview.css';
@@ -13,9 +13,20 @@ import logoGemini from '../../assets/logo_gemini.svg';
 
 const { isDark } = useTheme();
 
+const props = defineProps<{
+  message: Message;
+  isNew?: boolean; // 是否是新消息，用于控制动画
+  hideTimestamp?: boolean; // 是否隐藏时间戳
+}>();
+
+// 判断是否正在流式接收
+const isStreaming = computed(() => props.message.status === 'streaming');
+
 // 监听复制按钮文本变化
 const markdownContentRef = ref<HTMLElement | null>(null);
+const bubbleRef = ref<HTMLElement | null>(null);
 let copyButtonObserver: MutationObserver | null = null;
+let resizeObserver: ResizeObserver | null = null;
 
 const setupCopyButtonObserver = () => {
   if (!markdownContentRef.value) return;
@@ -46,9 +57,74 @@ const setupCopyButtonObserver = () => {
   });
 };
 
+// 流式状态下的平滑高度动画
+let animationFrameId: number | null = null;
+
+const setupResizeObserver = () => {
+  if (!markdownContentRef.value || !bubbleRef.value) return;
+
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+
+  // 初始化：设置气泡为当前高度并启用过渡
+  const bubble = bubbleRef.value;
+  bubble.style.transition = 'height 0.15s ease-out';
+
+  resizeObserver = new ResizeObserver(() => {
+    if (!isStreaming.value || !bubbleRef.value) return;
+
+    // 取消之前的动画帧
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+    }
+
+    animationFrameId = requestAnimationFrame(() => {
+      const bubble = bubbleRef.value;
+      if (!bubble) return;
+
+      // 临时移除高度限制以获取真实高度
+      const currentHeight = bubble.style.height;
+      bubble.style.height = '';
+      const targetHeight = bubble.scrollHeight;
+
+      // 如果之前有固定高度，恢复它然后动画到新高度
+      if (currentHeight) {
+        bubble.style.height = currentHeight;
+        // 强制重排
+        bubble.offsetHeight;
+      }
+
+      bubble.style.height = `${targetHeight}px`;
+    });
+  });
+
+  resizeObserver.observe(markdownContentRef.value);
+};
+
+// 监听流式状态变化
+watch(() => props.message.status, (newStatus, oldStatus) => {
+  if (newStatus === 'streaming') {
+    nextTick(setupResizeObserver);
+  } else if (oldStatus === 'streaming') {
+    // 流式结束，清理
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+    if (bubbleRef.value) {
+      bubbleRef.value.style.transition = '';
+      bubbleRef.value.style.height = '';
+    }
+  }
+}, { immediate: true });
+
 onMounted(() => {
   nextTick(() => {
     setupCopyButtonObserver();
+    if (isStreaming.value) {
+      setupResizeObserver();
+    }
   });
 });
 
@@ -56,16 +132,13 @@ onUnmounted(() => {
   if (copyButtonObserver) {
     copyButtonObserver.disconnect();
   }
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
 });
-
-const props = defineProps<{
-  message: Message;
-  isNew?: boolean; // 是否是新消息，用于控制动画
-  hideTimestamp?: boolean; // 是否隐藏时间戳
-}>();
-
-// 判断是否正在流式接收
-const isStreaming = computed(() => props.message.status === 'streaming');
 
 // 判断是否应该播放动画（只有新消息才播放，streaming 状态除外）
 const shouldAnimateAI = computed(() => props.isNew && props.message.role === 'assistant' && !isStreaming.value);
@@ -86,10 +159,12 @@ const modelIcon = computed(() => {
 
 const bubbleClass = computed(() => {
   return cn(
-    'relative max-w-[95%] md:max-w-[90%] px-4 py-3 text-sm shadow-sm transition-all duration-300',
+    'relative max-w-[95%] md:max-w-[90%] px-4 py-3 text-sm shadow-sm',
     isUser.value
       ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm'
-      : 'bg-muted/50 border border-border/50 rounded-2xl rounded-tl-sm text-foreground'
+      : 'bg-muted/50 border border-border/50 rounded-2xl rounded-tl-sm text-foreground',
+    // 流式状态下启用平滑高度动画
+    isStreaming.value && 'streaming-bubble'
   );
 });
 
@@ -115,6 +190,7 @@ const timeString = computed(() => {
     </div>
 
     <div
+      ref="bubbleRef"
       :class="[bubbleClass, shouldAnimateAI ? 'ai-bubble-animate' : '', shouldAnimateUser ? 'user-bubble-animate' : '']"
     >
       <!-- Content Area -->
@@ -146,6 +222,11 @@ const timeString = computed(() => {
 </template>
 
 <style scoped>
+/* 流式状态气泡 - 配合 JS 动画 */
+.streaming-bubble {
+  overflow: hidden;
+}
+
 /* 流式接收时的闪烁光标 */
 .streaming-cursor {
   display: inline-block;

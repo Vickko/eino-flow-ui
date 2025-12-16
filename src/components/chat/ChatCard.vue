@@ -32,10 +32,17 @@ let scrollDelta = 0;
 let ticking = false;
 const SCROLL_THRESHOLD = 30; // 需要累积的滚动距离才触发状态变化
 
-const scrollToBottom = async () => {
+const scrollToBottom = async (smooth = false) => {
   await nextTick();
   if (scrollAreaRef.value) {
-    scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
+    if (smooth) {
+      scrollAreaRef.value.scrollTo({
+        top: scrollAreaRef.value.scrollHeight,
+        behavior: 'smooth'
+      });
+    } else {
+      scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
+    }
   }
 };
 
@@ -123,6 +130,19 @@ watch(() => props.messages, (newMessages, oldMessages) => {
 
   scrollToBottom();
 }, { deep: false });
+
+// 监听流式消息的内容变化，保持滚动到底部
+watch(
+  () => {
+    const lastMsg = props.messages[props.messages.length - 1];
+    return lastMsg?.status === 'streaming' ? lastMsg.content : null;
+  },
+  (newContent) => {
+    if (newContent !== null) {
+      scrollToBottom();
+    }
+  }
+);
 
 // 判断消息是否为新消息
 const isNewMessage = (msgId: string) => newMessageIds.value.has(msgId);
