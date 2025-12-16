@@ -132,7 +132,8 @@ export const streamDebugRun = async (
 
 // Chat API - SSE 流式接口
 export interface StreamChatCallbacks {
-  onChunk?: (chunk: string) => void // 接收到内容片段
+  onChunk?: (chunk: string) => void // 接收到 content 内容片段
+  onReasoning?: (chunk: string) => void // 接收到 reasoning 思考内容片段
   onDone?: () => void // 流式输出完成
   onError?: (error: string) => void // 发生错误
 }
@@ -161,6 +162,8 @@ export const streamChatMessage = async (
 
     const decoder = new TextDecoder()
     let buffer = ''
+    // 跟踪当前事件类型：'reasoning' | 'content' | null
+    let currentEventType: string | null = null
 
     while (true) {
       const { done, value } = await reader.read()
@@ -181,8 +184,16 @@ export const streamChatMessage = async (
           const eventType = trimmedLine.slice(7)
           if (eventType === 'done') {
             callbacks.onDone?.()
+            currentEventType = null
           } else if (eventType === 'error') {
             // 下一行会包含错误信息
+            currentEventType = 'error'
+          } else if (eventType === 'reasoning') {
+            // 思考内容事件
+            currentEventType = 'reasoning'
+          } else if (eventType === 'content') {
+            // 最终答案事件
+            currentEventType = 'content'
           }
           continue
         }
@@ -196,10 +207,20 @@ export const streamChatMessage = async (
             // SSE data 字段是 JSON 字符串格式，需要解析还原原始内容
             try {
               const parsed = JSON.parse(data) as string
-              callbacks.onChunk?.(parsed)
+              // 根据当前事件类型调用相应的回调
+              if (currentEventType === 'reasoning') {
+                callbacks.onReasoning?.(parsed)
+              } else {
+                // 默认为 content 或无事件类型时（兼容旧格式）
+                callbacks.onChunk?.(parsed)
+              }
             } catch {
               // 解析失败时直接使用原始数据
-              callbacks.onChunk?.(data)
+              if (currentEventType === 'reasoning') {
+                callbacks.onReasoning?.(data)
+              } else {
+                callbacks.onChunk?.(data)
+              }
             }
           }
         }
@@ -214,9 +235,17 @@ export const streamChatMessage = async (
         if (data !== '[DONE]') {
           try {
             const parsed = JSON.parse(data) as string
-            callbacks.onChunk?.(parsed)
+            if (currentEventType === 'reasoning') {
+              callbacks.onReasoning?.(parsed)
+            } else {
+              callbacks.onChunk?.(parsed)
+            }
           } catch {
-            callbacks.onChunk?.(data)
+            if (currentEventType === 'reasoning') {
+              callbacks.onReasoning?.(data)
+            } else {
+              callbacks.onChunk?.(data)
+            }
           }
         }
       }

@@ -17,6 +17,7 @@ export interface Message {
   status?: 'sending' | 'sent' | 'error' | 'streaming' // 新增 streaming 状态
   model?: string
   reasoning_content?: string
+  reasoningStatus?: 'thinking' | 'done' // 思考状态：thinking=思考中，done=思考完成
 }
 
 export interface Conversation {
@@ -469,12 +470,83 @@ And this is an extremely extremely extremely extremely extremely extremely extre
 
 **演示完毕！** 以上展示了 Markdown 渲染器支持的所有主要功能。`
 
+// 思考过程演示内容
+const REASONING_DEMO_CONTENT = `根据我的分析，快速排序的平均时间复杂度是 **O(n log n)**。
+
+## 详细解释
+
+### 时间复杂度分析
+
+| 情况 | 时间复杂度 | 说明 |
+|------|-----------|------|
+| 最佳情况 | O(n log n) | 每次都能均匀分割 |
+| 平均情况 | O(n log n) | 随机数据 |
+| 最坏情况 | O(n²) | 已排序数组且选择首/尾元素作为基准 |
+
+### 为什么平均是 O(n log n)？
+
+1. **分割次数**：理想情况下，每次分割都将数组分成两半，需要 log n 次分割
+2. **每次分割的工作量**：每次分割需要遍历所有元素，工作量为 O(n)
+3. **总复杂度**：O(n) × O(log n) = O(n log n)
+
+### 代码示例
+
+\`\`\`python
+def quicksort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)
+\`\`\`
+
+### 空间复杂度
+
+- **递归栈空间**：O(log n) ~ O(n)
+- **原地排序版本**：O(log n)（只需要递归栈空间）`
+
+const REASONING_DEMO_THINKING = `用户问的是快速排序的时间复杂度，让我仔细分析一下...
+
+首先，快速排序的基本思想是分治法：
+1. 选择一个基准元素（pivot）
+2. 将数组分成两部分：小于基准的和大于基准的
+3. 递归地对两部分进行排序
+
+让我分析不同情况下的复杂度：
+
+**最佳情况分析：**
+- 每次分割都能将数组均匀分成两半
+- 分割深度为 log₂n
+- 每层需要处理 n 个元素
+- 总复杂度：n × log n = O(n log n)
+
+**最坏情况分析：**
+- 当数组已经排序，且每次都选择第一个或最后一个元素作为基准
+- 每次分割只能分出一个元素
+- 分割深度变成 n
+- 总复杂度：n × n = O(n²)
+
+**平均情况分析：**
+- 假设每次分割的位置是随机的
+- 通过数学期望计算，平均分割深度接近 log n
+- 因此平均复杂度为 O(n log n)
+
+我应该用表格来清晰地展示这三种情况，并给出代码示例帮助理解。`
+
 // 初始数据
 const INITIAL_CONVERSATIONS: Conversation[] = [
   {
     id: 'c1',
     title: 'New Chat',
     updatedAt: Date.now(),
+    unreadCount: 0,
+  },
+  {
+    id: 'reasoning-demo',
+    title: '思考过程演示',
+    updatedAt: Date.now() - 500,
     unreadCount: 0,
   },
   {
@@ -506,10 +578,34 @@ const DEMO_MESSAGES: Message[] = [
   },
 ]
 
+// 思考过程演示消息
+const REASONING_DEMO_MESSAGES: Message[] = [
+  {
+    id: 'reasoning-user-1',
+    conversationId: 'reasoning-demo',
+    role: 'user',
+    content: '快速排序的时间复杂度是多少？请详细解释。',
+    timestamp: Date.now() - 30000,
+    status: 'sent',
+  },
+  {
+    id: 'reasoning-assistant-1',
+    conversationId: 'reasoning-demo',
+    role: 'assistant',
+    content: REASONING_DEMO_CONTENT,
+    reasoning_content: REASONING_DEMO_THINKING,
+    reasoningStatus: 'done',
+    timestamp: Date.now() - 29000,
+    status: 'sent',
+    model: 'DeepSeek-R1',
+  },
+]
+
 // 全局状态
 const conversations = ref<Conversation[]>(INITIAL_CONVERSATIONS)
 const messages = ref<Record<string, Message[]>>({
   c1: [],
+  'reasoning-demo': REASONING_DEMO_MESSAGES,
   'markdown-demo': DEMO_MESSAGES,
 })
 const activeConversationId = ref<string | null>('c1')
@@ -563,6 +659,7 @@ export function useChat() {
       conversationId,
       role: 'assistant',
       content: '', // 初始为空，流式填充
+      reasoning_content: '', // 思考内容初始为空
       timestamp: Date.now(),
       status: 'streaming', // 流式接收中
       model: model,
@@ -582,6 +679,20 @@ export function useChat() {
           model: model,
         },
         {
+          onReasoning: (chunk: string) => {
+            // 流式追加思考内容
+            const msgList = messages.value[conversationId]
+            if (msgList) {
+              const msg = msgList.find((m) => m.id === aiMessageId)
+              if (msg) {
+                msg.reasoning_content = (msg.reasoning_content || '') + chunk
+                // 设置思考状态为进行中
+                if (!msg.reasoningStatus) {
+                  msg.reasoningStatus = 'thinking'
+                }
+              }
+            }
+          },
           onChunk: (chunk: string) => {
             // 流式追加内容
             const msgList = messages.value[conversationId]
@@ -589,6 +700,10 @@ export function useChat() {
               const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
                 msg.content += chunk
+                // 收到 content 时，标记思考完成
+                if (msg.reasoningStatus === 'thinking') {
+                  msg.reasoningStatus = 'done'
+                }
               }
             }
           },

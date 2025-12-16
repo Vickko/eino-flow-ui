@@ -5,16 +5,13 @@ const renderedMessageIds = new Set<string>()
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { Bot } from 'lucide-vue-next'
+import { Bot, Lightbulb, ChevronDown, ChevronRight } from 'lucide-vue-next'
 import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/preview.css'
 import type { Message } from '../../composables/useChat'
 import { useTheme } from '../../composables/useTheme'
 import { cn } from '../../lib/utils'
-
-import logoGPT from '../../assets/logo_GPT.svg'
-import logoClaude from '../../assets/logo_claude2.svg'
-import logoGemini from '../../assets/logo_gemini.svg'
+import { getModelIcon } from '../../utils/modelIcons'
 
 const { isDark } = useTheme()
 
@@ -221,13 +218,17 @@ const isUser = computed(() => props.message.role === 'user')
 
 // 为每个消息生成唯一 ID（MdPreview 需要）
 const previewId = computed(() => `preview-${props.message.id}`)
+const reasoningPreviewId = computed(() => `reasoning-preview-${props.message.id}`)
+
+// 思考内容相关
+const hasReasoning = computed(() => !!props.message.reasoning_content)
+const isThinking = computed(() => props.message.reasoningStatus === 'thinking')
+// 思考区域是否折叠
+const isReasoningCollapsed = ref(false)
 
 const modelIcon = computed(() => {
-  const model = props.message.model?.toLowerCase() || ''
-  if (model.includes('gpt')) return logoGPT
-  if (model.includes('claude')) return logoClaude
-  if (model.includes('gemini')) return logoGemini
-  return null
+  if (!props.message.model) return null
+  return getModelIcon(props.message.model)
 })
 
 const bubbleClass = computed(() => {
@@ -263,6 +264,54 @@ const timeString = computed(() => {
       <img v-if="modelIcon" :src="modelIcon" :alt="message.model" class="w-4 h-4" />
       <Bot v-else class="w-4 h-4 text-muted-foreground/70" />
       <span class="text-sm text-muted-foreground/70">{{ message.model }}</span>
+    </div>
+
+    <!-- Reasoning/Thinking Section (only for assistant messages with reasoning) -->
+    <div
+      v-if="!isUser && hasReasoning"
+      :class="[
+        'reasoning-section mt-1 mb-2 ml-1',
+        shouldAnimateAI ? 'ai-reasoning-animate' : '',
+      ]"
+    >
+      <!-- Header: 思考中/思考过程 -->
+      <div
+        class="flex items-center gap-1.5 mb-1 cursor-pointer select-none"
+        @click="isReasoningCollapsed = !isReasoningCollapsed"
+      >
+        <Lightbulb class="w-4 h-4 text-muted-foreground/70" :class="{ 'animate-pulse': isThinking }" />
+        <span class="text-sm text-muted-foreground/70">
+          {{ isThinking ? '思考中' : '思考过程' }}
+        </span>
+        <component
+          :is="isReasoningCollapsed ? ChevronRight : ChevronDown"
+          class="w-3.5 h-3.5 text-muted-foreground/50"
+        />
+      </div>
+      <!-- Reasoning Content (quote style) with collapse animation -->
+      <div
+        class="reasoning-collapse-wrapper grid transition-[grid-template-rows] duration-300 ease-out"
+        :class="isReasoningCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
+      >
+        <div class="overflow-hidden">
+          <div class="reasoning-content border-l-2 border-muted-foreground/30 pl-3 ml-0.5">
+            <div class="reasoning-markdown-content text-sm text-muted-foreground/80">
+              <MdPreview
+                :editor-id="reasoningPreviewId"
+                :model-value="message.reasoning_content || ''"
+                :theme="isDark ? 'dark' : 'light'"
+                language="zh-CN"
+                :show-code-row-number="false"
+                code-theme="github"
+                preview-theme="default"
+                :code-foldable="false"
+              />
+              <!-- 思考中时显示闪烁光标 -->
+              <span v-if="isThinking" class="streaming-cursor"></span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div
@@ -305,6 +354,63 @@ const timeString = computed(() => {
 </template>
 
 <style scoped>
+/* 思考区域动画 */
+.ai-reasoning-animate {
+  animation: reasoning-fade-in 0.4s ease-out both;
+}
+
+@keyframes reasoning-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 思考区域样式 */
+.reasoning-section {
+  max-width: 95%;
+}
+
+@media (min-width: 768px) {
+  .reasoning-section {
+    max-width: 90%;
+  }
+}
+
+/* 思考内容的 markdown 样式 */
+.reasoning-markdown-content {
+  --md-bk-color: transparent !important;
+}
+
+.reasoning-markdown-content :deep(.md-editor),
+.reasoning-markdown-content :deep(.md-editor-dark),
+.reasoning-markdown-content :deep(.md-editor-preview-wrapper),
+.reasoning-markdown-content :deep(.md-editor-preview) {
+  background: transparent !important;
+}
+
+.reasoning-markdown-content :deep(.md-editor-preview) {
+  word-break: break-word;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground) / 0.8);
+}
+
+.reasoning-markdown-content :deep(.md-editor-preview p),
+.reasoning-markdown-content :deep(.md-editor-preview li),
+.reasoning-markdown-content :deep(.md-editor-preview h1),
+.reasoning-markdown-content :deep(.md-editor-preview h2),
+.reasoning-markdown-content :deep(.md-editor-preview h3),
+.reasoning-markdown-content :deep(.md-editor-preview h4),
+.reasoning-markdown-content :deep(.md-editor-preview h5),
+.reasoning-markdown-content :deep(.md-editor-preview h6) {
+  color: hsl(var(--muted-foreground) / 0.8);
+}
+
 /* 流式状态气泡 - 配合 JS 动画 */
 .streaming-bubble {
   overflow: hidden;
