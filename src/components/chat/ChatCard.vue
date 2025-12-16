@@ -177,6 +177,20 @@ const showModelMenu = ref(false);
 const selectedModel = ref(models.value[0]?.name || '--');
 const modelSelectorRef = ref<HTMLButtonElement | null>(null);
 
+// 监听模型列表变化，确保 selectedModel 始终有效
+watch(models, (newModels) => {
+  // 如果列表为空，显示 --
+  if (newModels.length === 0) {
+    selectedModel.value = '--';
+    return;
+  }
+  // 如果当前选中的模型不在列表中（被删除或重命名），回退到第一个模型
+  const modelExists = newModels.some(m => m.name === selectedModel.value);
+  if (!modelExists || selectedModel.value === '--') {
+    selectedModel.value = newModels[0].name;
+  }
+}, { deep: true });
+
 // 模型管理对话框
 const showModelManagement = ref(false);
 
