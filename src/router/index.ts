@@ -8,14 +8,14 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: MainLayout
+      component: MainLayout,
     },
     {
       path: '/chat',
       name: 'chat',
-      component: ChatLayout
-    }
-  ]
+      component: ChatLayout,
+    },
+  ],
 })
 
 export default router

@@ -15,6 +15,6 @@ export function useNavButton() {
   return {
     isExpanded,
     handleMouseEnter,
-    handleMouseLeave
+    handleMouseLeave,
   }
 }

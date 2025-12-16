@@ -1,51 +1,45 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-vue-next';
-import { RouterLink } from 'vue-router';
-import { useChat } from '../composables/useChat';
-import { useTheme } from '../composables/useTheme';
-import { useNavButton } from '../composables/useNavButton';
-import ChatSidebar from '../components/chat/ChatSidebar.vue';
-import ChatCard from '../components/chat/ChatCard.vue';
+import { computed, onMounted, ref } from 'vue'
+import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-vue-next'
+import { RouterLink } from 'vue-router'
+import { useChat } from '../composables/useChat'
+import { useTheme } from '../composables/useTheme'
+import { useNavButton } from '../composables/useNavButton'
+import ChatSidebar from '../components/chat/ChatSidebar.vue'
+import ChatCard from '../components/chat/ChatCard.vue'
 
-const {
-  conversations,
-  messages,
-  activeConversationId,
-  sendMessage,
-  createConversation
-} = useChat();
+const { conversations, messages, activeConversationId, sendMessage, createConversation } = useChat()
 
-const { initTheme } = useTheme();
-const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton();
+const { initTheme } = useTheme()
+const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton()
 
 // 侧边栏展开状态
-const showChatSidebar = ref(true);
+const showChatSidebar = ref(true)
 
 onMounted(() => {
-  initTheme();
-});
+  initTheme()
+})
 
 const activeConversation = computed(() =>
-  conversations.value.find(c => c.id === activeConversationId.value)
-);
+  conversations.value.find((c) => c.id === activeConversationId.value)
+)
 
 const currentMessages = computed(() => {
-  if (!activeConversationId.value) return [];
-  return messages.value[activeConversationId.value] || [];
-});
+  if (!activeConversationId.value) return []
+  return messages.value[activeConversationId.value] || []
+})
 
 const handleSelectConversation = (id: string) => {
-  activeConversationId.value = id;
-};
+  activeConversationId.value = id
+}
 
 const handleBack = () => {
-  activeConversationId.value = null;
-};
+  activeConversationId.value = null
+}
 
 const toggleSidebar = () => {
-  showChatSidebar.value = !showChatSidebar.value;
-};
+  showChatSidebar.value = !showChatSidebar.value
+}
 </script>
 
 <template>
@@ -55,8 +49,10 @@ const toggleSidebar = () => {
       class="h-full border-r border-border/40 bg-background/50 backdrop-blur-xl flex-shrink-0 transition-all duration-300 relative sidebar-container z-30"
       :class="[
         activeConversationId
-          ? (showChatSidebar ? 'hidden md:flex md:w-80' : 'hidden md:flex md:w-20')
-          : 'w-full flex'
+          ? showChatSidebar
+            ? 'hidden md:flex md:w-80'
+            : 'hidden md:flex md:w-20'
+          : 'w-full flex',
       ]"
     >
       <!-- Sidebar Content -->
@@ -72,9 +68,9 @@ const toggleSidebar = () => {
       <!-- Toggle Button (desktop only, protruding from right edge) -->
       <button
         v-if="activeConversationId"
-        @click="toggleSidebar"
         class="toggle-btn hidden md:flex absolute top-1/2 -right-[21px] -translate-y-1/2 w-5 h-12 bg-background/80 backdrop-blur-md border-y border-r border-border/40 rounded-r-md items-center justify-center hover:bg-muted/50 transition-all duration-200 z-50 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.1)]"
         :title="showChatSidebar ? '收起侧边栏' : '展开侧边栏'"
+        @click="toggleSidebar"
       >
         <ChevronLeft v-if="showChatSidebar" class="w-3.5 h-3.5" />
         <ChevronRight v-else class="w-3.5 h-3.5" />
@@ -84,16 +80,14 @@ const toggleSidebar = () => {
     <!-- Chat Area -->
     <div
       class="flex-1 flex-col h-full relative p-3"
-      :class="[
-        activeConversationId ? 'flex' : 'hidden md:flex'
-      ]"
+      :class="[activeConversationId ? 'flex' : 'hidden md:flex']"
     >
       <template v-if="activeConversationId">
         <!-- Mobile Back Button Overlay -->
         <div class="md:hidden absolute top-6 left-5 z-50">
           <button
-            @click="handleBack"
             class="p-2 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:bg-muted transition-colors"
+            @click="handleBack"
           >
             <ChevronLeft class="w-5 h-5" />
           </button>
@@ -102,12 +96,15 @@ const toggleSidebar = () => {
         <ChatCard
           :messages="currentMessages"
           :conversation-title="activeConversation?.title"
-          @send="({ text, model }) => sendMessage(text, model)"
           class="w-full h-full"
+          @send="({ text, model }) => sendMessage(text, model)"
         />
       </template>
 
-      <div v-else class="flex-1 flex items-center justify-center text-muted-foreground rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-panel">
+      <div
+        v-else
+        class="flex-1 flex items-center justify-center text-muted-foreground rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-panel"
+      >
         <div class="text-center">
           <h3 class="text-lg font-medium">Welcome to Chat</h3>
           <p class="text-sm opacity-70">Select a conversation to start messaging</p>
@@ -153,7 +150,9 @@ const toggleSidebar = () => {
 /* Sidebar Toggle Button Hover Effect */
 .sidebar-container .toggle-btn {
   opacity: 0.4;
-  transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  transition:
+    opacity 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
 }
 
 .sidebar-container:hover .toggle-btn,

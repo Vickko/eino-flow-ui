@@ -1,30 +1,30 @@
-import { ref } from 'vue';
-import { streamChatMessage } from '@/api';
+import { ref } from 'vue'
+import { streamChatMessage } from '@/api'
 
 // 类型定义
 export interface User {
-  id: string;
-  name: string;
-  avatar: string;
+  id: string
+  name: string
+  avatar: string
 }
 
 export interface Message {
-  id: string;
-  conversationId: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: number;
-  status?: 'sending' | 'sent' | 'error' | 'streaming'; // 新增 streaming 状态
-  model?: string;
-  reasoning_content?: string;
+  id: string
+  conversationId: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  timestamp: number
+  status?: 'sending' | 'sent' | 'error' | 'streaming' // 新增 streaming 状态
+  model?: string
+  reasoning_content?: string
 }
 
 export interface Conversation {
-  id: string;
-  title: string;
-  updatedAt: number;
-  unreadCount: number;
-  lastMessage?: Message;
+  id: string
+  title: string
+  updatedAt: number
+  unreadCount: number
+  lastMessage?: Message
 }
 
 // Mock 对话内容 - 用于展示各种 Markdown 渲染能力
@@ -467,7 +467,7 @@ And this is an extremely extremely extremely extremely extremely extremely extre
 
 ---
 
-**演示完毕！** 以上展示了 Markdown 渲染器支持的所有主要功能。`;
+**演示完毕！** 以上展示了 Markdown 渲染器支持的所有主要功能。`
 
 // 初始数据
 const INITIAL_CONVERSATIONS: Conversation[] = [
@@ -482,8 +482,8 @@ const INITIAL_CONVERSATIONS: Conversation[] = [
     title: 'Markdown 渲染演示',
     updatedAt: Date.now() - 1000,
     unreadCount: 0,
-  }
-];
+  },
+]
 
 // Mock 消息
 const DEMO_MESSAGES: Message[] = [
@@ -503,28 +503,27 @@ const DEMO_MESSAGES: Message[] = [
     timestamp: Date.now() - 59000,
     status: 'sent',
     model: 'Claude-3.5-Sonnet',
-  }
-];
+  },
+]
 
 // 全局状态
-const conversations = ref<Conversation[]>(INITIAL_CONVERSATIONS);
+const conversations = ref<Conversation[]>(INITIAL_CONVERSATIONS)
 const messages = ref<Record<string, Message[]>>({
   c1: [],
-  'markdown-demo': DEMO_MESSAGES
-});
-const activeConversationId = ref<string | null>('c1');
+  'markdown-demo': DEMO_MESSAGES,
+})
+const activeConversationId = ref<string | null>('c1')
 const currentUser: User = {
   id: 'u1',
   name: 'Me',
-  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix'
-};
+  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+}
 
 export function useChat() {
-
   const sendMessage = async (text: string, model?: string) => {
-    if (!activeConversationId.value) return;
+    if (!activeConversationId.value) return
 
-    const conversationId = activeConversationId.value;
+    const conversationId = activeConversationId.value
     const newMessage: Message = {
       id: Date.now().toString(),
       conversationId,
@@ -532,45 +531,45 @@ export function useChat() {
       content: text,
       timestamp: Date.now(),
       status: 'sending',
-      model
-    };
+      model,
+    }
 
     // 添加用户消息
     if (!messages.value[conversationId]) {
-      messages.value[conversationId] = [];
+      messages.value[conversationId] = []
     }
-    messages.value[conversationId].push(newMessage);
+    messages.value[conversationId].push(newMessage)
 
     // 更新会话最后一条消息
-    const convIndex = conversations.value.findIndex(c => c.id === conversationId);
+    const convIndex = conversations.value.findIndex((c) => c.id === conversationId)
     if (convIndex !== -1) {
-      const conv = conversations.value[convIndex];
+      const conv = conversations.value[convIndex]
       if (conv) {
-        conv.lastMessage = newMessage;
-        conv.updatedAt = Date.now();
+        conv.lastMessage = newMessage
+        conv.updatedAt = Date.now()
         // 移到顶部
-        conversations.value.splice(convIndex, 1);
-        conversations.value.unshift(conv);
+        conversations.value.splice(convIndex, 1)
+        conversations.value.unshift(conv)
       }
     }
 
     // 标记用户消息为已发送
-    newMessage.status = 'sent';
+    newMessage.status = 'sent'
 
     // 创建 AI 回复消息占位符（streaming 状态）
-    const aiMessageId = (Date.now() + 1).toString();
+    const aiMessageId = (Date.now() + 1).toString()
     const aiMessage: Message = {
       id: aiMessageId,
       conversationId,
       role: 'assistant',
-      content: '',  // 初始为空，流式填充
+      content: '', // 初始为空，流式填充
       timestamp: Date.now(),
-      status: 'streaming',  // 流式接收中
-      model: model
-    };
+      status: 'streaming', // 流式接收中
+      model: model,
+    }
 
     if (messages.value[conversationId]) {
-      messages.value[conversationId].push(aiMessage);
+      messages.value[conversationId].push(aiMessage)
     }
 
     try {
@@ -580,90 +579,90 @@ export function useChat() {
           session: conversationId,
           role: 'user',
           content: text,
-          model: model
+          model: model,
         },
         {
           onChunk: (chunk: string) => {
             // 流式追加内容
-            const msgList = messages.value[conversationId];
+            const msgList = messages.value[conversationId]
             if (msgList) {
-              const msg = msgList.find(m => m.id === aiMessageId);
+              const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
-                msg.content += chunk;
+                msg.content += chunk
               }
             }
           },
           onDone: () => {
             // 流式完成，更新状态
-            const msgList = messages.value[conversationId];
+            const msgList = messages.value[conversationId]
             if (msgList) {
-              const msg = msgList.find(m => m.id === aiMessageId);
+              const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
-                msg.status = 'sent';
+                msg.status = 'sent'
               }
             }
 
             // 更新会话最后一条消息
-            const convIdx = conversations.value.findIndex(c => c.id === conversationId);
+            const convIdx = conversations.value.findIndex((c) => c.id === conversationId)
             if (convIdx !== -1) {
-              const conv = conversations.value[convIdx];
+              const conv = conversations.value[convIdx]
               if (conv) {
-                const msgList = messages.value[conversationId];
-                const msg = msgList?.find(m => m.id === aiMessageId);
+                const msgList = messages.value[conversationId]
+                const msg = msgList?.find((m) => m.id === aiMessageId)
                 if (msg) {
-                  conv.lastMessage = msg;
-                  conv.updatedAt = Date.now();
+                  conv.lastMessage = msg
+                  conv.updatedAt = Date.now()
                 }
 
                 // 如果是新会话的第一条消息，根据内容生成标题
                 if (conv.title === 'New Chat') {
-                  conv.title = text.length > 30 ? text.substring(0, 30) + '...' : text;
+                  conv.title = text.length > 30 ? text.substring(0, 30) + '...' : text
                 }
               }
             }
           },
           onError: (error: string) => {
             // 错误处理
-            const msgList = messages.value[conversationId];
+            const msgList = messages.value[conversationId]
             if (msgList) {
-              const msg = msgList.find(m => m.id === aiMessageId);
+              const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
-                msg.status = 'error';
-                msg.content = msg.content || `抱歉，发送消息时出现错误: ${error}`;
+                msg.status = 'error'
+                msg.content = msg.content || `抱歉，发送消息时出现错误: ${error}`
               }
             }
-          }
+          },
         }
-      );
+      )
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error sending message:', error)
 
       // 更新 AI 消息状态为错误
-      const msgList = messages.value[conversationId];
+      const msgList = messages.value[conversationId]
       if (msgList) {
-        const msg = msgList.find(m => m.id === aiMessageId);
+        const msg = msgList.find((m) => m.id === aiMessageId)
         if (msg) {
-          msg.status = 'error';
+          msg.status = 'error'
           if (!msg.content) {
-            msg.content = '抱歉，发送消息时出现错误。请稍后再试。';
+            msg.content = '抱歉，发送消息时出现错误。请稍后再试。'
           }
         }
       }
     }
-  };
+  }
 
   const createConversation = () => {
-    const newId = `c${Date.now()}`;
+    const newId = `c${Date.now()}`
     const newConv: Conversation = {
       id: newId,
       title: 'New Chat',
       updatedAt: Date.now(),
-      unreadCount: 0
-    };
-    conversations.value.unshift(newConv);
-    messages.value[newId] = [];
-    activeConversationId.value = newId;
-  };
+      unreadCount: 0,
+    }
+    conversations.value.unshift(newConv)
+    messages.value[newId] = []
+    activeConversationId.value = newId
+  }
 
   return {
     conversations,
@@ -671,6 +670,6 @@ export function useChat() {
     activeConversationId,
     currentUser,
     sendMessage,
-    createConversation
-  };
+    createConversation,
+  }
 }

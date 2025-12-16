@@ -49,9 +49,13 @@ export const fetchGraphs = async (): Promise<ApiResponse<GraphListResponse>> => 
   }
 }
 
-export const fetchGraphCanvas = async (graphId: string): Promise<ApiResponse<GraphCanvasResponse>> => {
+export const fetchGraphCanvas = async (
+  graphId: string
+): Promise<ApiResponse<GraphCanvasResponse>> => {
   try {
-    const response = await apiClient.get<ApiResponse<GraphCanvasResponse>>(`/debug/v1/graphs/${graphId}/canvas`)
+    const response = await apiClient.get<ApiResponse<GraphCanvasResponse>>(
+      `/debug/v1/graphs/${graphId}/canvas`
+    )
     return response.data
   } catch (error) {
     console.error(`Error fetching graph canvas for ${graphId}:`, error)
@@ -128,9 +132,9 @@ export const streamDebugRun = async (
 
 // Chat API - SSE 流式接口
 export interface StreamChatCallbacks {
-  onChunk?: (chunk: string) => void   // 接收到内容片段
-  onDone?: () => void                  // 流式输出完成
-  onError?: (error: string) => void    // 发生错误
+  onChunk?: (chunk: string) => void // 接收到内容片段
+  onDone?: () => void // 流式输出完成
+  onError?: (error: string) => void // 发生错误
 }
 
 export const streamChatMessage = async (
@@ -229,14 +233,10 @@ export const sendChatMessage = async (
   request: ChatMessageRequest
 ): Promise<ChatMessageResponse> => {
   try {
-    const response = await chatApiClient.post<ChatMessageResponse>(
-      '/api/v1/chat',
-      request
-    )
+    const response = await chatApiClient.post<ChatMessageResponse>('/api/v1/chat', request)
     return response.data
   } catch (error) {
     console.error('Error sending chat message:', error)
     throw error
   }
 }
-

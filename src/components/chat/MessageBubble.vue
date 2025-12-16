@@ -1,223 +1,234 @@
 <script lang="ts">
 // 模块级别：记录已渲染过的消息 ID，用于判断是否播放入场动画
-const renderedMessageIds = new Set<string>();
+const renderedMessageIds = new Set<string>()
 </script>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import { Bot } from 'lucide-vue-next';
-import { MdPreview } from 'md-editor-v3';
-import 'md-editor-v3/lib/preview.css';
-import type { Message } from '../../composables/useChat';
-import { useTheme } from '../../composables/useTheme';
-import { cn } from '../../lib/utils';
+import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { Bot } from 'lucide-vue-next'
+import { MdPreview } from 'md-editor-v3'
+import 'md-editor-v3/lib/preview.css'
+import type { Message } from '../../composables/useChat'
+import { useTheme } from '../../composables/useTheme'
+import { cn } from '../../lib/utils'
 
-import logoGPT from '../../assets/logo_GPT.svg';
-import logoClaude from '../../assets/logo_claude2.svg';
-import logoGemini from '../../assets/logo_gemini.svg';
+import logoGPT from '../../assets/logo_GPT.svg'
+import logoClaude from '../../assets/logo_claude2.svg'
+import logoGemini from '../../assets/logo_gemini.svg'
 
-const { isDark } = useTheme();
+const { isDark } = useTheme()
 
 const props = defineProps<{
-  message: Message;
-  isNew?: boolean; // 是否是新消息，用于控制动画
-  hideTimestamp?: boolean; // 是否隐藏时间戳
-}>();
+  message: Message
+  isNew?: boolean // 是否是新消息，用于控制动画
+  hideTimestamp?: boolean // 是否隐藏时间戳
+}>()
 
 // 判断是否正在流式接收
-const isStreaming = computed(() => props.message.status === 'streaming');
+const isStreaming = computed(() => props.message.status === 'streaming')
 
 // 监听复制按钮文本变化
-const markdownContentRef = ref<HTMLElement | null>(null);
-const bubbleRef = ref<HTMLElement | null>(null);
-let copyButtonObserver: MutationObserver | null = null;
-let resizeObserver: ResizeObserver | null = null;
+const markdownContentRef = ref<HTMLElement | null>(null)
+const bubbleRef = ref<HTMLElement | null>(null)
+let copyButtonObserver: MutationObserver | null = null
+let resizeObserver: ResizeObserver | null = null
 
 // 入场动画状态（首次渲染该消息时播放）
-const isFirstRender = !renderedMessageIds.has(props.message.id);
-renderedMessageIds.add(props.message.id);
-const shouldPlayEntranceAnimation = ref(isFirstRender);
+const isFirstRender = !renderedMessageIds.has(props.message.id)
+renderedMessageIds.add(props.message.id)
+const shouldPlayEntranceAnimation = ref(isFirstRender)
 // 延迟启动 ResizeObserver 的 timeout ID
-let resizeObserverDelayId: ReturnType<typeof setTimeout> | null = null;
+let resizeObserverDelayId: ReturnType<typeof setTimeout> | null = null
 
 // 立即切换到流式模式：取消入场动画，启动 ResizeObserver
 const switchToStreamingMode = () => {
   // 取消延迟启动的 timeout
   if (resizeObserverDelayId) {
-    clearTimeout(resizeObserverDelayId);
-    resizeObserverDelayId = null;
+    clearTimeout(resizeObserverDelayId)
+    resizeObserverDelayId = null
   }
   // 取消入场动画
-  shouldPlayEntranceAnimation.value = false;
+  shouldPlayEntranceAnimation.value = false
   // 立即启动 ResizeObserver
   if (!resizeObserver && isStreaming.value) {
-    setupResizeObserver();
+    setupResizeObserver()
   }
-};
+}
 
 const setupCopyButtonObserver = () => {
-  if (!markdownContentRef.value) return;
+  if (!markdownContentRef.value) return
 
   // 清理之前的 observer
   if (copyButtonObserver) {
-    copyButtonObserver.disconnect();
+    copyButtonObserver.disconnect()
   }
 
   copyButtonObserver = new MutationObserver(() => {
     // 检查所有复制按钮的状态
-    const buttons = markdownContentRef.value?.querySelectorAll('.md-editor-copy-button');
+    const buttons = markdownContentRef.value?.querySelectorAll('.md-editor-copy-button')
     buttons?.forEach((button) => {
-      const text = button.textContent?.trim();
+      const text = button.textContent?.trim()
       if (text === '已复制！') {
-        button.classList.add('copied');
+        button.classList.add('copied')
       } else {
-        button.classList.remove('copied');
+        button.classList.remove('copied')
       }
-    });
-  });
+    })
+  })
 
   // 监听整个 markdown-content 区域
   copyButtonObserver.observe(markdownContentRef.value, {
     childList: true,
     subtree: true,
-    characterData: true
-  });
-};
+    characterData: true,
+  })
+}
 
 // 流式状态下的平滑高度动画
-let animationFrameId: number | null = null;
+let animationFrameId: number | null = null
 
 const setupResizeObserver = () => {
-  if (!markdownContentRef.value || !bubbleRef.value) return;
+  if (!markdownContentRef.value || !bubbleRef.value) return
 
   if (resizeObserver) {
-    resizeObserver.disconnect();
+    resizeObserver.disconnect()
   }
 
   // 初始化：设置气泡为当前尺寸并启用过渡
-  const bubble = bubbleRef.value;
-  bubble.style.transition = 'height 0.15s ease-out, width 0.2s ease-out';
+  const bubble = bubbleRef.value
+  bubble.style.transition = 'height 0.15s ease-out, width 0.2s ease-out'
 
   resizeObserver = new ResizeObserver(() => {
-    if (!isStreaming.value || !bubbleRef.value) return;
+    if (!isStreaming.value || !bubbleRef.value) return
 
     // 取消之前的动画帧
     if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(animationFrameId)
     }
 
     animationFrameId = requestAnimationFrame(() => {
-      const bubble = bubbleRef.value;
-      if (!bubble) return;
+      const bubble = bubbleRef.value
+      if (!bubble) return
 
       // 临时移除尺寸限制以获取真实尺寸
-      const currentHeight = bubble.style.height;
-      const currentWidth = bubble.style.width;
-      bubble.style.height = '';
-      bubble.style.width = '';
-      const targetHeight = bubble.scrollHeight;
-      const targetWidth = bubble.scrollWidth;
+      const currentHeight = bubble.style.height
+      const currentWidth = bubble.style.width
+      bubble.style.height = ''
+      bubble.style.width = ''
+      const targetHeight = bubble.scrollHeight
+      const targetWidth = bubble.scrollWidth
 
       // 如果之前有固定尺寸，恢复它们然后动画到新尺寸
       if (currentHeight || currentWidth) {
-        bubble.style.height = currentHeight;
-        bubble.style.width = currentWidth;
+        bubble.style.height = currentHeight
+        bubble.style.width = currentWidth
         // 强制重排
-        bubble.offsetHeight;
+        void bubble.offsetHeight
       }
 
-      bubble.style.height = `${targetHeight}px`;
-      bubble.style.width = `${targetWidth}px`;
-    });
-  });
+      bubble.style.height = `${targetHeight}px`
+      bubble.style.width = `${targetWidth}px`
+    })
+  })
 
-  resizeObserver.observe(markdownContentRef.value);
-};
+  resizeObserver.observe(markdownContentRef.value)
+}
 
 // 监听流式状态变化
-watch(() => props.message.status, (newStatus, oldStatus) => {
-  if (newStatus === 'streaming') {
-    nextTick(setupResizeObserver);
-  } else if (oldStatus === 'streaming') {
-    // 流式结束，清理
-    if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
+watch(
+  () => props.message.status,
+  (newStatus, oldStatus) => {
+    if (newStatus === 'streaming') {
+      nextTick(setupResizeObserver)
+    } else if (oldStatus === 'streaming') {
+      // 流式结束，清理
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+        animationFrameId = null
+      }
+      if (bubbleRef.value) {
+        bubbleRef.value.style.transition = ''
+        bubbleRef.value.style.height = ''
+        bubbleRef.value.style.width = ''
+      }
     }
-    if (bubbleRef.value) {
-      bubbleRef.value.style.transition = '';
-      bubbleRef.value.style.height = '';
-      bubbleRef.value.style.width = '';
-    }
-  }
-}, { immediate: true });
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   // 初始化内容长度，避免首次 watch 误触发
-  lastContentLength = props.message.content?.length ?? 0;
+  lastContentLength = props.message.content?.length ?? 0
 
   nextTick(() => {
-    setupCopyButtonObserver();
+    setupCopyButtonObserver()
     if (isStreaming.value) {
       // 如果有入场动画，延迟启动 ResizeObserver，避免打断动画
-      const delay = shouldPlayEntranceAnimation.value ? 500 : 0;
+      const delay = shouldPlayEntranceAnimation.value ? 500 : 0
       if (delay > 0) {
         resizeObserverDelayId = setTimeout(() => {
-          resizeObserverDelayId = null;
-          setupResizeObserver();
-        }, delay);
+          resizeObserverDelayId = null
+          setupResizeObserver()
+        }, delay)
       } else {
-        setupResizeObserver();
+        setupResizeObserver()
       }
     }
-  });
-});
+  })
+})
 
 // 监听流式消息内容变化，一旦开始吐字就切换到流式模式
-let lastContentLength = 0;
-watch(() => props.message.content, (newContent) => {
-  const newLength = newContent?.length ?? 0;
-  // 只在流式状态且内容长度增加时触发
-  if (isStreaming.value && newLength > lastContentLength) {
-    // 如果还在等待入场动画，立即切换到流式模式
-    if (resizeObserverDelayId || shouldPlayEntranceAnimation.value) {
-      switchToStreamingMode();
+let lastContentLength = 0
+watch(
+  () => props.message.content,
+  (newContent) => {
+    const newLength = newContent?.length ?? 0
+    // 只在流式状态且内容长度增加时触发
+    if (isStreaming.value && newLength > lastContentLength) {
+      // 如果还在等待入场动画，立即切换到流式模式
+      if (resizeObserverDelayId || shouldPlayEntranceAnimation.value) {
+        switchToStreamingMode()
+      }
     }
+    lastContentLength = newLength
   }
-  lastContentLength = newLength;
-});
+)
 
 onUnmounted(() => {
   if (copyButtonObserver) {
-    copyButtonObserver.disconnect();
+    copyButtonObserver.disconnect()
   }
   if (resizeObserver) {
-    resizeObserver.disconnect();
+    resizeObserver.disconnect()
   }
   if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
+    cancelAnimationFrame(animationFrameId)
   }
   if (resizeObserverDelayId) {
-    clearTimeout(resizeObserverDelayId);
+    clearTimeout(resizeObserverDelayId)
   }
-});
+})
 
 // 判断是否应该播放动画（基于首次挂载时的状态）
-const shouldAnimateAI = computed(() => shouldPlayEntranceAnimation.value && props.message.role === 'assistant');
-const shouldAnimateUser = computed(() => shouldPlayEntranceAnimation.value && props.message.role === 'user');
+const shouldAnimateAI = computed(
+  () => shouldPlayEntranceAnimation.value && props.message.role === 'assistant'
+)
+const shouldAnimateUser = computed(
+  () => shouldPlayEntranceAnimation.value && props.message.role === 'user'
+)
 
-const isUser = computed(() => props.message.role === 'user');
+const isUser = computed(() => props.message.role === 'user')
 
 // 为每个消息生成唯一 ID（MdPreview 需要）
-const previewId = computed(() => `preview-${props.message.id}`);
+const previewId = computed(() => `preview-${props.message.id}`)
 
 const modelIcon = computed(() => {
-  const model = props.message.model?.toLowerCase() || '';
-  if (model.includes('gpt')) return logoGPT;
-  if (model.includes('claude')) return logoClaude;
-  if (model.includes('gemini')) return logoGemini;
-  return null;
-});
+  const model = props.message.model?.toLowerCase() || ''
+  if (model.includes('gpt')) return logoGPT
+  if (model.includes('claude')) return logoClaude
+  if (model.includes('gemini')) return logoGemini
+  return null
+})
 
 const bubbleClass = computed(() => {
   return cn(
@@ -227,25 +238,28 @@ const bubbleClass = computed(() => {
       : 'bg-muted/50 border border-border/50 rounded-2xl rounded-tl-sm text-foreground',
     // 流式状态下启用平滑高度动画
     isStreaming.value && 'streaming-bubble'
-  );
-});
+  )
+})
 
 const containerClass = computed(() => {
-  return cn(
-    'flex flex-col w-full mb-4',
-    isUser.value ? 'items-end' : 'items-start'
-  );
-});
+  return cn('flex flex-col w-full mb-4', isUser.value ? 'items-end' : 'items-start')
+})
 
 const timeString = computed(() => {
-  return new Date(props.message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-});
+  return new Date(props.message.timestamp).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+})
 </script>
 
 <template>
   <div :class="containerClass">
     <!-- Model Label (only for assistant messages) -->
-    <div v-if="!isUser && message.model" :class="['flex items-center gap-1.5 mb-1 ml-1', shouldAnimateAI ? 'ai-label-animate' : '']">
+    <div
+      v-if="!isUser && message.model"
+      :class="['flex items-center gap-1.5 mb-1 ml-1', shouldAnimateAI ? 'ai-label-animate' : '']"
+    >
       <img v-if="modelIcon" :src="modelIcon" :alt="message.model" class="w-4 h-4" />
       <Bot v-else class="w-4 h-4 text-muted-foreground/70" />
       <span class="text-sm text-muted-foreground/70">{{ message.model }}</span>
@@ -253,19 +267,26 @@ const timeString = computed(() => {
 
     <div
       ref="bubbleRef"
-      :class="[bubbleClass, shouldAnimateAI ? 'ai-bubble-animate' : '', shouldAnimateUser ? 'user-bubble-animate' : '']"
+      :class="[
+        bubbleClass,
+        shouldAnimateAI ? 'ai-bubble-animate' : '',
+        shouldAnimateUser ? 'user-bubble-animate' : '',
+      ]"
     >
       <!-- Content Area -->
-      <div ref="markdownContentRef" :class="['markdown-content', isUser ? 'user-content' : 'assistant-content']">
+      <div
+        ref="markdownContentRef"
+        :class="['markdown-content', isUser ? 'user-content' : 'assistant-content']"
+      >
         <MdPreview
-          :editorId="previewId"
-          :modelValue="message.content"
+          :editor-id="previewId"
+          :model-value="message.content"
           :theme="isDark ? 'dark' : 'light'"
           language="zh-CN"
-          :showCodeRowNumber="true"
-          codeTheme="github"
-          previewTheme="default"
-          :codeFoldable="false"
+          :show-code-row-number="true"
+          code-theme="github"
+          preview-theme="default"
+          :code-foldable="false"
         />
         <!-- 流式接收时显示闪烁光标 -->
         <span v-if="isStreaming" class="streaming-cursor"></span>
@@ -301,8 +322,13 @@ const timeString = computed(() => {
 }
 
 @keyframes cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* 动画 */
@@ -311,8 +337,14 @@ const timeString = computed(() => {
 }
 
 @keyframes label-fade-in {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .ai-bubble-animate {
@@ -321,9 +353,17 @@ const timeString = computed(() => {
 }
 
 @keyframes bubble-expand {
-  0% { opacity: 0; transform: scale(0.3); }
-  45% { opacity: 1; transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .user-bubble-animate {
@@ -332,8 +372,14 @@ const timeString = computed(() => {
 }
 
 @keyframes user-bubble-expand {
-  0% { opacity: 0; transform: scale(0.85) translateY(16px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* md-editor 背景透明 */
@@ -409,9 +455,15 @@ const timeString = computed(() => {
   padding-left: 1.5em !important;
 }
 
-.markdown-content :deep(.md-editor-preview ul ul) { list-style-type: circle !important; }
-.markdown-content :deep(.md-editor-preview ul ul ul) { list-style-type: square !important; }
-.markdown-content :deep(.md-editor-preview li) { display: list-item !important; }
+.markdown-content :deep(.md-editor-preview ul ul) {
+  list-style-type: circle !important;
+}
+.markdown-content :deep(.md-editor-preview ul ul ul) {
+  list-style-type: square !important;
+}
+.markdown-content :deep(.md-editor-preview li) {
+  display: list-item !important;
+}
 
 /* 任务列表 */
 .markdown-content :deep(.md-editor-preview ul.contains-task-list),
@@ -519,7 +571,8 @@ const timeString = computed(() => {
 }
 
 /* 复制按钮样式 */
-.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button) {
+.markdown-content
+  :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button) {
   width: 24px !important;
   height: 24px !important;
   border-radius: 4px !important;
@@ -538,14 +591,16 @@ const timeString = computed(() => {
 }
 
 /* 隐藏按钮内的所有文字子元素 */
-.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button > *) {
+.markdown-content
+  :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button > *) {
   font-size: 0 !important;
   text-indent: -9999px !important;
   color: transparent !important;
 }
 
 /* 默认显示复制图标 */
-.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button::before) {
+.markdown-content
+  :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button::before) {
   content: '' !important;
   position: absolute !important;
   top: 50% !important;
@@ -564,19 +619,22 @@ const timeString = computed(() => {
 }
 
 /* 只在悬浮按钮本身时才亮起 */
-.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button:hover) {
+.markdown-content
+  :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button:hover) {
   background-color: hsl(var(--foreground) / 0.1) !important;
   opacity: 1 !important;
 }
 
 /* 点击时的视觉反馈 */
-.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button:active) {
+.markdown-content
+  :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button:active) {
   transform: scale(0.9) !important;
   opacity: 0.8 !important;
 }
 
 /* 复制成功后显示文字 */
-.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button.copied) {
+.markdown-content
+  :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button.copied) {
   width: auto !important;
   padding: 0 8px !important;
   font-size: 11px !important;
@@ -585,7 +643,10 @@ const timeString = computed(() => {
   color: hsl(var(--muted-foreground)) !important;
 }
 
-.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button.copied::before) {
+.markdown-content
+  :deep(
+    .md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button.copied::before
+  ) {
   display: none !important;
 }
 
@@ -640,7 +701,7 @@ const timeString = computed(() => {
   fill: #374151 !important;
   stroke: #6b7280 !important;
 }
-.markdown-content :deep(.md-editor-dark [aria-roledescription="sequence"] text) {
+.markdown-content :deep(.md-editor-dark [aria-roledescription='sequence'] text) {
   fill: #f3f4f6 !important;
 }
 .markdown-content :deep(.md-editor-dark .messageLine0),

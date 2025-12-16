@@ -24,19 +24,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    class="relative h-screen w-full overflow-hidden bg-background text-foreground font-sans"
-  >
-
+  <div class="relative h-screen w-full overflow-hidden bg-background text-foreground font-sans">
     <!-- 1. Graph Layer (Bottom Z-Index) -->
     <div class="absolute inset-0 z-0 bg-muted/20 overflow-hidden">
       <!-- GraphViewer -->
       <GraphViewer :graph-id="selectedGraphId" />
-      
+
       <!-- Grid Background Placeholder (Visual Aid) -->
-      <div class="absolute inset-0 pointer-events-none opacity-[0.05]"
-           style="background-image: radial-gradient(currentColor 1px, transparent 1px); background-size: 20px 20px;">
-      </div>
+      <div
+        class="absolute inset-0 pointer-events-none opacity-[0.05]"
+        style="
+          background-image: radial-gradient(currentColor 1px, transparent 1px);
+          background-size: 20px 20px;
+        "
+      ></div>
     </div>
 
     <!-- Connection Lost Badge (animated, below grayscale) -->
@@ -48,8 +49,13 @@ onMounted(() => {
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="!isOnline" class="absolute inset-0 z-[99] pointer-events-none flex items-center justify-center">
-        <div class="bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg font-medium text-sm flex items-center gap-2">
+      <div
+        v-if="!isOnline"
+        class="absolute inset-0 z-[99] pointer-events-none flex items-center justify-center"
+      >
+        <div
+          class="bg-red-500/90 text-white px-4 py-2 rounded-full shadow-lg font-medium text-sm flex items-center gap-2"
+        >
           <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
           Connection Lost
         </div>
@@ -64,10 +70,8 @@ onMounted(() => {
 
     <!-- 2. UI Overlay Layer (Top Z-Index, Pointer Events None) -->
     <div class="absolute inset-0 z-10 pointer-events-none flex flex-col p-3">
-      
       <!-- Top Row: Sidebar + Spacer + Inspector -->
       <div class="flex flex-1 min-h-0 gap-3">
-        
         <!-- Sidebar -->
         <Transition name="slide-left">
           <div v-if="showSidebar" class="w-64 h-full pointer-events-auto">
@@ -89,11 +93,14 @@ onMounted(() => {
       <!-- Bottom Row: BottomPanel -->
       <div
         class="w-full pointer-events-auto shrink-0 transition-all duration-300 ease-in-out overflow-hidden rounded-xl relative z-20"
-        :class="showBottomPanel ? 'h-64 mt-3 opacity-100 shadow-panel border border-border/40 bg-background/60 backdrop-blur-xl' : 'h-0 mt-0 opacity-0 border-0'"
+        :class="
+          showBottomPanel
+            ? 'h-64 mt-3 opacity-100 shadow-panel border border-border/40 bg-background/60 backdrop-blur-xl'
+            : 'h-0 mt-0 opacity-0 border-0'
+        "
       >
         <BottomPanel />
       </div>
-
     </div>
 
     <!-- Nav Switch Button (Bottom Left) -->
