@@ -17,19 +17,32 @@ const emit = defineEmits<{
 
 const scrollAreaRef = ref<HTMLDivElement | null>(null);
 
-const scrollToBottom = async () => {
+const scrollToBottom = async (delay = 0) => {
   await nextTick();
+  if (delay > 0) {
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
   if (scrollAreaRef.value) {
     scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
   }
 };
 
+// 监听消息变化（包括切换对话）
+watch(() => props.messages, () => {
+  scrollToBottom();
+  // 延迟再滚动一次，等待 MdPreview 渲染完成
+  scrollToBottom(100);
+}, { deep: false });
+
+// 监听消息数量变化（新消息）
 watch(() => props.messages.length, () => {
   scrollToBottom();
+  scrollToBottom(100);
 });
 
 onMounted(() => {
   scrollToBottom();
+  scrollToBottom(100);
 });
 
 const handleSend = (text: string) => {
