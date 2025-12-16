@@ -279,7 +279,7 @@ const handleClickOutside = (event: MouseEvent) => {
       </div>
 
       <!-- Model Selector -->
-      <div class="px-4 pb-3 relative z-20">
+      <div class="px-4 pt-1.5 pb-1 relative z-20">
         <div class="flex items-center gap-2">
           <div class="model-selector relative inline-block">
             <button
