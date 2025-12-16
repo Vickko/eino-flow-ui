@@ -1,6 +1,5 @@
 import { ref } from 'vue';
-import { sendChatMessage } from '@/api';
-import type { ChatMessageResponse } from '@/types';
+import { streamChatMessage } from '@/api';
 
 // 类型定义
 export interface User {
@@ -15,7 +14,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: number;
-  status?: 'sending' | 'sent' | 'error';
+  status?: 'sending' | 'sent' | 'error' | 'streaming'; // 新增 streaming 状态
   model?: string;
   reasoning_content?: string;
 }
@@ -555,64 +554,100 @@ export function useChat() {
       }
     }
 
+    // 标记用户消息为已发送
+    newMessage.status = 'sent';
+
+    // 创建 AI 回复消息占位符（streaming 状态）
+    const aiMessageId = (Date.now() + 1).toString();
+    const aiMessage: Message = {
+      id: aiMessageId,
+      conversationId,
+      role: 'assistant',
+      content: '',  // 初始为空，流式填充
+      timestamp: Date.now(),
+      status: 'streaming',  // 流式接收中
+      model: model
+    };
+
+    if (messages.value[conversationId]) {
+      messages.value[conversationId].push(aiMessage);
+    }
+
     try {
-      // 标记为已发送
-      newMessage.status = 'sent';
+      // 使用流式 API
+      await streamChatMessage(
+        {
+          session: conversationId,
+          role: 'user',
+          content: text,
+          model: model
+        },
+        {
+          onChunk: (chunk: string) => {
+            // 流式追加内容
+            const msgList = messages.value[conversationId];
+            if (msgList) {
+              const msg = msgList.find(m => m.id === aiMessageId);
+              if (msg) {
+                msg.content += chunk;
+              }
+            }
+          },
+          onDone: () => {
+            // 流式完成，更新状态
+            const msgList = messages.value[conversationId];
+            if (msgList) {
+              const msg = msgList.find(m => m.id === aiMessageId);
+              if (msg) {
+                msg.status = 'sent';
+              }
+            }
 
-      // 调用真实 API
-      const response: ChatMessageResponse = await sendChatMessage({
-        session: conversationId, // 使用 conversationId 作为 session
-        role: 'user',
-        content: text,
-        model: model
-      });
+            // 更新会话最后一条消息
+            const convIdx = conversations.value.findIndex(c => c.id === conversationId);
+            if (convIdx !== -1) {
+              const conv = conversations.value[convIdx];
+              if (conv) {
+                const msgList = messages.value[conversationId];
+                const msg = msgList?.find(m => m.id === aiMessageId);
+                if (msg) {
+                  conv.lastMessage = msg;
+                  conv.updatedAt = Date.now();
+                }
 
-      // 添加 AI 回复消息
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        conversationId,
-        role: 'assistant',
-        content: response.content,
-        timestamp: Date.now(),
-        status: 'sent',
-        model: model || response.response_meta?.finish_reason,
-        reasoning_content: response.reasoning_content
-      };
-
-      if (messages.value[conversationId]) {
-        messages.value[conversationId].push(aiMessage);
-      }
-
-      // 再次更新会话最后一条消息
-      const convIndex = conversations.value.findIndex(c => c.id === conversationId);
-      if (convIndex !== -1) {
-        const conv = conversations.value[convIndex];
-        if (conv) {
-          conv.lastMessage = aiMessage;
-          conv.updatedAt = Date.now();
-
-          // 如果是新会话的第一条消息，根据内容生成标题
-          if (conv.title === 'New Chat') {
-            conv.title = text.length > 30 ? text.substring(0, 30) + '...' : text;
+                // 如果是新会话的第一条消息，根据内容生成标题
+                if (conv.title === 'New Chat') {
+                  conv.title = text.length > 30 ? text.substring(0, 30) + '...' : text;
+                }
+              }
+            }
+          },
+          onError: (error: string) => {
+            // 错误处理
+            const msgList = messages.value[conversationId];
+            if (msgList) {
+              const msg = msgList.find(m => m.id === aiMessageId);
+              if (msg) {
+                msg.status = 'error';
+                msg.content = msg.content || `抱歉，发送消息时出现错误: ${error}`;
+              }
+            }
           }
         }
-      }
+      );
     } catch (error) {
       console.error('Error sending message:', error);
-      newMessage.status = 'error';
 
-      // 添加错误消息
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        conversationId,
-        role: 'assistant',
-        content: '抱歉，发送消息时出现错误。请稍后再试。',
-        timestamp: Date.now(),
-        status: 'error'
-      };
-
-      if (messages.value[conversationId]) {
-        messages.value[conversationId].push(errorMessage);
+      // 更新 AI 消息状态为错误
+      const msgList = messages.value[conversationId];
+      if (msgList) {
+        const msg = msgList.find(m => m.id === aiMessageId);
+        if (msg) {
+          msg.status = 'error';
+          if (!msg.content) {
+            msg.content = '抱歉，发送消息时出现错误。请稍后再试。';
+          }
+        }
       }
     }
   };

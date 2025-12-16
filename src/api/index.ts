@@ -126,7 +126,93 @@ export const streamDebugRun = async (
   }
 }
 
-// Chat API
+// Chat API - SSE 流式接口
+export interface StreamChatCallbacks {
+  onChunk?: (chunk: string) => void   // 接收到内容片段
+  onDone?: () => void                  // 流式输出完成
+  onError?: (error: string) => void    // 发生错误
+}
+
+export const streamChatMessage = async (
+  request: ChatMessageRequest,
+  callbacks: StreamChatCallbacks
+): Promise<void> => {
+  try {
+    const response = await fetch(`${CHAT_API_BASE}/api/v1/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('Response body is not readable')
+    }
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+
+      // 保留最后一个可能不完整的行
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        const trimmedLine = line.trim()
+        if (!trimmedLine) continue
+
+        // 处理事件类型
+        if (trimmedLine.startsWith('event: ')) {
+          const eventType = trimmedLine.slice(7)
+          if (eventType === 'done') {
+            callbacks.onDone?.()
+          } else if (eventType === 'error') {
+            // 下一行会包含错误信息
+          }
+          continue
+        }
+
+        // 处理数据
+        if (trimmedLine.startsWith('data: ')) {
+          const data = trimmedLine.slice(6)
+          if (data === '[DONE]') {
+            callbacks.onDone?.()
+          } else {
+            callbacks.onChunk?.(data)
+          }
+        }
+      }
+    }
+
+    // 处理剩余的 buffer
+    if (buffer.trim()) {
+      const trimmedLine = buffer.trim()
+      if (trimmedLine.startsWith('data: ')) {
+        const data = trimmedLine.slice(6)
+        if (data !== '[DONE]') {
+          callbacks.onChunk?.(data)
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error streaming chat message:', error)
+    callbacks.onError?.(error instanceof Error ? error.message : 'Unknown error')
+    throw error
+  }
+}
+
+// 保留原有的非流式 API（用于兼容）
 export const sendChatMessage = async (
   request: ChatMessageRequest
 ): Promise<ChatMessageResponse> => {

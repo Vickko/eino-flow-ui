@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { Bot } from 'lucide-vue-next';
 import { MdPreview } from 'md-editor-v3';
 import 'md-editor-v3/lib/preview.css';
@@ -64,8 +64,11 @@ const props = defineProps<{
   hideTimestamp?: boolean; // 是否隐藏时间戳
 }>();
 
-// 判断是否应该播放动画（只有新消息才播放）
-const shouldAnimateAI = computed(() => props.isNew && props.message.role === 'assistant');
+// 判断是否正在流式接收
+const isStreaming = computed(() => props.message.status === 'streaming');
+
+// 判断是否应该播放动画（只有新消息才播放，streaming 状态除外）
+const shouldAnimateAI = computed(() => props.isNew && props.message.role === 'assistant' && !isStreaming.value);
 const shouldAnimateUser = computed(() => props.isNew && props.message.role === 'user');
 
 const isUser = computed(() => props.message.role === 'user');
@@ -126,6 +129,8 @@ const timeString = computed(() => {
           previewTheme="default"
           :codeFoldable="false"
         />
+        <!-- 流式接收时显示闪烁光标 -->
+        <span v-if="isStreaming" class="streaming-cursor"></span>
       </div>
 
       <!-- Timestamp -->
@@ -141,6 +146,22 @@ const timeString = computed(() => {
 </template>
 
 <style scoped>
+/* 流式接收时的闪烁光标 */
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: hsl(var(--foreground));
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 /* 动画 */
 .ai-label-animate {
   animation: label-fade-in 0.3s ease-out both;

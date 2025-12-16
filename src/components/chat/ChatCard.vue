@@ -23,8 +23,8 @@ const isHeaderCollapsed = ref(false);
 // 追踪新消息的 ID（用于播放动画）
 const newMessageIds = ref<Set<string>>(new Set());
 const isInitialLoad = ref(true);
-// 追踪上一次的消息列表，用于区分切换对话和新消息
-const previousMessageIds = ref<string[]>([]);
+// 追踪上一次的对话 ID，用于区分切换对话和新消息
+const previousConversationId = ref<string | null>(null);
 
 // 滚动检测相关状态
 let lastScrollTop = 0;
@@ -81,22 +81,27 @@ const handleScroll = () => {
   }
 };
 
-watch(() => props.messages.length, (newLen, oldLen) => {
+watch(() => props.messages, (newMessages, oldMessages) => {
+  const newLen = newMessages.length;
+  const oldLen = oldMessages?.length ?? 0;
+
   // 页面初次加载不标记新消息
   if (isInitialLoad.value) {
-    previousMessageIds.value = props.messages.map(m => m.id);
+    if (newLen > 0) {
+      previousConversationId.value = newMessages[0]?.conversationId ?? null;
+    }
     scrollToBottom();
     return;
   }
 
-  const currentMessageIds = props.messages.map(m => m.id);
+  // 获取当前对话 ID
+  const currentConversationId = newLen > 0 ? newMessages[0]?.conversationId ?? null : null;
 
-  // 检测是否是切换对话：如果之前的消息 ID 都不在当前列表中，说明是切换了对话
-  const isSwitchingConversation = previousMessageIds.value.length > 0 &&
-    !previousMessageIds.value.some(id => currentMessageIds.includes(id));
+  // 检测是否切换了对话
+  const isSwitchingConversation = currentConversationId !== previousConversationId.value;
 
-  // 更新消息 ID 列表
-  previousMessageIds.value = currentMessageIds;
+  // 更新对话 ID
+  previousConversationId.value = currentConversationId;
 
   // 如果是切换对话，不触发动画
   if (isSwitchingConversation) {
@@ -106,7 +111,7 @@ watch(() => props.messages.length, (newLen, oldLen) => {
 
   // 检测新增的消息，只标记最后一条
   if (newLen > oldLen) {
-    const lastMessage = props.messages[props.messages.length - 1];
+    const lastMessage = newMessages[newLen - 1];
     if (lastMessage) {
       newMessageIds.value.add(lastMessage.id);
       // 动画结束后移除标记
@@ -117,7 +122,7 @@ watch(() => props.messages.length, (newLen, oldLen) => {
   }
 
   scrollToBottom();
-});
+}, { deep: false });
 
 // 判断消息是否为新消息
 const isNewMessage = (msgId: string) => newMessageIds.value.has(msgId);
