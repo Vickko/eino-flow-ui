@@ -144,7 +144,7 @@ export function useModelManagement() {
     models.value[index] = {
       ...models.value[index],
       ...updates
-    };
+    } as Model;
 
     return true;
   };
@@ -194,7 +194,7 @@ export function useModelManagement() {
       return false;
     }
 
-    const item = models.value.splice(fromIndex, 1)[0];
+    const item = models.value.splice(fromIndex, 1)[0]!;
     models.value.splice(toIndex, 0, item);
     return true;
   };

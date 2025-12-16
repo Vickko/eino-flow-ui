@@ -151,7 +151,7 @@
           :max-zoom="4"
           :fit-view-on-init="true"
           :pan-on-scroll="true"
-          pan-on-scroll-mode="free"
+          :pan-on-scroll-mode="PanOnScrollMode.Free"
           :pan-on-scroll-speed="0.5"
           :zoom-on-scroll="true"
           zoom-activation-key-code="Control"
@@ -182,7 +182,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
-import { VueFlow } from '@vue-flow/core'
+import { VueFlow, PanOnScrollMode } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'

@@ -187,7 +187,7 @@ watch(models, (newModels) => {
   // 如果当前选中的模型不在列表中（被删除或重命名），回退到第一个模型
   const modelExists = newModels.some(m => m.name === selectedModel.value);
   if (!modelExists || selectedModel.value === '--') {
-    selectedModel.value = newModels[0].name;
+    selectedModel.value = newModels[0]!.name;
   }
 }, { deep: true });
 
