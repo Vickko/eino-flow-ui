@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Bot } from 'lucide-vue-next';
 import { MdPreview } from 'md-editor-v3';
 import 'md-editor-v3/lib/preview.css';
@@ -12,6 +12,51 @@ import logoClaude from '../../assets/logo_claude2.svg';
 import logoGemini from '../../assets/logo_gemini.svg';
 
 const { isDark } = useTheme();
+
+// 监听复制按钮文本变化
+const markdownContentRef = ref<HTMLElement | null>(null);
+let copyButtonObserver: MutationObserver | null = null;
+
+const setupCopyButtonObserver = () => {
+  if (!markdownContentRef.value) return;
+
+  // 清理之前的 observer
+  if (copyButtonObserver) {
+    copyButtonObserver.disconnect();
+  }
+
+  copyButtonObserver = new MutationObserver(() => {
+    // 检查所有复制按钮的状态
+    const buttons = markdownContentRef.value?.querySelectorAll('.md-editor-copy-button');
+    buttons?.forEach((button) => {
+      const text = button.textContent?.trim();
+      if (text === '已复制！') {
+        button.classList.add('copied');
+      } else {
+        button.classList.remove('copied');
+      }
+    });
+  });
+
+  // 监听整个 markdown-content 区域
+  copyButtonObserver.observe(markdownContentRef.value, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  });
+};
+
+onMounted(() => {
+  nextTick(() => {
+    setupCopyButtonObserver();
+  });
+});
+
+onUnmounted(() => {
+  if (copyButtonObserver) {
+    copyButtonObserver.disconnect();
+  }
+});
 
 const props = defineProps<{
   message: Message;
@@ -70,7 +115,7 @@ const timeString = computed(() => {
       :class="[bubbleClass, shouldAnimateAI ? 'ai-bubble-animate' : '', shouldAnimateUser ? 'user-bubble-animate' : '']"
     >
       <!-- Content Area -->
-      <div :class="['markdown-content', isUser ? 'user-content' : 'assistant-content']">
+      <div ref="markdownContentRef" :class="['markdown-content', isUser ? 'user-content' : 'assistant-content']">
         <MdPreview
           :editorId="previewId"
           :modelValue="message.content"
@@ -79,6 +124,7 @@ const timeString = computed(() => {
           :showCodeRowNumber="true"
           codeTheme="github"
           previewTheme="default"
+          :codeFoldable="false"
         />
       </div>
 
@@ -244,6 +290,156 @@ const timeString = computed(() => {
   border-radius: 0.5rem !important;
   overflow: hidden !important;
   margin: 0.75rem 0 !important;
+}
+
+/* 代码块：去掉独立 header，融入代码块内部 */
+.markdown-content :deep(.md-editor-preview .md-editor-code) {
+  position: relative !important;
+}
+
+/* 禁用 details 折叠功能 */
+.markdown-content :deep(.md-editor-preview details.md-editor-code) {
+  pointer-events: none !important;
+}
+
+.markdown-content :deep(.md-editor-preview details.md-editor-code > *) {
+  pointer-events: auto !important;
+}
+
+.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head) {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: auto !important;
+  padding: 8px 12px !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  z-index: 10 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+/* 隐藏装饰性的三个彩色圆点 */
+.markdown-content :deep(.md-editor-preview .md-editor-code-head .md-editor-code-flag > span) {
+  display: none !important;
+}
+
+/* 隐藏折叠按钮 */
+.markdown-content :deep(.md-editor-preview .md-editor-code-head .md-editor-collapse-tips) {
+  display: none !important;
+}
+
+/* 语言标识样式 - 绝对定位到左侧 */
+.markdown-content :deep(.md-editor-preview .md-editor-code-head .md-editor-code-lang) {
+  position: absolute !important;
+  left: 1em !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  font-size: 11px !important;
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.6 !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* 复制按钮容器 */
+.markdown-content :deep(.md-editor-preview .md-editor-code-head .md-editor-code-action) {
+  margin-right: 0 !important;
+  pointer-events: auto !important;
+}
+
+/* 复制按钮样式 */
+.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button) {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s !important;
+  opacity: 0.4 !important;
+  user-select: none !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative !important;
+  font-size: 0 !important;
+  text-indent: -9999px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 0 !important;
+}
+
+/* 隐藏按钮内的所有文字子元素 */
+.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button > *) {
+  font-size: 0 !important;
+  text-indent: -9999px !important;
+  color: transparent !important;
+}
+
+/* 默认显示复制图标 */
+.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button::before) {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 14px !important;
+  height: 14px !important;
+  text-indent: 0 !important;
+  background-color: hsl(var(--muted-foreground)) !important;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='14' height='14' x='8' y='8' rx='2' ry='2'/%3E%3Cpath d='M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2'/%3E%3C/svg%3E") !important;
+  mask-size: contain !important;
+  mask-repeat: no-repeat !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='14' height='14' x='8' y='8' rx='2' ry='2'/%3E%3Cpath d='M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2'/%3E%3C/svg%3E") !important;
+  -webkit-mask-size: contain !important;
+  -webkit-mask-repeat: no-repeat !important;
+}
+
+/* 只在悬浮按钮本身时才亮起 */
+.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button:hover) {
+  background-color: hsl(var(--foreground) / 0.1) !important;
+  opacity: 1 !important;
+}
+
+/* 点击时的视觉反馈 */
+.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button:active) {
+  transform: scale(0.9) !important;
+  opacity: 0.8 !important;
+}
+
+/* 复制成功后显示文字 */
+.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button.copied) {
+  width: auto !important;
+  padding: 0 8px !important;
+  font-size: 11px !important;
+  text-indent: 0 !important;
+  line-height: 24px !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.markdown-content :deep(.md-editor-preview .md-editor-code .md-editor-code-head .md-editor-copy-button.copied::before) {
+  display: none !important;
+}
+
+/* 代码块 body 增加顶部 padding 给 header 留空间 */
+.markdown-content :deep(.md-editor-preview .md-editor-code pre code) {
+  padding-top: 2.5em !important;
+  border-radius: 0.5rem !important;
+}
+
+/* 行号位置也相应下移，跳过 header 区域 */
+.markdown-content :deep(.md-editor-preview .md-editor-code pre code span[rn-wrapper]) {
+  top: 2.5em !important;
+}
+
+/* 代码块整体圆角 */
+.markdown-content :deep(.md-editor-preview .md-editor-code pre) {
+  border-radius: 0.5rem !important;
+  margin: 0 !important;
 }
 
 .markdown-content :deep(.md-editor-preview .code-block > *),

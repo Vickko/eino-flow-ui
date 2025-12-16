@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useGraph } from '../composables/useGraph'
 import { Settings2, Activity, MessageSquare } from 'lucide-vue-next'
 import { formatSchemaType } from '@/utils/schema'
-import type { Message } from '../composables/useChatMock'
+import type { Message } from '../composables/useChat'
 import MessageBubble from './chat/MessageBubble.vue'
 
 const { selectedNode, nodeExecutionResults, navigateToSubgraph } = useGraph()

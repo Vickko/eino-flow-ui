@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { sendChatMessage } from '@/api';
 import type { ChatMessageResponse } from '@/types';
 
-// 类型定义（保持与 useChatMock 兼容）
+// 类型定义
 export interface User {
   id: string;
   name: string;
