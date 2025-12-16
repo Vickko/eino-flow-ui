@@ -56,6 +56,78 @@ const DEFAULT_MODELS: Model[] = [
     description: 'Ultra-fast responses',
     icon: getModelIcon('gemini-2.5-flash'),
   },
+  {
+    id: 'deepseek-v3.2',
+    name: 'DeepSeek V3.2',
+    description: 'Advanced reasoning model',
+    icon: getModelIcon('deepseek-v3.2'),
+  },
+  {
+    id: 'deepseek-v3.2-speciale',
+    name: 'DeepSeek V3.2 Speciale',
+    description: 'Enhanced special edition',
+    icon: getModelIcon('deepseek-v3.2-speciale'),
+  },
+  {
+    id: 'grok-4-1-fast-non-reasoning',
+    name: 'Grok 4.1 Fast',
+    description: 'Fast non-reasoning mode',
+    icon: getModelIcon('grok-4-1-fast-non-reasoning'),
+  },
+  {
+    id: 'grok-4-1-fast-reasoning',
+    name: 'Grok 4.1 Fast Reasoning',
+    description: 'Fast with reasoning',
+    icon: getModelIcon('grok-4-1-fast-reasoning'),
+  },
+  {
+    id: 'qwen3-vl-235b-a22b-instruct',
+    name: 'Qwen3 VL 235B Instruct',
+    description: 'Vision-language instruction model',
+    icon: getModelIcon('qwen3-vl-235b-a22b-instruct'),
+  },
+  {
+    id: 'qwen3-vl-235b-a22b-thinking',
+    name: 'Qwen3 VL 235B Thinking',
+    description: 'Vision-language thinking model',
+    icon: getModelIcon('qwen3-vl-235b-a22b-thinking'),
+  },
+  {
+    id: 'glm-4.6',
+    name: 'GLM 4.6',
+    description: 'Advanced ChatGLM model',
+    icon: getModelIcon('glm-4.6'),
+  },
+  {
+    id: 'doubao-seed-1-6',
+    name: 'Doubao Seed 1.6',
+    description: 'ByteDance foundation model',
+    icon: getModelIcon('doubao-seed-1-6'),
+  },
+  {
+    id: 'kimi-k2-thinking',
+    name: 'Kimi K2 Thinking',
+    description: 'Deep thinking model',
+    icon: getModelIcon('kimi-k2-thinking'),
+  },
+  {
+    id: 'kimi-k2-0711',
+    name: 'Kimi K2 0711',
+    description: 'Kimi K2 latest release',
+    icon: getModelIcon('kimi-k2-0711'),
+  },
+  {
+    id: 'minimax-m2',
+    name: 'MiniMax M2',
+    description: 'Advanced multimodal model',
+    icon: getModelIcon('minimax-m2'),
+  },
+  {
+    id: 'llama-4-maverick',
+    name: 'Llama 4 Maverick',
+    description: 'Meta experimental model',
+    icon: getModelIcon('llama-4-maverick'),
+  },
 ]
 
 /**
