@@ -129,7 +129,7 @@ watch(() => props.messages, (newMessages, oldMessages) => {
   }
 
   scrollToBottom();
-}, { deep: false });
+}, { deep: false, flush: 'sync' });
 
 // 监听流式消息的内容变化，保持滚动到底部
 watch(

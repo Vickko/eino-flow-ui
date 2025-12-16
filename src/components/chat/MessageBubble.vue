@@ -1,3 +1,8 @@
+<script lang="ts">
+// 模块级别：记录已渲染过的消息 ID，用于判断是否播放入场动画
+const renderedMessageIds = new Set<string>();
+</script>
+
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Bot } from 'lucide-vue-next';
@@ -27,6 +32,28 @@ const markdownContentRef = ref<HTMLElement | null>(null);
 const bubbleRef = ref<HTMLElement | null>(null);
 let copyButtonObserver: MutationObserver | null = null;
 let resizeObserver: ResizeObserver | null = null;
+
+// 入场动画状态（首次渲染该消息时播放）
+const isFirstRender = !renderedMessageIds.has(props.message.id);
+renderedMessageIds.add(props.message.id);
+const shouldPlayEntranceAnimation = ref(isFirstRender);
+// 延迟启动 ResizeObserver 的 timeout ID
+let resizeObserverDelayId: ReturnType<typeof setTimeout> | null = null;
+
+// 立即切换到流式模式：取消入场动画，启动 ResizeObserver
+const switchToStreamingMode = () => {
+  // 取消延迟启动的 timeout
+  if (resizeObserverDelayId) {
+    clearTimeout(resizeObserverDelayId);
+    resizeObserverDelayId = null;
+  }
+  // 取消入场动画
+  shouldPlayEntranceAnimation.value = false;
+  // 立即启动 ResizeObserver
+  if (!resizeObserver && isStreaming.value) {
+    setupResizeObserver();
+  }
+};
 
 const setupCopyButtonObserver = () => {
   if (!markdownContentRef.value) return;
@@ -126,12 +153,38 @@ watch(() => props.message.status, (newStatus, oldStatus) => {
 }, { immediate: true });
 
 onMounted(() => {
+  // 初始化内容长度，避免首次 watch 误触发
+  lastContentLength = props.message.content?.length ?? 0;
+
   nextTick(() => {
     setupCopyButtonObserver();
     if (isStreaming.value) {
-      setupResizeObserver();
+      // 如果有入场动画，延迟启动 ResizeObserver，避免打断动画
+      const delay = shouldPlayEntranceAnimation.value ? 500 : 0;
+      if (delay > 0) {
+        resizeObserverDelayId = setTimeout(() => {
+          resizeObserverDelayId = null;
+          setupResizeObserver();
+        }, delay);
+      } else {
+        setupResizeObserver();
+      }
     }
   });
+});
+
+// 监听流式消息内容变化，一旦开始吐字就切换到流式模式
+let lastContentLength = 0;
+watch(() => props.message.content, (newContent) => {
+  const newLength = newContent?.length ?? 0;
+  // 只在流式状态且内容长度增加时触发
+  if (isStreaming.value && newLength > lastContentLength) {
+    // 如果还在等待入场动画，立即切换到流式模式
+    if (resizeObserverDelayId || shouldPlayEntranceAnimation.value) {
+      switchToStreamingMode();
+    }
+  }
+  lastContentLength = newLength;
 });
 
 onUnmounted(() => {
@@ -144,11 +197,14 @@ onUnmounted(() => {
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId);
   }
+  if (resizeObserverDelayId) {
+    clearTimeout(resizeObserverDelayId);
+  }
 });
 
-// 判断是否应该播放动画（只有新消息才播放，streaming 状态除外）
-const shouldAnimateAI = computed(() => props.isNew && props.message.role === 'assistant' && !isStreaming.value);
-const shouldAnimateUser = computed(() => props.isNew && props.message.role === 'user');
+// 判断是否应该播放动画（基于首次挂载时的状态）
+const shouldAnimateAI = computed(() => shouldPlayEntranceAnimation.value && props.message.role === 'assistant');
+const shouldAnimateUser = computed(() => shouldPlayEntranceAnimation.value && props.message.role === 'user');
 
 const isUser = computed(() => props.message.role === 'user');
 
