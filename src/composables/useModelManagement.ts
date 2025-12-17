@@ -63,10 +63,10 @@ const DEFAULT_MODELS: Model[] = [
     icon: getModelIcon('deepseek-v3.2'),
   },
   {
-    id: 'deepseek-v3.2-speciale',
-    name: 'DeepSeek V3.2 Speciale',
-    description: 'Enhanced special edition',
-    icon: getModelIcon('deepseek-v3.2-speciale'),
+    id: 'deepseek-v3.2-think',
+    name: 'DeepSeek V3.2 Think',
+    description: 'DeepSeek V3.2 with thinking capabilities',
+    icon: getModelIcon('deepseek-v3.2-think'),
   },
   {
     id: 'grok-4-1-fast-non-reasoning',
