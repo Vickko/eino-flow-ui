@@ -15,6 +15,18 @@ const STORAGE_KEY = 'chat_models'
 // 默认模型列表
 const DEFAULT_MODELS: Model[] = [
   {
+    id: 'deepseek-v3.2',
+    name: 'DeepSeek V3.2',
+    description: 'Advanced reasoning model',
+    icon: getModelIcon('deepseek-v3.2'),
+  },
+  {
+    id: 'deepseek-v3.2-think',
+    name: 'DeepSeek V3.2 Think',
+    description: 'DeepSeek V3.2 with thinking capabilities',
+    icon: getModelIcon('deepseek-v3.2-think'),
+  },
+  {
     id: 'gpt-5.2',
     name: 'GPT-5.2',
     description: 'Most advanced GPT model',
@@ -57,16 +69,10 @@ const DEFAULT_MODELS: Model[] = [
     icon: getModelIcon('gemini-2.5-flash'),
   },
   {
-    id: 'deepseek-v3.2',
-    name: 'DeepSeek V3.2',
-    description: 'Advanced reasoning model',
-    icon: getModelIcon('deepseek-v3.2'),
-  },
-  {
-    id: 'deepseek-v3.2-think',
-    name: 'DeepSeek V3.2 Think',
-    description: 'DeepSeek V3.2 with thinking capabilities',
-    icon: getModelIcon('deepseek-v3.2-think'),
+    id: 'gemini-3-pro-image-preview',
+    name: 'Nano Banana Pro',
+    description: 'Gemini 3 Pro with image support',
+    icon: getModelIcon('gemini-3-pro-image-preview'),
   },
   {
     id: 'grok-4-1-fast-non-reasoning',
