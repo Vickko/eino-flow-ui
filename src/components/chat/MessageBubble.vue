@@ -226,6 +226,34 @@ const isThinking = computed(() => props.message.reasoningStatus === 'thinking')
 // 思考区域是否折叠
 const isReasoningCollapsed = ref(false)
 
+// 判断是否处于等待首字符状态（流式中但正式回复内容还没有）
+// 注意：只检查 content，不检查 reasoning_content，因为思考内容不应该导致气泡展开
+const isWaitingForFirstToken = computed(() => {
+  if (!isStreaming.value) return false
+  const hasContent = !!props.message.content?.trim()
+  return !hasContent
+})
+
+// 追踪消息是否经历过等待状态（用于决定是否播放展开动画）
+const hasExperiencedWaiting = ref(false)
+// 追踪是否应该播放展开动画
+const shouldPlayExpandAnimation = ref(false)
+
+// 初始化时检查是否处于等待状态
+if (isFirstRender && isWaitingForFirstToken.value) {
+  hasExperiencedWaiting.value = true
+}
+
+// 监听等待状态变化
+watch(isWaitingForFirstToken, (isWaiting, wasWaiting) => {
+  if (isWaiting) {
+    hasExperiencedWaiting.value = true
+  } else if (wasWaiting && hasExperiencedWaiting.value) {
+    // 刚从等待状态变为有内容，触发展开动画
+    shouldPlayExpandAnimation.value = true
+  }
+})
+
 const modelIcon = computed(() => {
   if (!props.message.model) return null
   return getModelIcon(props.message.model)
@@ -267,6 +295,7 @@ const timeString = computed(() => {
     </div>
 
     <!-- Reasoning/Thinking Section (only for assistant messages with reasoning) -->
+    <!-- 思考区域独立于气泡，有思考内容时就显示 -->
     <div
       v-if="!isUser && hasReasoning"
       :class="[
@@ -294,7 +323,10 @@ const timeString = computed(() => {
         :class="isReasoningCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'"
       >
         <div class="overflow-hidden">
-          <div class="reasoning-content border-l-2 border-muted-foreground/30 pl-3 ml-0.5">
+          <div
+            class="reasoning-content border-l-2 border-muted-foreground/30 pl-3 ml-0.5"
+            :class="{ 'show-thinking-cursor': isThinking }"
+          >
             <div class="reasoning-markdown-content text-sm text-muted-foreground/80">
               <MdPreview
                 :editor-id="reasoningPreviewId"
@@ -306,26 +338,41 @@ const timeString = computed(() => {
                 preview-theme="default"
                 :code-foldable="false"
               />
-              <!-- 思考中时显示闪烁光标 -->
-              <span v-if="isThinking" class="streaming-cursor"></span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Waiting Dot: 等待首字符时显示的小圆球 -->
     <div
+      v-if="!isUser && isWaitingForFirstToken"
+      class="waiting-dot bg-muted/50 border border-border/50"
+    />
+
+    <!-- Full Bubble: 有内容后显示完整气泡 -->
+    <div
+      v-else
       ref="bubbleRef"
       :class="[
         bubbleClass,
-        shouldAnimateAI ? 'ai-bubble-animate' : '',
+        // AI 气泡动画：从小圆球展开时使用专门的展开动画，否则使用普通入场动画
+        shouldPlayExpandAnimation && !isUser
+          ? 'bubble-expand-from-dot'
+          : shouldAnimateAI
+            ? 'ai-bubble-animate'
+            : '',
         shouldAnimateUser ? 'user-bubble-animate' : '',
       ]"
     >
       <!-- Content Area -->
       <div
         ref="markdownContentRef"
-        :class="['markdown-content', isUser ? 'user-content' : 'assistant-content']"
+        :class="[
+          'markdown-content',
+          isUser ? 'user-content' : 'assistant-content',
+          { 'show-streaming-cursor': isStreaming && !isThinking },
+        ]"
       >
         <MdPreview
           :editor-id="previewId"
@@ -337,13 +384,11 @@ const timeString = computed(() => {
           preview-theme="default"
           :code-foldable="false"
         />
-        <!-- 流式接收时显示闪烁光标 -->
-        <span v-if="isStreaming" class="streaming-cursor"></span>
       </div>
 
-      <!-- Timestamp -->
+      <!-- Timestamp: 流式输出完成后才显示 -->
       <div
-        v-if="!hideTimestamp"
+        v-if="!hideTimestamp && !isStreaming"
         class="mt-1 text-[10px] opacity-70 text-right select-none"
         :class="isUser ? 'text-primary-foreground/80' : 'text-muted-foreground'"
       >
@@ -354,6 +399,50 @@ const timeString = computed(() => {
 </template>
 
 <style scoped>
+/* 等待首字符时的小圆球 */
+.waiting-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px 12px 12px 12px;
+  animation: breathing 1.5s ease-in-out infinite;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes breathing {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  }
+}
+
+/* 从小圆球展开到完整气泡的动画 */
+.bubble-expand-from-dot {
+  animation: expand-from-dot 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: top left;
+}
+
+@keyframes expand-from-dot {
+  0% {
+    transform: scale(0.15);
+    opacity: 0.7;
+    border-radius: 12px;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* 思考区域动画 */
 .ai-reasoning-animate {
   animation: reasoning-fade-in 0.4s ease-out both;
@@ -416,8 +505,32 @@ const timeString = computed(() => {
   overflow: hidden;
 }
 
-/* 流式接收时的闪烁光标 */
-.streaming-cursor {
+/* 流式接收时的闪烁光标 - 使用 ::after 伪元素定位在文字末尾 */
+@keyframes cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 思考区域的光标 */
+.show-thinking-cursor :deep(.md-editor-preview > *:last-child::after) {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: hsl(var(--muted-foreground) / 0.8);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 1s step-end infinite;
+}
+
+/* 气泡区域的光标 */
+.show-streaming-cursor :deep(.md-editor-preview > *:last-child::after) {
+  content: '';
   display: inline-block;
   width: 2px;
   height: 1em;
@@ -427,14 +540,9 @@ const timeString = computed(() => {
   animation: cursor-blink 1s step-end infinite;
 }
 
-@keyframes cursor-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
+/* 用户消息的光标颜色 */
+.user-content.show-streaming-cursor :deep(.md-editor-preview > *:last-child::after) {
+  background-color: hsl(var(--primary-foreground));
 }
 
 /* 动画 */
