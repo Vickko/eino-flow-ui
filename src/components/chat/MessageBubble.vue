@@ -919,17 +919,156 @@ const timeString = computed(() => {
   border-color: hsl(var(--border));
 }
 
-/* Mermaid 时序图暗黑模式修复 */
+/* Mermaid 暗黑模式修复 */
+
+/* 时序图 - 背景和边框 */
 .markdown-content :deep(.md-editor-dark .actor-top),
 .markdown-content :deep(.md-editor-dark .actor-bottom) {
   fill: #374151 !important;
   stroke: #6b7280 !important;
 }
-.markdown-content :deep(.md-editor-dark [aria-roledescription='sequence'] text) {
+
+/* 时序图 - 文字（包括 box 内的文字） */
+.markdown-content :deep(.md-editor-dark [aria-roledescription='sequence'] text),
+.markdown-content :deep(.md-editor-dark [aria-roledescription='sequence'] tspan),
+.markdown-content :deep(.md-editor-dark .actor text),
+.markdown-content :deep(.md-editor-dark .actor tspan),
+.markdown-content :deep(.md-editor-dark .labelBox text),
+.markdown-content :deep(.md-editor-dark .labelBox tspan) {
   fill: #f3f4f6 !important;
 }
+
+/* 时序图 - 连接线 */
 .markdown-content :deep(.md-editor-dark .messageLine0),
 .markdown-content :deep(.md-editor-dark .messageLine1) {
   stroke: #9ca3af !important;
+}
+
+/* 流程图 - 节点背景和边框 */
+.markdown-content :deep(.md-editor-dark .node rect),
+.markdown-content :deep(.md-editor-dark .node circle),
+.markdown-content :deep(.md-editor-dark .node ellipse),
+.markdown-content :deep(.md-editor-dark .node polygon),
+.markdown-content :deep(.md-editor-dark .node path) {
+  fill: #374151 !important;
+  stroke: #6b7280 !important;
+}
+
+/* 流程图 - 节点文字 */
+.markdown-content :deep(.md-editor-dark .nodeLabel),
+.markdown-content :deep(.md-editor-dark .node text) {
+  fill: #f3f4f6 !important;
+  color: #f3f4f6 !important;
+}
+
+/* 流程图 - 连接线 */
+.markdown-content :deep(.md-editor-dark .edgePath .path),
+.markdown-content :deep(.md-editor-dark .flowchart-link) {
+  stroke: #9ca3af !important;
+}
+
+/* 流程图和状态图 - 连接线标签（浅色背景 + 深色文字） */
+.markdown-content :deep(.md-editor-dark .edgeLabel rect) {
+  fill: #e5e7eb !important;
+  stroke: #6b7280 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .labelBkg) {
+  background-color: #e5e7eb !important;
+  color: #1f2937 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .labelBkg p) {
+  color: #1f2937 !important;
+}
+
+/* 箭头标记 */
+.markdown-content :deep(.md-editor-dark marker path) {
+  fill: #9ca3af !important;
+  stroke: #9ca3af !important;
+}
+
+/* 类图 */
+.markdown-content :deep(.md-editor-dark .classGroup rect),
+.markdown-content :deep(.md-editor-dark .classGroup line) {
+  stroke: #6b7280 !important;
+  fill: #374151 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .classLabel .box) {
+  fill: #374151 !important;
+  stroke: #6b7280 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .classLabel .label),
+.markdown-content :deep(.md-editor-dark .classGroup text) {
+  fill: #f3f4f6 !important;
+}
+
+/* 状态图 - 起止节点 */
+.markdown-content :deep(.md-editor-dark .state-start circle),
+.markdown-content :deep(.md-editor-dark .state-end circle) {
+  fill: #6b7280 !important;
+  stroke: #9ca3af !important;
+}
+
+/* 状态图 - 状态节点 */
+.markdown-content :deep(.md-editor-dark .stateGroup rect) {
+  fill: #374151 !important;
+  stroke: #6b7280 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .stateLabel text) {
+  fill: #f3f4f6 !important;
+}
+
+/* 状态图 - 连接线文字 */
+.markdown-content :deep(.md-editor-dark .transition text),
+.markdown-content :deep(.md-editor-dark .transition tspan) {
+  fill: #1f2937 !important;
+}
+
+/* 甘特图 - 网格 */
+.markdown-content :deep(.md-editor-dark .grid .tick line) {
+  stroke: #4b5563 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .grid .tick text) {
+  fill: #9ca3af !important;
+}
+
+/* 甘特图 - 文字 */
+.markdown-content :deep(.md-editor-dark .taskText),
+.markdown-content :deep(.md-editor-dark .titleText),
+.markdown-content :deep(.md-editor-dark .sectionTitle),
+.markdown-content :deep(.md-editor-dark .taskTextOutsideRight),
+.markdown-content :deep(.md-editor-dark .taskTextOutsideLeft) {
+  fill: #f3f4f6 !important;
+}
+
+/* ER 图 */
+.markdown-content :deep(.md-editor-dark .er .entityBox) {
+  fill: #374151 !important;
+  stroke: #6b7280 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .er .entityLabel) {
+  fill: #f3f4f6 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .er .relationshipLine) {
+  stroke: #9ca3af !important;
+}
+
+/* 饼图 */
+.markdown-content :deep(.md-editor-dark .pieCircle) {
+  stroke: #374151 !important;
+}
+
+.markdown-content :deep(.md-editor-dark .pieTitleText),
+.markdown-content :deep(.md-editor-dark .legend text),
+.markdown-content :deep(.md-editor-dark .slice text),
+.markdown-content :deep(.md-editor-dark .pieLabel) {
+  fill: #f3f4f6 !important;
 }
 </style>

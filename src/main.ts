@@ -7,6 +7,12 @@ import App from './App.vue'
 import router from './router'
 
 // 预加载 mermaid，解决懒加载导致的渲染不稳定问题
+// 使用 default 主题，通过 CSS 控制暗黑模式样式
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'default',
+})
+
 config({
   editorExtensions: {
     mermaid: {
