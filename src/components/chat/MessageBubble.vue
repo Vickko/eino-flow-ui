@@ -356,6 +356,17 @@ const timeString = computed(() => {
           preview-theme="default"
           :code-foldable="false"
         />
+
+        <!-- 图片展示区域 -->
+        <div v-if="message.images && message.images.length > 0" class="images-container mt-3">
+          <img
+            v-for="(imageData, index) in message.images"
+            :key="index"
+            :src="`data:image/png;base64,${imageData}`"
+            :alt="`Generated image ${index + 1}`"
+            class="generated-image"
+          />
+        </div>
       </div>
 
       <!-- Timestamp: 流式输出完成后才显示 -->
@@ -917,6 +928,26 @@ const timeString = computed(() => {
 /* 水平线 */
 .markdown-content :deep(.md-editor-preview hr) {
   border-color: hsl(var(--border));
+}
+
+/* 图片展示 */
+.images-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.generated-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-out;
+}
+
+.generated-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Mermaid 暗黑模式修复 */

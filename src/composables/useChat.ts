@@ -18,6 +18,7 @@ export interface Message {
   model?: string
   reasoning_content?: string
   reasoningStatus?: 'thinking' | 'done' // 思考状态：thinking=思考中，done=思考完成
+  images?: string[] // 图片数据数组（base64 格式）
 }
 
 export interface Conversation {
@@ -660,6 +661,7 @@ export function useChat() {
       role: 'assistant',
       content: '', // 初始为空，流式填充
       reasoning_content: '', // 思考内容初始为空
+      images: [], // 图片数组初始为空
       timestamp: Date.now(),
       status: 'streaming', // 流式接收中
       model: model,
@@ -690,6 +692,19 @@ export function useChat() {
                 if (!msg.reasoningStatus) {
                   msg.reasoningStatus = 'thinking'
                 }
+              }
+            }
+          },
+          onImage: (base64data: string) => {
+            // 添加图片数据
+            const msgList = messages.value[conversationId]
+            if (msgList) {
+              const msg = msgList.find((m) => m.id === aiMessageId)
+              if (msg) {
+                if (!msg.images) {
+                  msg.images = []
+                }
+                msg.images.push(base64data)
               }
             }
           },

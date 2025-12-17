@@ -134,6 +134,7 @@ export const streamDebugRun = async (
 export interface StreamChatCallbacks {
   onChunk?: (chunk: string) => void // 接收到 content 内容片段
   onReasoning?: (chunk: string) => void // 接收到 reasoning 思考内容片段
+  onImage?: (base64data: string) => void // 接收到图片数据
   onDone?: () => void // 流式输出完成
   onError?: (error: string) => void // 发生错误
 }
@@ -162,7 +163,7 @@ export const streamChatMessage = async (
 
     const decoder = new TextDecoder()
     let buffer = ''
-    // 跟踪当前事件类型：'reasoning' | 'content' | null
+    // 跟踪当前事件类型：'reasoning' | 'content' | 'image' | null
     let currentEventType: string | null = null
 
     while (true) {
@@ -194,6 +195,9 @@ export const streamChatMessage = async (
           } else if (eventType === 'content') {
             // 最终答案事件
             currentEventType = 'content'
+          } else if (eventType === 'image') {
+            // 图片数据事件
+            currentEventType = 'image'
           }
           continue
         }
@@ -206,19 +210,25 @@ export const streamChatMessage = async (
           } else {
             // SSE data 字段是 JSON 字符串格式，需要解析还原原始内容
             try {
-              const parsed = JSON.parse(data) as string
-              // 根据当前事件类型调用相应的回调
-              if (currentEventType === 'reasoning') {
-                callbacks.onReasoning?.(parsed)
+              if (currentEventType === 'image') {
+                // 图片数据是 JSON 对象，包含 base64data 字段
+                const imageData = JSON.parse(data) as { base64data: string }
+                callbacks.onImage?.(imageData.base64data)
               } else {
-                // 默认为 content 或无事件类型时（兼容旧格式）
-                callbacks.onChunk?.(parsed)
+                const parsed = JSON.parse(data) as string
+                // 根据当前事件类型调用相应的回调
+                if (currentEventType === 'reasoning') {
+                  callbacks.onReasoning?.(parsed)
+                } else {
+                  // 默认为 content 或无事件类型时（兼容旧格式）
+                  callbacks.onChunk?.(parsed)
+                }
               }
             } catch {
               // 解析失败时直接使用原始数据
               if (currentEventType === 'reasoning') {
                 callbacks.onReasoning?.(data)
-              } else {
+              } else if (currentEventType !== 'image') {
                 callbacks.onChunk?.(data)
               }
             }
@@ -234,16 +244,21 @@ export const streamChatMessage = async (
         const data = trimmedLine.slice(6)
         if (data !== '[DONE]') {
           try {
-            const parsed = JSON.parse(data) as string
-            if (currentEventType === 'reasoning') {
-              callbacks.onReasoning?.(parsed)
+            if (currentEventType === 'image') {
+              const imageData = JSON.parse(data) as { base64data: string }
+              callbacks.onImage?.(imageData.base64data)
             } else {
-              callbacks.onChunk?.(parsed)
+              const parsed = JSON.parse(data) as string
+              if (currentEventType === 'reasoning') {
+                callbacks.onReasoning?.(parsed)
+              } else {
+                callbacks.onChunk?.(parsed)
+              }
             }
           } catch {
             if (currentEventType === 'reasoning') {
               callbacks.onReasoning?.(data)
-            } else {
+            } else if (currentEventType !== 'image') {
               callbacks.onChunk?.(data)
             }
           }
