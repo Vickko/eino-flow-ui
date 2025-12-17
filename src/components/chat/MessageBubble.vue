@@ -234,26 +234,6 @@ const isWaitingForFirstToken = computed(() => {
   return !hasContent
 })
 
-// 追踪消息是否经历过等待状态（用于决定是否播放展开动画）
-const hasExperiencedWaiting = ref(false)
-// 追踪是否应该播放展开动画
-const shouldPlayExpandAnimation = ref(false)
-
-// 初始化时检查是否处于等待状态
-if (isFirstRender && isWaitingForFirstToken.value) {
-  hasExperiencedWaiting.value = true
-}
-
-// 监听等待状态变化
-watch(isWaitingForFirstToken, (isWaiting, wasWaiting) => {
-  if (isWaiting) {
-    hasExperiencedWaiting.value = true
-  } else if (wasWaiting && hasExperiencedWaiting.value) {
-    // 刚从等待状态变为有内容，触发展开动画
-    shouldPlayExpandAnimation.value = true
-  }
-})
-
 const modelIcon = computed(() => {
   if (!props.message.model) return null
   return getModelIcon(props.message.model)
@@ -344,33 +324,25 @@ const timeString = computed(() => {
       </div>
     </div>
 
-    <!-- Waiting Dot: 等待首字符时显示的小圆球 -->
+    <!-- AI 气泡：等待时显示为小圆球，有内容后平滑展开 -->
     <div
-      v-if="!isUser && isWaitingForFirstToken"
-      class="waiting-dot bg-muted/50 border border-border/50"
-    />
-
-    <!-- Full Bubble: 有内容后显示完整气泡 -->
-    <div
-      v-else
+      v-if="!isUser"
       ref="bubbleRef"
       :class="[
+        'ai-bubble',
+        isWaitingForFirstToken ? 'waiting-state' : 'expanded-state',
         bubbleClass,
-        // AI 气泡动画：从小圆球展开时使用专门的展开动画，否则使用普通入场动画
-        shouldPlayExpandAnimation && !isUser
-          ? 'bubble-expand-from-dot'
-          : shouldAnimateAI
-            ? 'ai-bubble-animate'
-            : '',
-        shouldAnimateUser ? 'user-bubble-animate' : '',
+        // 只有非等待状态且首次渲染时才播放入场动画
+        !isWaitingForFirstToken && shouldAnimateAI ? 'ai-bubble-animate' : '',
       ]"
     >
-      <!-- Content Area -->
+      <!-- Content Area: 等待时隐藏 -->
       <div
+        v-show="!isWaitingForFirstToken"
         ref="markdownContentRef"
         :class="[
           'markdown-content',
-          isUser ? 'user-content' : 'assistant-content',
+          'assistant-content',
           { 'show-streaming-cursor': isStreaming && !isThinking },
         ]"
       >
@@ -388,9 +360,45 @@ const timeString = computed(() => {
 
       <!-- Timestamp: 流式输出完成后才显示 -->
       <div
+        v-if="!hideTimestamp && !isStreaming && !isWaitingForFirstToken"
+        class="mt-1 text-[10px] opacity-70 text-right select-none text-muted-foreground"
+      >
+        {{ timeString }}
+      </div>
+    </div>
+
+    <!-- User Bubble: 用户消息保持原来的逻辑 -->
+    <div
+      v-else
+      ref="bubbleRef"
+      :class="[
+        bubbleClass,
+        shouldAnimateUser ? 'user-bubble-animate' : '',
+      ]"
+    >
+      <div
+        ref="markdownContentRef"
+        :class="[
+          'markdown-content',
+          'user-content',
+          { 'show-streaming-cursor': isStreaming },
+        ]"
+      >
+        <MdPreview
+          :editor-id="previewId"
+          :model-value="message.content"
+          :theme="isDark ? 'dark' : 'light'"
+          language="zh-CN"
+          :show-code-row-number="true"
+          code-theme="github"
+          preview-theme="default"
+          :code-foldable="false"
+        />
+      </div>
+
+      <div
         v-if="!hideTimestamp && !isStreaming"
-        class="mt-1 text-[10px] opacity-70 text-right select-none"
-        :class="isUser ? 'text-primary-foreground/80' : 'text-muted-foreground'"
+        class="mt-1 text-[10px] opacity-70 text-right select-none text-primary-foreground/80"
       >
         {{ timeString }}
       </div>
@@ -399,13 +407,36 @@ const timeString = computed(() => {
 </template>
 
 <style scoped>
-/* 等待首字符时的小圆球 */
-.waiting-dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px 12px 12px 12px;
+/* AI 气泡基础样式 */
+.ai-bubble {
+  transform-origin: top left;
+  transition:
+    width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    height 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    padding 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-radius 0.35s ease-out,
+    box-shadow 0.3s ease-out,
+    opacity 0.3s ease-out;
+}
+
+/* 等待状态：小圆球 */
+.ai-bubble.waiting-state {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  padding: 0 !important;
+  border-radius: 4px 12px 12px 12px !important;
   animation: breathing 1.5s ease-in-out infinite;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+/* 展开状态：正常气泡 */
+.ai-bubble.expanded-state {
+  animation: none;
+  /* 让 bubbleClass 的样式生效 */
 }
 
 @keyframes breathing {
@@ -419,27 +450,6 @@ const timeString = computed(() => {
     transform: scale(1.1);
     opacity: 1;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-  }
-}
-
-/* 从小圆球展开到完整气泡的动画 */
-.bubble-expand-from-dot {
-  animation: expand-from-dot 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  transform-origin: top left;
-}
-
-@keyframes expand-from-dot {
-  0% {
-    transform: scale(0.15);
-    opacity: 0.7;
-    border-radius: 12px;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
   }
 }
 
