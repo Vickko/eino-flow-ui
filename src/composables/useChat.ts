@@ -705,6 +705,10 @@ export function useChat() {
                   msg.images = []
                 }
                 msg.images.push(base64data)
+                // 收到图片时，如果正在思考，标记思考完成
+                if (msg.reasoningStatus === 'thinking') {
+                  msg.reasoningStatus = 'done'
+                }
               }
             }
           },

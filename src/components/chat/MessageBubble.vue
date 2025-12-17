@@ -227,11 +227,12 @@ const isThinking = computed(() => props.message.reasoningStatus === 'thinking')
 const isReasoningCollapsed = ref(false)
 
 // 判断是否处于等待首字符状态（流式中但正式回复内容还没有）
-// 注意：只检查 content，不检查 reasoning_content，因为思考内容不应该导致气泡展开
+// 注意：检查 content 和 images，有任一内容就展开气泡
 const isWaitingForFirstToken = computed(() => {
   if (!isStreaming.value) return false
   const hasContent = !!props.message.content?.trim()
-  return !hasContent
+  const hasImages = !!props.message.images && props.message.images.length > 0
+  return !hasContent && !hasImages
 })
 
 const modelIcon = computed(() => {
