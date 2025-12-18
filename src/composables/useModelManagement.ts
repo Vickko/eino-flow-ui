@@ -63,16 +63,22 @@ const DEFAULT_MODELS: Model[] = [
     icon: getModelIcon('gemini-3-pro-preview'),
   },
   {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash',
     description: 'Ultra-fast responses',
-    icon: getModelIcon('gemini-2.5-flash'),
+    icon: getModelIcon('gemini-3-flash-preview'),
   },
   {
     id: 'gemini-3-pro-image-preview',
     name: 'Nano Banana Pro',
     description: 'Gemini 3 Pro with image support',
     icon: getModelIcon('gemini-3-pro-image-preview'),
+  },
+  {
+    id: 'gemini-2.5-flash-image',
+    name: 'Nano Banana',
+    description: 'Gemini 2.5 Pro with image support',
+    icon: getModelIcon('gemini-2.5-flash-image'),
   },
   {
     id: 'grok-4-1-fast-non-reasoning',
