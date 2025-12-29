@@ -141,7 +141,8 @@ export interface StreamChatCallbacks {
 
 export const streamChatMessage = async (
   request: ChatMessageRequest,
-  callbacks: StreamChatCallbacks
+  callbacks: StreamChatCallbacks,
+  abortSignal?: AbortSignal
 ): Promise<void> => {
   try {
     const response = await fetch(`${CHAT_API_BASE}/api/v1/chat`, {
@@ -150,6 +151,7 @@ export const streamChatMessage = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
+      signal: abortSignal,
     })
 
     if (!response.ok) {

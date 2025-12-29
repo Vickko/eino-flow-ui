@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { streamChatMessage } from '@/api'
 
 // 类型定义
@@ -616,6 +616,16 @@ const currentUser: User = {
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
 }
 
+// SSE 流式传输控制
+const currentAbortController = ref<AbortController | null>(null)
+
+// 通过检查消息状态来判断是否正在流式传输
+const isStreaming = computed(() => {
+  if (!activeConversationId.value) return false
+  const msgList = messages.value[activeConversationId.value]
+  return msgList?.some((m) => m.status === 'streaming') ?? false
+})
+
 export function useChat() {
   const sendMessage = async (text: string, model?: string, thinking?: boolean) => {
     if (!activeConversationId.value) return
@@ -670,6 +680,10 @@ export function useChat() {
     if (messages.value[conversationId]) {
       messages.value[conversationId].push(aiMessage)
     }
+
+    // 创建 AbortController 用于中断请求
+    const abortController = new AbortController()
+    currentAbortController.value = abortController
 
     try {
       // 使用流式 API
@@ -755,6 +769,9 @@ export function useChat() {
                 }
               }
             }
+
+            // 清理 AbortController
+            currentAbortController.value = null
           },
           onError: (error: string) => {
             // 错误处理
@@ -766,8 +783,12 @@ export function useChat() {
                 msg.content = msg.content || `抱歉，发送消息时出现错误: ${error}`
               }
             }
+
+            // 清理 AbortController
+            currentAbortController.value = null
           },
-        }
+        },
+        abortController.signal
       )
     } catch (error) {
       console.error('Error sending message:', error)
@@ -777,12 +798,30 @@ export function useChat() {
       if (msgList) {
         const msg = msgList.find((m) => m.id === aiMessageId)
         if (msg) {
-          msg.status = 'error'
-          if (!msg.content) {
-            msg.content = '抱歉，发送消息时出现错误。请稍后再试。'
+          // 如果是主动中断，不显示错误
+          if (error instanceof Error && error.name === 'AbortError') {
+            msg.status = 'sent'
+            if (!msg.content) {
+              msg.content = '已停止生成'
+            }
+          } else {
+            msg.status = 'error'
+            if (!msg.content) {
+              msg.content = '抱歉，发送消息时出现错误。请稍后再试。'
+            }
           }
         }
       }
+
+      // 清理 AbortController
+      currentAbortController.value = null
+    }
+  }
+
+  const stopStreaming = () => {
+    if (currentAbortController.value) {
+      currentAbortController.value.abort()
+      currentAbortController.value = null
     }
   }
 
@@ -806,5 +845,7 @@ export function useChat() {
     currentUser,
     sendMessage,
     createConversation,
+    isStreaming,
+    stopStreaming,
   }
 }

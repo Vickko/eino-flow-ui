@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { Send } from 'lucide-vue-next'
+import { Send, Square } from 'lucide-vue-next'
 import { cn } from '../../lib/utils'
+
+const props = defineProps<{
+  isStreaming?: boolean
+}>()
 
 const emit = defineEmits<{
   (e: 'send', text: string): void
+  (e: 'stop'): void
 }>()
 
 const input = ref('')
@@ -33,7 +38,27 @@ const handleSend = () => {
   })
 }
 
+const handleStop = () => {
+  emit('stop')
+}
+
+const handleButtonClick = () => {
+  // 如果正在流式传输，点击停止；否则发送消息
+  if (props.isStreaming) {
+    handleStop()
+  } else {
+    handleSend()
+  }
+}
+
 const handleKeydown = (e: KeyboardEvent) => {
+  // 如果正在流式传输，Enter 键也停止生成
+  if (props.isStreaming && e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault()
+    handleStop()
+    return
+  }
+
   // 检查是否处于输入法组合状态，避免在选择候选词时误发送
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault()
@@ -56,18 +81,22 @@ const handleKeydown = (e: KeyboardEvent) => {
       ></textarea>
 
       <button
-        :disabled="!isValid"
+        :disabled="!isValid && !isStreaming"
         :class="
           cn(
             'p-2 rounded-md transition-all duration-200 flex items-center justify-center shrink-0',
-            isValid
+            isStreaming
+              ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm'
+              : isValid
               ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
               : 'bg-transparent text-muted-foreground hover:bg-muted cursor-not-allowed opacity-50'
           )
         "
-        @click="handleSend"
+        :title="isStreaming ? '停止生成' : '发送消息'"
+        @click="handleButtonClick"
       >
-        <Send class="w-4 h-4" />
+        <Square v-if="isStreaming" class="w-4 h-4" />
+        <Send v-else class="w-4 h-4" />
       </button>
     </div>
   </div>

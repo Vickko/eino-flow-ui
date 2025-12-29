@@ -11,10 +11,12 @@ const props = defineProps<{
   messages: Message[]
   loading?: boolean
   conversationTitle?: string
+  isStreaming?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'send', payload: { text: string; model?: string; thinking?: boolean }): void
+  (e: 'stop'): void
 }>()
 
 const scrollAreaRef = ref<HTMLDivElement | null>(null)
@@ -460,7 +462,7 @@ const handleClickOutside = (event: MouseEvent) => {
       </div>
 
       <!-- Input Area -->
-      <ChatInput @send="handleSend" />
+      <ChatInput :is-streaming="isStreaming" @send="handleSend" @stop="emit('stop')" />
       <div class="text-center pb-1">
         <span class="text-[10px] text-muted-foreground/50"
           >Press Enter to send, Shift + Enter for new line</span

@@ -8,7 +8,7 @@ import { useNavButton } from '../composables/useNavButton'
 import ChatSidebar from '../components/chat/ChatSidebar.vue'
 import ChatCard from '../components/chat/ChatCard.vue'
 
-const { conversations, messages, activeConversationId, sendMessage, createConversation } = useChat()
+const { conversations, messages, activeConversationId, sendMessage, createConversation, isStreaming, stopStreaming } = useChat()
 
 const { initTheme } = useTheme()
 const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton()
@@ -96,8 +96,10 @@ const toggleSidebar = () => {
         <ChatCard
           :messages="currentMessages"
           :conversation-title="activeConversation?.title"
+          :is-streaming="isStreaming"
           class="w-full h-full"
           @send="({ text, model, thinking }) => sendMessage(text, model, thinking)"
+          @stop="stopStreaming"
         />
       </template>
 
