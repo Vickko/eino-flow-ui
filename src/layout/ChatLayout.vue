@@ -97,7 +97,7 @@ const toggleSidebar = () => {
           :messages="currentMessages"
           :conversation-title="activeConversation?.title"
           class="w-full h-full"
-          @send="({ text, model }) => sendMessage(text, model)"
+          @send="({ text, model, thinking }) => sendMessage(text, model, thinking)"
         />
       </template>
 

@@ -151,6 +151,7 @@ export interface ChatMessageRequest {
   role: 'user' | 'system' | 'assistant' | 'tool'
   content: string
   model?: string
+  thinking?: boolean
   client?: string
   name?: string
   tool_call_id?: string

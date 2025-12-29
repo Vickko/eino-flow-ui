@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { MoreVertical, Phone, Video, ChevronUp, Check, Settings } from 'lucide-vue-next'
+import { MoreVertical, Phone, Video, ChevronUp, Check, Settings, Lightbulb } from 'lucide-vue-next'
 import type { Message } from '../../composables/useChat'
 import MessageBubble from './MessageBubble.vue'
 import ChatInput from './ChatInput.vue'
@@ -14,7 +14,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'send', payload: { text: string; model?: string }): void
+  (e: 'send', payload: { text: string; model?: string; thinking?: boolean }): void
 }>()
 
 const scrollAreaRef = ref<HTMLDivElement | null>(null)
@@ -169,7 +169,7 @@ onUnmounted(() => {
 const handleSend = (text: string) => {
   // 查找当前选中模型的 ID
   const model = models.value.find((m) => m.name === selectedModel.value)
-  emit('send', { text, model: model?.id })
+  emit('send', { text, model: model?.id, thinking: thinkingEnabled.value })
 }
 
 // 使用模型管理 composable
@@ -201,6 +201,9 @@ watch(
 
 // 模型管理对话框
 const showModelManagement = ref(false)
+
+// 思考模式开关
+const thinkingEnabled = ref(false)
 
 // 获取当前选中模型的图标
 const getCurrentModelIcon = () => {
@@ -421,6 +424,27 @@ const handleClickOutside = (event: MouseEvent) => {
               </div>
             </Transition>
           </div>
+
+          <!-- Thinking Toggle -->
+          <button
+            class="p-1.5 rounded-full border-[0.5px] shadow-sm backdrop-blur-md transition-all duration-300 group"
+            :class="
+              thinkingEnabled
+                ? 'bg-amber-500/20 border-amber-500/30 hover:bg-amber-500/30 shadow-amber-500/20'
+                : 'bg-background/40 hover:bg-background/60 border-transparent hover:border-border hover:shadow-md'
+            "
+            :title="thinkingEnabled ? '关闭思考模式' : '开启思考模式'"
+            @click="thinkingEnabled = !thinkingEnabled"
+          >
+            <Lightbulb
+              class="w-4 h-4 transition-all duration-300"
+              :class="
+                thinkingEnabled
+                  ? 'text-amber-500 fill-amber-500/30'
+                  : 'text-muted-foreground/70 group-hover:text-primary/80'
+              "
+            />
+          </button>
 
           <!-- Settings Button -->
           <button

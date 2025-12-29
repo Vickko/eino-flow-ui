@@ -617,7 +617,7 @@ const currentUser: User = {
 }
 
 export function useChat() {
-  const sendMessage = async (text: string, model?: string) => {
+  const sendMessage = async (text: string, model?: string, thinking?: boolean) => {
     if (!activeConversationId.value) return
 
     const conversationId = activeConversationId.value
@@ -679,6 +679,7 @@ export function useChat() {
           role: 'user',
           content: text,
           model: model,
+          thinking,
         },
         {
           onReasoning: (chunk: string) => {
