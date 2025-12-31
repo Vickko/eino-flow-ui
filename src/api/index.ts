@@ -135,6 +135,7 @@ export interface StreamChatCallbacks {
   onChunk?: (chunk: string) => void // 接收到 content 内容片段
   onReasoning?: (chunk: string) => void // 接收到 reasoning 思考内容片段
   onImage?: (base64data: string) => void // 接收到图片数据
+  onInfo?: (info: { session: string }) => void // 接收到 info 事件（包含后端生成的 session）
   onDone?: () => void // 流式输出完成
   onError?: (error: string) => void // 发生错误
 }
@@ -200,6 +201,9 @@ export const streamChatMessage = async (
           } else if (eventType === 'image') {
             // 图片数据事件
             currentEventType = 'image'
+          } else if (eventType === 'info') {
+            // 会话信息事件（包含后端生成的 session）
+            currentEventType = 'info'
           }
           continue
         }
@@ -216,21 +220,30 @@ export const streamChatMessage = async (
                 // 图片数据是 JSON 对象，包含 base64data 字段
                 const imageData = JSON.parse(data) as { base64data: string }
                 callbacks.onImage?.(imageData.base64data)
+              } else if (currentEventType === 'info') {
+                // info 数据是 JSON 对象，包含 session 字段
+                const infoData = JSON.parse(data) as { session: string }
+                callbacks.onInfo?.(infoData)
               } else {
-                const parsed = JSON.parse(data) as string
+                const parsed = JSON.parse(data)
                 // 根据当前事件类型调用相应的回调
                 if (currentEventType === 'reasoning') {
-                  callbacks.onReasoning?.(parsed)
+                  callbacks.onReasoning?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
                 } else {
                   // 默认为 content 或无事件类型时（兼容旧格式）
-                  callbacks.onChunk?.(parsed)
+                  // 检查是否是 info 对象（后端可能没有发送 event: info 行）
+                  if (typeof parsed === 'object' && parsed !== null && 'session' in parsed) {
+                    callbacks.onInfo?.(parsed as { session: string })
+                  } else {
+                    callbacks.onChunk?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
+                  }
                 }
               }
             } catch {
               // 解析失败时直接使用原始数据
               if (currentEventType === 'reasoning') {
                 callbacks.onReasoning?.(data)
-              } else if (currentEventType !== 'image') {
+              } else if (currentEventType !== 'image' && currentEventType !== 'info') {
                 callbacks.onChunk?.(data)
               }
             }
@@ -249,18 +262,26 @@ export const streamChatMessage = async (
             if (currentEventType === 'image') {
               const imageData = JSON.parse(data) as { base64data: string }
               callbacks.onImage?.(imageData.base64data)
+            } else if (currentEventType === 'info') {
+              const infoData = JSON.parse(data) as { session: string }
+              callbacks.onInfo?.(infoData)
             } else {
-              const parsed = JSON.parse(data) as string
+              const parsed = JSON.parse(data)
               if (currentEventType === 'reasoning') {
-                callbacks.onReasoning?.(parsed)
+                callbacks.onReasoning?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
               } else {
-                callbacks.onChunk?.(parsed)
+                // 检查是否是 info 对象
+                if (typeof parsed === 'object' && parsed !== null && 'session' in parsed) {
+                  callbacks.onInfo?.(parsed as { session: string })
+                } else {
+                  callbacks.onChunk?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
+                }
               }
             }
           } catch {
             if (currentEventType === 'reasoning') {
               callbacks.onReasoning?.(data)
-            } else if (currentEventType !== 'image') {
+            } else if (currentEventType !== 'image' && currentEventType !== 'info') {
               callbacks.onChunk?.(data)
             }
           }

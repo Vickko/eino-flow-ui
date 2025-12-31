@@ -147,7 +147,7 @@ export interface LogEntry {
 
 // Chat 相关类型
 export interface ChatMessageRequest {
-  session: string
+  session?: string
   role: 'user' | 'system' | 'assistant' | 'tool'
   content: string
   model?: string

@@ -539,7 +539,7 @@ const REASONING_DEMO_THINKING = `用户问的是快速排序的时间复杂度�
 // 初始数据
 const INITIAL_CONVERSATIONS: Conversation[] = [
   {
-    id: 'c1',
+    id: 'local_init',
     title: 'New Chat',
     updatedAt: Date.now(),
     unreadCount: 0,
@@ -605,11 +605,11 @@ const REASONING_DEMO_MESSAGES: Message[] = [
 // 全局状态
 const conversations = ref<Conversation[]>(INITIAL_CONVERSATIONS)
 const messages = ref<Record<string, Message[]>>({
-  c1: [],
+  local_init: [],
   'reasoning-demo': REASONING_DEMO_MESSAGES,
   'markdown-demo': DEMO_MESSAGES,
 })
-const activeConversationId = ref<string | null>('c1')
+const activeConversationId = ref<string | null>('local_init')
 const currentUser: User = {
   id: 'u1',
   name: 'Me',
@@ -685,20 +685,32 @@ export function useChat() {
     const abortController = new AbortController()
     currentAbortController.value = abortController
 
+    // 判断是否为本地会话（新对话）
+    const isLocal = conversationId.startsWith('local_')
+
     try {
       // 使用流式 API
       await streamChatMessage(
         {
-          session: conversationId,
+          // 本地会话（新对话）不传 session，追问传真实 session
+          session: isLocal ? undefined : conversationId,
           role: 'user',
           content: text,
           model: model,
           thinking,
         },
         {
+          onInfo: ({ session }) => {
+            // 收到后端返回的 session，用真实 session 替换本地临时 ID
+            if (isLocal) {
+              updateConversationId(conversationId, session)
+            }
+          },
           onReasoning: (chunk: string) => {
             // 流式追加思考内容
-            const msgList = messages.value[conversationId]
+            // 注意：此时 conversationId 可能已被更新，需要使用新的 ID
+            const currentConvId = isLocal ? activeConversationId.value : conversationId
+            const msgList = currentConvId ? messages.value[currentConvId] : null
             if (msgList) {
               const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
@@ -712,7 +724,9 @@ export function useChat() {
           },
           onImage: (base64data: string) => {
             // 添加图片数据
-            const msgList = messages.value[conversationId]
+            // 注意：此时 conversationId 可能已被更新，需要使用新的 ID
+            const currentConvId = isLocal ? activeConversationId.value : conversationId
+            const msgList = currentConvId ? messages.value[currentConvId] : null
             if (msgList) {
               const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
@@ -729,7 +743,9 @@ export function useChat() {
           },
           onChunk: (chunk: string) => {
             // 流式追加内容
-            const msgList = messages.value[conversationId]
+            // 注意：此时 conversationId 可能已被更新，需要使用新的 ID
+            const currentConvId = isLocal ? activeConversationId.value : conversationId
+            const msgList = currentConvId ? messages.value[currentConvId] : null
             if (msgList) {
               const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
@@ -743,7 +759,9 @@ export function useChat() {
           },
           onDone: () => {
             // 流式完成，更新状态
-            const msgList = messages.value[conversationId]
+            // 注意：此时 conversationId 可能已被更新，需要使用新的 ID
+            const currentConvId = isLocal ? activeConversationId.value : conversationId
+            const msgList = currentConvId ? messages.value[currentConvId] : null
             if (msgList) {
               const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
@@ -752,11 +770,11 @@ export function useChat() {
             }
 
             // 更新会话最后一条消息
-            const convIdx = conversations.value.findIndex((c) => c.id === conversationId)
+            const convIdx = conversations.value.findIndex((c) => c.id === currentConvId)
             if (convIdx !== -1) {
               const conv = conversations.value[convIdx]
               if (conv) {
-                const msgList = messages.value[conversationId]
+                const msgList = currentConvId ? messages.value[currentConvId] : null
                 const msg = msgList?.find((m) => m.id === aiMessageId)
                 if (msg) {
                   conv.lastMessage = msg
@@ -775,7 +793,9 @@ export function useChat() {
           },
           onError: (error: string) => {
             // 错误处理
-            const msgList = messages.value[conversationId]
+            // 注意：此时 conversationId 可能已被更新，需要使用新的 ID
+            const currentConvId = isLocal ? activeConversationId.value : conversationId
+            const msgList = currentConvId ? messages.value[currentConvId] : null
             if (msgList) {
               const msg = msgList.find((m) => m.id === aiMessageId)
               if (msg) {
@@ -794,7 +814,9 @@ export function useChat() {
       console.error('Error sending message:', error)
 
       // 更新 AI 消息状态为错误
-      const msgList = messages.value[conversationId]
+      // 注意：此时 conversationId 可能已被更新，需要使用新的 ID
+      const currentConvId = isLocal ? activeConversationId.value : conversationId
+      const msgList = currentConvId ? messages.value[currentConvId] : null
       if (msgList) {
         const msg = msgList.find((m) => m.id === aiMessageId)
         if (msg) {
@@ -826,16 +848,38 @@ export function useChat() {
   }
 
   const createConversation = () => {
-    const newId = `c${Date.now()}`
+    // 本地临时 ID，仅用于前端 UI 状态管理，不发送给后端
+    const localId = `local_${Date.now()}`
     const newConv: Conversation = {
-      id: newId,
+      id: localId,
       title: 'New Chat',
       updatedAt: Date.now(),
       unreadCount: 0,
     }
     conversations.value.unshift(newConv)
-    messages.value[newId] = []
-    activeConversationId.value = newId
+    messages.value[localId] = []
+    activeConversationId.value = localId
+  }
+
+  // 更新会话 ID（用于收到后端 session 后替换本地临时 ID）
+  const updateConversationId = (oldId: string, newId: string) => {
+    // 1. 更新 conversations 列表中的 id
+    const conv = conversations.value.find((c) => c.id === oldId)
+    if (conv) {
+      conv.id = newId
+    }
+
+    // 2. 更新 messages 映射的 key
+    if (messages.value[oldId]) {
+      messages.value[newId] = messages.value[oldId]
+      messages.value[newId].forEach((m) => (m.conversationId = newId))
+      delete messages.value[oldId]
+    }
+
+    // 3. 更新当前活跃会话 ID
+    if (activeConversationId.value === oldId) {
+      activeConversationId.value = newId
+    }
   }
 
   return {
