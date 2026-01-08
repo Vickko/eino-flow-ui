@@ -88,8 +88,8 @@ const handleKeydown = (e: KeyboardEvent) => {
             isStreaming
               ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm'
               : isValid
-              ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
-              : 'bg-transparent text-muted-foreground hover:bg-muted cursor-not-allowed opacity-50'
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
+                : 'bg-transparent text-muted-foreground hover:bg-muted cursor-not-allowed opacity-50'
           )
         "
         :title="isStreaming ? '停止生成' : '发送消息'"

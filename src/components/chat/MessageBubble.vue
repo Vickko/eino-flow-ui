@@ -279,17 +279,17 @@ const timeString = computed(() => {
     <!-- 思考区域独立于气泡，有思考内容时就显示 -->
     <div
       v-if="!isUser && hasReasoning"
-      :class="[
-        'reasoning-section mt-1 mb-2 ml-1',
-        shouldAnimateAI ? 'ai-reasoning-animate' : '',
-      ]"
+      :class="['reasoning-section mt-1 mb-2 ml-1', shouldAnimateAI ? 'ai-reasoning-animate' : '']"
     >
       <!-- Header: 思考中/思考过程 -->
       <div
         class="flex items-center gap-1.5 mb-1 cursor-pointer select-none"
         @click="isReasoningCollapsed = !isReasoningCollapsed"
       >
-        <Lightbulb class="w-4 h-4 text-muted-foreground/70" :class="{ 'animate-pulse': isThinking }" />
+        <Lightbulb
+          class="w-4 h-4 text-muted-foreground/70"
+          :class="{ 'animate-pulse': isThinking }"
+        />
         <span class="text-sm text-muted-foreground/70">
           {{ isThinking ? '思考中' : '思考过程' }}
         </span>
@@ -383,18 +383,11 @@ const timeString = computed(() => {
     <div
       v-else
       ref="bubbleRef"
-      :class="[
-        bubbleClass,
-        shouldAnimateUser ? 'user-bubble-animate' : '',
-      ]"
+      :class="[bubbleClass, shouldAnimateUser ? 'user-bubble-animate' : '']"
     >
       <div
         ref="markdownContentRef"
-        :class="[
-          'markdown-content',
-          'user-content',
-          { 'show-streaming-cursor': isStreaming },
-        ]"
+        :class="['markdown-content', 'user-content', { 'show-streaming-cursor': isStreaming }]"
       >
         <MdPreview
           :editor-id="previewId"

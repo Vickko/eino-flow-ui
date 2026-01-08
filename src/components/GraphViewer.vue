@@ -171,7 +171,7 @@
       </div>
 
       <!-- Canvas -->
-      <div v-else ref="graphContainer" class="flex-1 relative">
+      <div v-else class="flex-1 relative">
         <VueFlow
           v-model="elements"
           :default-zoom="1"
@@ -286,8 +286,6 @@ const {
 const { showSidebar, showInspector, showBottomPanel, edgeType, toggleEdgeType } = useLayout()
 
 const vueFlowInstance = ref<VueFlowInstance | null>(null)
-const graphContainer = ref<HTMLElement | null>(null)
-
 const showToolbar = ref(false)
 let hideTimeout: ReturnType<typeof setTimeout> | undefined
 const contentRef = ref<HTMLElement | null>(null)

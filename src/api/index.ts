@@ -8,6 +8,8 @@ import type {
   DebugRunRequest,
   ChatMessageRequest,
   ChatMessageResponse,
+  SessionListResponse,
+  SessionMessagesResponse,
 } from '@/types'
 
 let API_BASE = 'http://localhost:52538/eino/devops'
@@ -135,7 +137,8 @@ export interface StreamChatCallbacks {
   onChunk?: (chunk: string) => void // 接收到 content 内容片段
   onReasoning?: (chunk: string) => void // 接收到 reasoning 思考内容片段
   onImage?: (base64data: string) => void // 接收到图片数据
-  onInfo?: (info: { session: string }) => void // 接收到 info 事件（包含后端生成的 session）
+  // 兼容：旧后端可能只返回 session
+  onInfo?: (info: { session: string; tree_id?: string; is_new?: boolean }) => void // 接收到 info 事件（包含会话信息）
   onDone?: () => void // 流式输出完成
   onError?: (error: string) => void // 发生错误
 }
@@ -221,21 +224,38 @@ export const streamChatMessage = async (
                 const imageData = JSON.parse(data) as { base64data: string }
                 callbacks.onImage?.(imageData.base64data)
               } else if (currentEventType === 'info') {
-                // info 数据是 JSON 对象，包含 session 字段
-                const infoData = JSON.parse(data) as { session: string }
-                callbacks.onInfo?.(infoData)
+                // info 数据是 JSON 对象：至少包含 session；可能还包含 tree_id, is_new
+                const parsedInfo = JSON.parse(data) as unknown
+                if (
+                  typeof parsedInfo === 'object' &&
+                  parsedInfo !== null &&
+                  'session' in parsedInfo
+                ) {
+                  const infoData = parsedInfo as {
+                    session: string
+                    tree_id?: string
+                    is_new?: boolean
+                  }
+                  callbacks.onInfo?.(infoData)
+                }
               } else {
                 const parsed = JSON.parse(data)
                 // 根据当前事件类型调用相应的回调
                 if (currentEventType === 'reasoning') {
-                  callbacks.onReasoning?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
+                  callbacks.onReasoning?.(
+                    typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
+                  )
                 } else {
                   // 默认为 content 或无事件类型时（兼容旧格式）
                   // 检查是否是 info 对象（后端可能没有发送 event: info 行）
                   if (typeof parsed === 'object' && parsed !== null && 'session' in parsed) {
-                    callbacks.onInfo?.(parsed as { session: string })
+                    callbacks.onInfo?.(
+                      parsed as { session: string; tree_id?: string; is_new?: boolean }
+                    )
                   } else {
-                    callbacks.onChunk?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
+                    callbacks.onChunk?.(
+                      typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
+                    )
                   }
                 }
               }
@@ -263,16 +283,31 @@ export const streamChatMessage = async (
               const imageData = JSON.parse(data) as { base64data: string }
               callbacks.onImage?.(imageData.base64data)
             } else if (currentEventType === 'info') {
-              const infoData = JSON.parse(data) as { session: string }
-              callbacks.onInfo?.(infoData)
+              const parsedInfo = JSON.parse(data) as unknown
+              if (
+                typeof parsedInfo === 'object' &&
+                parsedInfo !== null &&
+                'session' in parsedInfo
+              ) {
+                const infoData = parsedInfo as {
+                  session: string
+                  tree_id?: string
+                  is_new?: boolean
+                }
+                callbacks.onInfo?.(infoData)
+              }
             } else {
               const parsed = JSON.parse(data)
               if (currentEventType === 'reasoning') {
-                callbacks.onReasoning?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
+                callbacks.onReasoning?.(
+                  typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
+                )
               } else {
                 // 检查是否是 info 对象
                 if (typeof parsed === 'object' && parsed !== null && 'session' in parsed) {
-                  callbacks.onInfo?.(parsed as { session: string })
+                  callbacks.onInfo?.(
+                    parsed as { session: string; tree_id?: string; is_new?: boolean }
+                  )
                 } else {
                   callbacks.onChunk?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
                 }
@@ -304,6 +339,30 @@ export const sendChatMessage = async (
     return response.data
   } catch (error) {
     console.error('Error sending chat message:', error)
+    throw error
+  }
+}
+
+// Session API - 获取会话列表
+export const fetchSessions = async (): Promise<SessionListResponse> => {
+  try {
+    const response = await chatApiClient.get<SessionListResponse>('/api/v1/sessions')
+    return response.data
+  } catch (error) {
+    console.error('Error fetching sessions:', error)
+    throw error
+  }
+}
+
+// Session API - 获取会话消息列表
+export const fetchSessionMessages = async (sessionId: string): Promise<SessionMessagesResponse> => {
+  try {
+    const response = await chatApiClient.get<SessionMessagesResponse>(
+      `/api/v1/sessions/${sessionId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error(`Error fetching session messages for ${sessionId}:`, error)
     throw error
   }
 }

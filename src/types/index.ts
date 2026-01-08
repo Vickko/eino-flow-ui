@@ -185,3 +185,27 @@ export interface ChatMessageResponse {
   reasoning_content?: string
   response_meta?: ResponseMeta
 }
+
+// Session 相关类型
+export interface Session {
+  id: string // 会话树 ID (tree_xxx)
+  title: string
+  last_active_session_id: string // 最后活跃分支 ID
+  last_message: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SessionListResponse {
+  sessions: Session[]
+}
+
+export interface SessionMessage {
+  role: 'user' | 'assistant' | 'system' | 'tool'
+  content: string
+  reasoning_content?: string
+}
+
+export interface SessionMessagesResponse {
+  messages: SessionMessage[]
+}

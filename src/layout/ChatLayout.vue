@@ -8,7 +8,17 @@ import { useNavButton } from '../composables/useNavButton'
 import ChatSidebar from '../components/chat/ChatSidebar.vue'
 import ChatCard from '../components/chat/ChatCard.vue'
 
-const { conversations, messages, activeConversationId, sendMessage, createConversation, isStreaming, stopStreaming } = useChat()
+const {
+  conversations,
+  messages,
+  activeConversationId,
+  sendMessage,
+  createConversation,
+  selectConversation,
+  loadSessions,
+  isStreaming,
+  stopStreaming,
+} = useChat()
 
 const { initTheme } = useTheme()
 const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton()
@@ -18,6 +28,8 @@ const showChatSidebar = ref(true)
 
 onMounted(() => {
   initTheme()
+  // 加载会话列表
+  loadSessions()
 })
 
 const activeConversation = computed(() =>
@@ -30,7 +42,7 @@ const currentMessages = computed(() => {
 })
 
 const handleSelectConversation = (id: string) => {
-  activeConversationId.value = id
+  selectConversation(id)
 }
 
 const handleBack = () => {
