@@ -204,6 +204,7 @@ export interface SessionMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
   content: string
   reasoning_content?: string
+  model?: string // 仅助手消息有值
 }
 
 export interface SessionMessagesResponse {

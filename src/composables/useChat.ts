@@ -252,6 +252,7 @@ export function useChat() {
     reasoningStatus: msg.reasoning_content ? 'done' : undefined,
     timestamp: Date.now() - (1000 - index), // 保持消息顺序
     status: 'sent',
+    model: msg.model, // 传递模型信息（仅助手消息有值）
   })
 
   // 从后端加载会话列表
