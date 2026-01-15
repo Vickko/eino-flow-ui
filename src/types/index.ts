@@ -210,3 +210,19 @@ export interface SessionMessage {
 export interface SessionMessagesResponse {
   messages: SessionMessage[]
 }
+
+// 认证类型
+export interface UserInfo {
+  sub: string // OIDC 用户 ID
+  email?: string
+  name?: string
+  preferred_username?: string
+  [key: string]: unknown
+}
+
+export interface AuthState {
+  isAuthenticated: boolean
+  isLoading: boolean
+  user: UserInfo | null
+  error: string | null
+}

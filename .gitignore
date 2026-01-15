@@ -42,5 +42,5 @@ coverage
 __screenshots__/
 
 # Local env files
-.env
-.env.*
+.env.local
+.env.*.local

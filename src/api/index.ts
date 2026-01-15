@@ -12,11 +12,17 @@ import type {
   SessionMessagesResponse,
 } from '@/types'
 
-let API_BASE = 'http://localhost:52538/eino/devops'
-const CHAT_API_BASE = 'http://localhost:52538'
+// 从环境变量读取 API 基础 URL
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:52538'
+let API_BASE_DEVOPS = `${API_BASE}/eino/devops`
+const CHAT_API_BASE = API_BASE
+
+// 检查是否启用认证
+const isAuthEnabled = import.meta.env.VITE_ENABLE_AUTH === 'true'
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE,
+  baseURL: API_BASE_DEVOPS,
+  withCredentials: isAuthEnabled, // 仅在认证启用时发送 cookies
   headers: {
     'Content-Type': 'application/json',
   },
@@ -24,17 +30,38 @@ const apiClient: AxiosInstance = axios.create({
 
 const chatApiClient: AxiosInstance = axios.create({
   baseURL: CHAT_API_BASE,
+  withCredentials: isAuthEnabled, // 仅在认证启用时发送 cookies
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
 export const setBaseUrl = (url: string): void => {
-  API_BASE = url
-  apiClient.defaults.baseURL = url
+  API_BASE_DEVOPS = `${url}/eino/devops`
+  apiClient.defaults.baseURL = API_BASE_DEVOPS
 }
 
-export const getBaseUrl = (): string => API_BASE
+export const getBaseUrl = (): string => API_BASE_DEVOPS
+
+// 添加 401 响应拦截器（仅在认证启用时）
+if (isAuthEnabled) {
+  // 动态导入 useAuth 避免循环依赖
+  const handle401 = async (error: unknown) => {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { status: number } }
+      if (axiosError.response?.status === 401) {
+        // 延迟导入 useAuth
+        const { useAuth } = await import('@/composables/useAuth')
+        const { login } = useAuth()
+        login()
+      }
+    }
+    return Promise.reject(error)
+  }
+
+  apiClient.interceptors.response.use((response) => response, handle401)
+  chatApiClient.interceptors.response.use((response) => response, handle401)
+}
 
 export const ping = async (): Promise<ApiResponse> => {
   const response = await apiClient.get<ApiResponse>('/ping')
@@ -99,13 +126,14 @@ export const streamDebugRun = async (
 ): Promise<void> => {
   try {
     const response = await fetch(
-      `${API_BASE}/debug/v1/graphs/${graphId}/threads/${threadId}/stream`,
+      `${API_BASE_DEVOPS}/debug/v1/graphs/${graphId}/threads/${threadId}/stream`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(input),
+        ...(isAuthEnabled && { credentials: 'include' }), // 条件性添加
       }
     )
 
@@ -156,6 +184,7 @@ export const streamChatMessage = async (
       },
       body: JSON.stringify(request),
       signal: abortSignal,
+      ...(isAuthEnabled && { credentials: 'include' }), // 条件性添加
     })
 
     if (!response.ok) {
