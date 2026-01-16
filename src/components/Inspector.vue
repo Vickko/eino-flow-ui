@@ -153,9 +153,8 @@ const chatMessages = computed((): Message[] => {
     if (Array.isArray(input)) {
       input.forEach((msg: unknown, index: number) => {
         const message = msg as { role?: string; content?: string; name?: string }
-        const role = message.role === 'system' || message.role === 'assistant'
-          ? message.role
-          : 'user'
+        const role =
+          message.role === 'system' || message.role === 'assistant' ? message.role : 'user'
         messages.push({
           id: `input-${index}`,
           conversationId: selectedNode.value?.key || 'unknown',

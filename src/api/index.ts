@@ -14,9 +14,10 @@ import type {
 
 // 从环境变量读取 API 基础 URL
 // 注意：使用 !== undefined 而不是 || 来允许空字符串作为有效值
-const API_BASE = import.meta.env.VITE_API_BASE_URL !== undefined
-  ? import.meta.env.VITE_API_BASE_URL
-  : 'http://localhost:52538'
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL !== undefined
+    ? import.meta.env.VITE_API_BASE_URL
+    : 'http://localhost:52538'
 let API_BASE_DEVOPS = `${API_BASE}/eino/devops`
 const CHAT_API_BASE = API_BASE
 
