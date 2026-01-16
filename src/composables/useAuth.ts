@@ -68,7 +68,8 @@ export function useAuth() {
       user.value = userInfo
       isAuthenticated.value = true
       error.value = null
-    } catch (err) {
+    } catch {
+      // 静默处理错误
       user.value = null
       isAuthenticated.value = false
     }

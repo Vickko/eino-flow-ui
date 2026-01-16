@@ -15,7 +15,7 @@ const props = withDefaults(
   }
 )
 
-const emit = defineEmits<{
+const _emit = defineEmits<{
   select: [id: string, name: string]
 }>()
 
