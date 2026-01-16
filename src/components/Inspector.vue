@@ -151,15 +151,19 @@ const chatMessages = computed((): Message[] => {
         : executionResult.value.input
 
     if (Array.isArray(input)) {
-      input.forEach((msg: Message | { role: string; content: string }, index: number) => {
+      input.forEach((msg: unknown, index: number) => {
+        const message = msg as { role?: string; content?: string; name?: string }
+        const role = message.role === 'system' || message.role === 'assistant'
+          ? message.role
+          : 'user'
         messages.push({
           id: `input-${index}`,
           conversationId: selectedNode.value?.key || 'unknown',
-          role: msg.role || 'user',
-          content: msg.content || '',
+          role,
+          content: message.content || '',
           timestamp: 0, // 不使用时间戳
           status: 'sent',
-          model: msg.name || undefined,
+          model: message.name || undefined,
         })
       })
     }
