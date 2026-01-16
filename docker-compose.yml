@@ -1,0 +1,85 @@
+# ================================
+# Docker Compose Configuration
+# DevOps Frontend + Watchtower
+# ================================
+
+services:
+  # ================================
+  # 前端应用服务
+  # ================================
+  devops-frontend:
+    image: ghcr.io/vickko/devops-frontend:latest
+    container_name: devops-frontend
+    restart: unless-stopped
+    ports:
+      - "52539:8080"  # 主机端口:容器端口
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Shanghai
+    labels:
+      # Watchtower 自动更新标签
+      - "com.centurylinklabs.watchtower.enable=true"
+      # 项目信息
+      - "com.devops.project=devops-frontend"
+      - "com.devops.description=DevOps Frontend Application"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - devops-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ================================
+  # Watchtower 自动更新服务
+  # ================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      # 检查间隔 (秒)
+      - WATCHTOWER_POLL_INTERVAL=300
+      # 仅更新带标签的容器
+      - WATCHTOWER_LABEL_ENABLE=true
+      # 自动清理旧镜像
+      - WATCHTOWER_CLEANUP=true
+      # 包含已停止的容器
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      # 包含重启中的容器
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      # 时区
+      - TZ=Asia/Shanghai
+      # 日志级别 (debug, info, warn, error)
+      - WATCHTOWER_LOG_LEVEL=info
+      # 滚动更新 (逐个更新)
+      - WATCHTOWER_ROLLING_RESTART=true
+      # 通知 (可选 - Slack/Discord/Email)
+      # - WATCHTOWER_NOTIFICATION_URL=slack://token@channel
+    volumes:
+      # Docker socket (必需)
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      # Watchtower 不更新自己
+      - "com.centurylinklabs.watchtower.enable=false"
+    networks:
+      - devops-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ================================
+# 网络配置
+# ================================
+networks:
+  devops-network:
+    driver: bridge
+    name: devops-network
