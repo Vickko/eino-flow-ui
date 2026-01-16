@@ -18,6 +18,14 @@ RUN npm ci --legacy-peer-deps
 # 复制源代码
 COPY . .
 
+# 定义构建参数（可在构建时通过 --build-arg 传递）
+ARG VITE_API_BASE_URL=/api
+ARG VITE_ENABLE_AUTH=true
+
+# 设置环境变量供 Vite 构建时使用
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_ENABLE_AUTH=${VITE_ENABLE_AUTH}
+
 # 构建生产版本
 RUN npm run build
 
