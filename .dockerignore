@@ -53,7 +53,6 @@ docker-compose*.yml
 .prettierrc
 .prettierignore
 eslint.config.js
-tsconfig*.json
 *.tsbuildinfo
 pnpm-lock.yaml
 yarn.lock
