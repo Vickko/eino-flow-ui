@@ -21,7 +21,7 @@ COPY . .
 # 定义构建参数（可在构建时通过 --build-arg 传递）
 # 留空因为代码中的路径已包含 /api 前缀
 ARG VITE_API_BASE_URL=
-ARG VITE_ENABLE_AUTH=false
+ARG VITE_ENABLE_AUTH=true
 
 # 设置环境变量供 Vite 构建时使用
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
