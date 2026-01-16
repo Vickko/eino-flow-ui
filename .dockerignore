@@ -55,8 +55,7 @@ docker-compose*.yml
 eslint.config.js
 tsconfig*.json
 *.tsbuildinfo
-*.lock
-package-lock.json
 pnpm-lock.yaml
+yarn.lock
 bun.lock
 bunfig.toml
