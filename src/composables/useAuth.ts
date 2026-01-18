@@ -14,6 +14,9 @@ const error = ref<string | null>(null)
 // 跟踪初始化状态以防止重复检查
 let isInitialized = false
 
+// 防止重复登录重定向的标志
+let isRedirecting = false
+
 export function useAuth() {
   /**
    * 初始化认证状态
@@ -100,12 +103,23 @@ export function useAuth() {
   const login = (): void => {
     if (!isAuthEnabled.value) return
 
-    // 使用 !== undefined 来允许空字符串作为有效值
-    const AUTH_BASE =
-      import.meta.env.VITE_API_BASE_URL !== undefined
-        ? import.meta.env.VITE_API_BASE_URL
-        : 'http://localhost:52538'
-    window.location.href = `${AUTH_BASE}/api/auth/login`
+    // 防止重复重定向
+    if (isRedirecting) {
+      console.log('[useAuth] Login redirect already in progress, skipping')
+      return
+    }
+
+    isRedirecting = true
+    console.log('[useAuth] Triggering login redirect')
+
+    // 使用绝对 URL 确保可靠的重定向
+    const currentOrigin = window.location.origin
+    const loginUrl = `${currentOrigin}/api/auth/login`
+
+    console.log('[useAuth] Redirecting to:', loginUrl)
+
+    // 使用 replace 避免在历史记录中留下记录
+    window.location.replace(loginUrl)
   }
 
   /**
