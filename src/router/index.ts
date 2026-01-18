@@ -56,7 +56,9 @@ router.beforeEach(
     const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
 
     if (requiresAuth && !isAuthenticated.value) {
-      console.log('[Router Guard] Route requires auth but user not authenticated, redirecting to login')
+      console.log(
+        '[Router Guard] Route requires auth but user not authenticated, redirecting to login'
+      )
 
       // 使用完整 URL 确保浏览器执行完整页面导航
       const currentOrigin = window.location.origin
