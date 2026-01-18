@@ -29,7 +29,7 @@ router.beforeEach(
     _from: RouteLocationNormalized,
     next: NavigationGuardNext
   ) => {
-    const { isAuthenticated, isLoading, initAuth, login, isAuthEnabled } = useAuth()
+    const { isAuthenticated, isLoading, initAuth, isAuthEnabled } = useAuth()
 
     console.log('[Router Guard]', {
       path: to.path,
