@@ -1,7 +1,11 @@
 import axios, { type AxiosInstance } from 'axios'
 import type { UserInfo } from '@/types'
 
-const AUTH_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:52538'
+// 使用 !== undefined 来允许空字符串作为有效值
+const AUTH_BASE =
+  import.meta.env.VITE_API_BASE_URL !== undefined
+    ? import.meta.env.VITE_API_BASE_URL
+    : 'http://localhost:52538'
 
 const authClient: AxiosInstance = axios.create({
   baseURL: AUTH_BASE,
