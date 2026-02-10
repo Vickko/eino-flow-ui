@@ -12,14 +12,36 @@ import type {
   SessionMessagesResponse,
 } from '@/types'
 
+const DEVOPS_API_PREFIX = '/eino/devops'
+
+// Users may provide either:
+// - an origin:               "https://devops.vickko.com" or "http://localhost:52538"
+// - a full DevOps base path: "https://devops.vickko.com/eino/devops"
+// We normalize it to an origin so we do not accidentally create "/eino/devops/eino/devops/...".
+export const normalizeDevopsApiOrigin = (input: string): string => {
+  const raw = (input ?? '').trim()
+  if (raw === '') return ''
+
+  // Remove trailing slashes first.
+  let s = raw.replace(/\/+$/, '')
+
+  // If someone pasted the full DevOps base path, strip it back to the origin.
+  if (s.endsWith(DEVOPS_API_PREFIX)) {
+    s = s.slice(0, -DEVOPS_API_PREFIX.length)
+  }
+
+  // Remove trailing slashes again (in case origin ended with "/").
+  return s.replace(/\/+$/, '')
+}
+
 // 从环境变量读取 API 基础 URL
 // 注意：使用 !== undefined 而不是 || 来允许空字符串作为有效值
-const API_BASE =
+const API_BASE_ORIGIN =
   import.meta.env.VITE_API_BASE_URL !== undefined
-    ? import.meta.env.VITE_API_BASE_URL
+    ? normalizeDevopsApiOrigin(import.meta.env.VITE_API_BASE_URL)
     : 'http://localhost:52538'
-let API_BASE_DEVOPS = `${API_BASE}/eino/devops`
-const CHAT_API_BASE = API_BASE
+let API_BASE_DEVOPS = `${API_BASE_ORIGIN}${DEVOPS_API_PREFIX}`
+const CHAT_API_BASE = API_BASE_ORIGIN
 
 // 检查是否启用认证
 const isAuthEnabled = import.meta.env.VITE_ENABLE_AUTH === 'true'
@@ -41,7 +63,8 @@ const chatApiClient: AxiosInstance = axios.create({
 })
 
 export const setBaseUrl = (url: string): void => {
-  API_BASE_DEVOPS = `${url}/eino/devops`
+  const origin = normalizeDevopsApiOrigin(url)
+  API_BASE_DEVOPS = `${origin}${DEVOPS_API_PREFIX}`
   apiClient.defaults.baseURL = API_BASE_DEVOPS
 }
 
