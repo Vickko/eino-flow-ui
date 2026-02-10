@@ -20,7 +20,17 @@ if (storedUrl && normalizedStoredUrl && storedUrl !== normalizedStoredUrl) {
   localStorage.setItem(STORAGE_KEY, normalizedStoredUrl)
 }
 
-const initialUrl = normalizedStoredUrl ?? DEFAULT_API_BASE
+// If the app is configured to use same-origin by default (VITE_API_BASE_URL is empty),
+// but localStorage still has a legacy value like ".../eino/devops" or "localhost",
+// prefer the current site origin to avoid accidental cross-origin + CORS issues.
+let initialUrl = normalizedStoredUrl ?? DEFAULT_API_BASE
+const shouldDefaultToSameOrigin = !(typeof ENV_API_BASE === 'string' && ENV_API_BASE.trim() !== '')
+const looksLikeLegacyValue =
+  !!storedUrl && (storedUrl.includes('/eino/devops') || storedUrl.includes('localhost'))
+if (shouldDefaultToSameOrigin && looksLikeLegacyValue && initialUrl !== window.location.origin) {
+  initialUrl = window.location.origin
+  localStorage.setItem(STORAGE_KEY, initialUrl)
+}
 
 setBaseUrl(initialUrl)
 
