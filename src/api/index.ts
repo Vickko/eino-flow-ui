@@ -1,13 +1,14 @@
 import axios, { type AxiosInstance } from 'axios'
 import type {
+  AgUiEvent,
   ApiResponse,
-  GraphListResponse,
-  GraphCanvasResponse,
-  InputTypesResponse,
-  DebugThreadResponse,
-  DebugRunRequest,
-  ChatMessageRequest,
   ChatMessageResponse,
+  DebugRunRequest,
+  DebugThreadResponse,
+  GraphCanvasResponse,
+  GraphListResponse,
+  InputTypesResponse,
+  RunAgentInput,
   SessionListResponse,
   SessionMessagesResponse,
 } from '@/types'
@@ -189,17 +190,55 @@ export const streamDebugRun = async (
 
 // Chat API - SSE 流式接口
 export interface StreamChatCallbacks {
-  onChunk?: (chunk: string) => void // 接收到 content 内容片段
-  onReasoning?: (chunk: string) => void // 接收到 reasoning 思考内容片段
-  onImage?: (base64data: string) => void // 接收到图片数据
-  // 兼容：旧后端可能只返回 session
-  onInfo?: (info: { session: string; tree_id?: string; is_new?: boolean }) => void // 接收到 info 事件（包含会话信息）
-  onDone?: () => void // 流式输出完成
+  onEvent?: (event: AgUiEvent) => void // 接收到 AG-UI 事件
+  onDone?: () => void // 收到 RUN_FINISHED / RUN_ERROR / [DONE]
   onError?: (error: string) => void // 发生错误
 }
 
+const isAgUiEvent = (value: unknown): value is AgUiEvent => {
+  if (typeof value !== 'object' || value === null) return false
+  if (!('type' in value)) return false
+  return typeof (value as { type?: unknown }).type === 'string'
+}
+
+const parseSSEEventBlock = (
+  block: string,
+  callbacks: StreamChatCallbacks,
+  notifyDone: () => void
+): void => {
+  const lines = block.split('\n')
+  const dataLines: string[] = []
+
+  for (const line of lines) {
+    if (line.startsWith('data:')) {
+      dataLines.push(line.slice(5).trimStart())
+    }
+  }
+
+  if (dataLines.length === 0) return
+
+  const payload = dataLines.join('\n').trim()
+  if (!payload) return
+  if (payload === '[DONE]') {
+    notifyDone()
+    return
+  }
+
+  try {
+    const parsed = JSON.parse(payload) as unknown
+    if (!isAgUiEvent(parsed)) return
+
+    callbacks.onEvent?.(parsed)
+    if (parsed.type === 'RUN_FINISHED' || parsed.type === 'RUN_ERROR') {
+      notifyDone()
+    }
+  } catch {
+    console.warn('Ignore invalid SSE event payload:', payload)
+  }
+}
+
 export const streamChatMessage = async (
-  request: ChatMessageRequest,
+  request: RunAgentInput,
   callbacks: StreamChatCallbacks,
   abortSignal?: AbortSignal
 ): Promise<void> => {
@@ -225,159 +264,34 @@ export const streamChatMessage = async (
 
     const decoder = new TextDecoder()
     let buffer = ''
-    // 跟踪当前事件类型：'reasoning' | 'content' | 'image' | null
-    let currentEventType: string | null = null
+    let doneNotified = false
+    const notifyDone = () => {
+      if (doneNotified) return
+      doneNotified = true
+      callbacks.onDone?.()
+    }
 
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
 
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
+      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n')
 
-      // 保留最后一个可能不完整的行
-      buffer = lines.pop() || ''
-
-      for (const line of lines) {
-        const trimmedLine = line.trim()
-        if (!trimmedLine) continue
-
-        // 处理事件类型
-        if (trimmedLine.startsWith('event: ')) {
-          const eventType = trimmedLine.slice(7)
-          if (eventType === 'done') {
-            callbacks.onDone?.()
-            currentEventType = null
-          } else if (eventType === 'error') {
-            // 下一行会包含错误信息
-            currentEventType = 'error'
-          } else if (eventType === 'reasoning') {
-            // 思考内容事件
-            currentEventType = 'reasoning'
-          } else if (eventType === 'content') {
-            // 最终答案事件
-            currentEventType = 'content'
-          } else if (eventType === 'image') {
-            // 图片数据事件
-            currentEventType = 'image'
-          } else if (eventType === 'info') {
-            // 会话信息事件（包含后端生成的 session）
-            currentEventType = 'info'
-          }
-          continue
-        }
-
-        // 处理数据
-        if (trimmedLine.startsWith('data: ')) {
-          const data = trimmedLine.slice(6)
-          if (data === '[DONE]') {
-            callbacks.onDone?.()
-          } else {
-            // SSE data 字段是 JSON 字符串格式，需要解析还原原始内容
-            try {
-              if (currentEventType === 'image') {
-                // 图片数据是 JSON 对象，包含 base64data 字段
-                const imageData = JSON.parse(data) as { base64data: string }
-                callbacks.onImage?.(imageData.base64data)
-              } else if (currentEventType === 'info') {
-                // info 数据是 JSON 对象：至少包含 session；可能还包含 tree_id, is_new
-                const parsedInfo = JSON.parse(data) as unknown
-                if (
-                  typeof parsedInfo === 'object' &&
-                  parsedInfo !== null &&
-                  'session' in parsedInfo
-                ) {
-                  const infoData = parsedInfo as {
-                    session: string
-                    tree_id?: string
-                    is_new?: boolean
-                  }
-                  callbacks.onInfo?.(infoData)
-                }
-              } else {
-                const parsed = JSON.parse(data)
-                // 根据当前事件类型调用相应的回调
-                if (currentEventType === 'reasoning') {
-                  callbacks.onReasoning?.(
-                    typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
-                  )
-                } else {
-                  // 默认为 content 或无事件类型时（兼容旧格式）
-                  // 检查是否是 info 对象（后端可能没有发送 event: info 行）
-                  if (typeof parsed === 'object' && parsed !== null && 'session' in parsed) {
-                    callbacks.onInfo?.(
-                      parsed as { session: string; tree_id?: string; is_new?: boolean }
-                    )
-                  } else {
-                    callbacks.onChunk?.(
-                      typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
-                    )
-                  }
-                }
-              }
-            } catch {
-              // 解析失败时直接使用原始数据
-              if (currentEventType === 'reasoning') {
-                callbacks.onReasoning?.(data)
-              } else if (currentEventType !== 'image' && currentEventType !== 'info') {
-                callbacks.onChunk?.(data)
-              }
-            }
-          }
-        }
+      let eventSeparatorIndex = buffer.indexOf('\n\n')
+      while (eventSeparatorIndex !== -1) {
+        const eventBlock = buffer.slice(0, eventSeparatorIndex)
+        buffer = buffer.slice(eventSeparatorIndex + 2)
+        parseSSEEventBlock(eventBlock, callbacks, notifyDone)
+        eventSeparatorIndex = buffer.indexOf('\n\n')
       }
     }
 
-    // 处理剩余的 buffer
     if (buffer.trim()) {
-      const trimmedLine = buffer.trim()
-      if (trimmedLine.startsWith('data: ')) {
-        const data = trimmedLine.slice(6)
-        if (data !== '[DONE]') {
-          try {
-            if (currentEventType === 'image') {
-              const imageData = JSON.parse(data) as { base64data: string }
-              callbacks.onImage?.(imageData.base64data)
-            } else if (currentEventType === 'info') {
-              const parsedInfo = JSON.parse(data) as unknown
-              if (
-                typeof parsedInfo === 'object' &&
-                parsedInfo !== null &&
-                'session' in parsedInfo
-              ) {
-                const infoData = parsedInfo as {
-                  session: string
-                  tree_id?: string
-                  is_new?: boolean
-                }
-                callbacks.onInfo?.(infoData)
-              }
-            } else {
-              const parsed = JSON.parse(data)
-              if (currentEventType === 'reasoning') {
-                callbacks.onReasoning?.(
-                  typeof parsed === 'string' ? parsed : JSON.stringify(parsed)
-                )
-              } else {
-                // 检查是否是 info 对象
-                if (typeof parsed === 'object' && parsed !== null && 'session' in parsed) {
-                  callbacks.onInfo?.(
-                    parsed as { session: string; tree_id?: string; is_new?: boolean }
-                  )
-                } else {
-                  callbacks.onChunk?.(typeof parsed === 'string' ? parsed : JSON.stringify(parsed))
-                }
-              }
-            }
-          } catch {
-            if (currentEventType === 'reasoning') {
-              callbacks.onReasoning?.(data)
-            } else if (currentEventType !== 'image' && currentEventType !== 'info') {
-              callbacks.onChunk?.(data)
-            }
-          }
-        }
-      }
+      parseSSEEventBlock(buffer, callbacks, notifyDone)
+    }
+
+    if (!doneNotified) {
+      throw new Error('Stream ended before completion event')
     }
   } catch (error) {
     console.error('Error streaming chat message:', error)
@@ -388,14 +302,36 @@ export const streamChatMessage = async (
 
 // 保留原有的非流式 API（用于兼容）
 export const sendChatMessage = async (
-  request: ChatMessageRequest
+  request: RunAgentInput
 ): Promise<ChatMessageResponse> => {
-  try {
-    const response = await chatApiClient.post<ChatMessageResponse>('/api/v1/chat', request)
-    return response.data
-  } catch (error) {
-    console.error('Error sending chat message:', error)
-    throw error
+  let content = ''
+  let reasoningContent = ''
+  let runErrorMessage = ''
+
+  await streamChatMessage(request, {
+    onEvent: (event) => {
+      switch (event.type) {
+        case 'TEXT_MESSAGE_DELTA':
+          content += event.delta
+          break
+        case 'TEXT_MESSAGE_REASONING_DELTA':
+          reasoningContent += event.delta
+          break
+        case 'RUN_ERROR':
+          runErrorMessage = event.message
+          break
+      }
+    },
+  })
+
+  if (runErrorMessage) {
+    throw new Error(runErrorMessage)
+  }
+
+  return {
+    role: 'assistant',
+    content,
+    reasoning_content: reasoningContent || undefined,
   }
 }
 

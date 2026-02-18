@@ -154,9 +154,6 @@ watch(
 )
 
 onMounted(() => {
-  // 初始化内容长度，避免首次 watch 误触发
-  lastContentLength = props.message.content?.length ?? 0
-
   nextTick(() => {
     setupCopyButtonObserver()
     if (isStreaming.value) {
@@ -173,23 +170,6 @@ onMounted(() => {
     }
   })
 })
-
-// 监听流式消息内容变化，一旦开始吐字就切换到流式模式
-let lastContentLength = 0
-watch(
-  () => props.message.content,
-  (newContent) => {
-    const newLength = newContent?.length ?? 0
-    // 只在流式状态且内容长度增加时触发
-    if (isStreaming.value && newLength > lastContentLength) {
-      // 如果还在等待入场动画，立即切换到流式模式
-      if (resizeObserverDelayId || shouldPlayEntranceAnimation.value) {
-        switchToStreamingMode()
-      }
-    }
-    lastContentLength = newLength
-  }
-)
 
 onUnmounted(() => {
   if (copyButtonObserver) {
@@ -223,17 +203,33 @@ const reasoningPreviewId = computed(() => `reasoning-preview-${props.message.id}
 // 思考内容相关
 const hasReasoning = computed(() => !!props.message.reasoning_content)
 const isThinking = computed(() => props.message.reasoningStatus === 'thinking')
+const hasToolCalls = computed(
+  () => !!props.message.tool_calls && props.message.tool_calls.length > 0
+)
+const hasDisplayablePayload = computed(() => {
+  const hasContent = !!props.message.content?.trim()
+  const hasImages = !!props.message.images && props.message.images.length > 0
+  return hasContent || hasImages || hasToolCalls.value
+})
 // 思考区域是否折叠
 const isReasoningCollapsed = ref(false)
 
-// 判断是否处于等待首字符状态（流式中但正式回复内容还没有）
-// 注意：检查 content 和 images，有任一内容就展开气泡
+// 判断是否处于等待首字符状态（流式中且还没有可展示内容）
 const isWaitingForFirstToken = computed(() => {
   if (!isStreaming.value) return false
-  const hasContent = !!props.message.content?.trim()
-  const hasImages = !!props.message.images && props.message.images.length > 0
-  return !hasContent && !hasImages
+  return !hasDisplayablePayload.value
 })
+
+// 一旦出现任意可展示内容（文本、图片、工具调用），立即退出等待小圆点
+watch(
+  () => hasDisplayablePayload.value,
+  (hasPayload, hadPayload) => {
+    if (!isStreaming.value || !hasPayload || hadPayload) return
+    if (resizeObserverDelayId || shouldPlayEntranceAnimation.value) {
+      switchToStreamingMode()
+    }
+  }
+)
 
 const modelIcon = computed(() => {
   if (!props.message.model) return null
@@ -261,6 +257,26 @@ const timeString = computed(() => {
     minute: '2-digit',
   })
 })
+
+const toolCallStatusText = (status: 'running' | 'done' | 'error') => {
+  switch (status) {
+    case 'running':
+      return '调用中'
+    case 'done':
+      return '已完成'
+    case 'error':
+      return '失败'
+  }
+}
+
+const formatToolCallArgs = (args: unknown) => {
+  if (args === undefined) return ''
+  try {
+    return JSON.stringify(args, null, 2)
+  } catch {
+    return String(args)
+  }
+}
 </script>
 
 <template>
@@ -347,6 +363,23 @@ const timeString = computed(() => {
           { 'show-streaming-cursor': isStreaming && !isThinking },
         ]"
       >
+        <div v-if="hasToolCalls" class="mb-3 space-y-2">
+          <div
+            v-for="toolCall in message.tool_calls"
+            :key="toolCall.id"
+            class="rounded-md border border-border/40 bg-background/40 px-3 py-2"
+          >
+            <div class="flex items-center justify-between text-xs text-muted-foreground">
+              <span class="font-medium">{{ toolCall.name }}</span>
+              <span>{{ toolCallStatusText(toolCall.status) }}</span>
+            </div>
+            <pre
+              v-if="toolCall.args !== undefined"
+              class="mt-2 whitespace-pre-wrap break-words text-xs text-muted-foreground/90"
+            >{{ formatToolCallArgs(toolCall.args) }}</pre>
+          </div>
+        </div>
+
         <MdPreview
           :editor-id="previewId"
           :model-value="message.content"

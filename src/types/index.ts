@@ -146,16 +146,42 @@ export interface LogEntry {
 }
 
 // Chat 相关类型
+export type ChatMessageRole = 'user' | 'system' | 'assistant' | 'tool'
+
+export interface RunAgentInputContentPart {
+  type: 'text' | 'binary'
+  text?: string
+  data?: string
+  mimeType?: string
+}
+
+export interface RunAgentInputMessage {
+  id?: string
+  role: ChatMessageRole
+  content: string | RunAgentInputContentPart[]
+  name?: string
+  toolCallId?: string
+}
+
+export interface RunAgentInput {
+  threadId?: string
+  runId?: string
+  state?: Record<string, unknown>
+  messages: RunAgentInputMessage[]
+  tools?: unknown[]
+  context?: unknown[]
+  forwardedProps?: Record<string, unknown>
+}
+
 export interface ChatMessageRequest {
-  session?: string
+  // 兼容旧命名，当前等价于 AG-UI RunAgentInput
+  threadId?: string
   role: 'user' | 'system' | 'assistant' | 'tool'
   content: string
   model?: string
   thinking?: boolean
-  client?: string
   name?: string
-  tool_call_id?: string
-  tool_name?: string
+  toolCallId?: string
 }
 
 export interface ToolCall {
@@ -185,6 +211,93 @@ export interface ChatMessageResponse {
   reasoning_content?: string
   response_meta?: ResponseMeta
 }
+
+export interface AgUiRunStartedEvent {
+  type: 'RUN_STARTED'
+  threadId: string
+  runId: string
+}
+
+export interface AgUiRunFinishedEvent {
+  type: 'RUN_FINISHED'
+  threadId: string
+  runId: string
+}
+
+export interface AgUiRunErrorEvent {
+  type: 'RUN_ERROR'
+  message: string
+  code?: string
+}
+
+export interface AgUiTextMessageStartEvent {
+  type: 'TEXT_MESSAGE_START'
+  messageId: string
+  role: ChatMessageRole
+  parentMessageId?: string
+}
+
+export interface AgUiTextMessageDeltaEvent {
+  type: 'TEXT_MESSAGE_DELTA'
+  messageId: string
+  delta: string
+}
+
+export interface AgUiTextMessageEndEvent {
+  type: 'TEXT_MESSAGE_END'
+  messageId: string
+}
+
+export interface AgUiReasoningStartEvent {
+  type: 'TEXT_MESSAGE_REASONING_START'
+  messageId: string
+}
+
+export interface AgUiReasoningDeltaEvent {
+  type: 'TEXT_MESSAGE_REASONING_DELTA'
+  messageId: string
+  delta: string
+}
+
+export interface AgUiReasoningEndEvent {
+  type: 'TEXT_MESSAGE_REASONING_END'
+  messageId: string
+}
+
+export interface AgUiToolCallStartEvent {
+  type: 'TOOL_CALL_START'
+  toolCallId: string
+  toolCallName?: string
+  parentMessageId?: string
+}
+
+export interface AgUiToolCallArgsEvent {
+  type: 'TOOL_CALL_ARGS'
+  toolCallId: string
+  args: unknown
+  parentMessageId?: string
+}
+
+export interface AgUiToolCallEndEvent {
+  type: 'TOOL_CALL_END'
+  toolCallId: string
+  toolCallName?: string
+  parentMessageId?: string
+}
+
+export type AgUiEvent =
+  | AgUiRunStartedEvent
+  | AgUiRunFinishedEvent
+  | AgUiRunErrorEvent
+  | AgUiTextMessageStartEvent
+  | AgUiTextMessageDeltaEvent
+  | AgUiTextMessageEndEvent
+  | AgUiReasoningStartEvent
+  | AgUiReasoningDeltaEvent
+  | AgUiReasoningEndEvent
+  | AgUiToolCallStartEvent
+  | AgUiToolCallArgsEvent
+  | AgUiToolCallEndEvent
 
 // Session 相关类型
 export interface Session {
