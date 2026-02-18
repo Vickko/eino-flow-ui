@@ -31,6 +31,12 @@ export interface ToolCallState {
   error?: string
 }
 
+export interface ImageAttachment {
+  mimeType: string
+  data: string
+  name?: string
+}
+
 export interface Conversation {
   id: string // tree_id 或 local_xxx，用于前端列表 key
   sessionId?: string // last_active_session_id，用于 API 调用
@@ -357,15 +363,26 @@ export function useChat() {
     }
   }
 
-  const sendMessage = async (text: string, model?: string, thinking?: boolean) => {
+  const sendMessage = async (
+    text: string,
+    model?: string,
+    thinking?: boolean,
+    attachments?: ImageAttachment[]
+  ) => {
     if (!activeConversationId.value) return
 
     const conversationId = activeConversationId.value
+    const normalizedText = text.trim()
+    const safeAttachments = attachments ?? []
+    const displayContent =
+      normalizedText || (safeAttachments.length > 0 ? `[已上传 ${safeAttachments.length} 张图片]` : '')
+    const contentForInput = normalizedText || displayContent
+
     const newMessage: Message = {
       id: Date.now().toString(),
       conversationId,
       role: 'user',
-      content: text,
+      content: displayContent,
       timestamp: Date.now(),
       status: 'sending',
       model,
@@ -448,7 +465,8 @@ export function useChat() {
       }
 
       if (conv.title === 'New Chat') {
-        conv.title = text.length > 30 ? text.substring(0, 30) + '...' : text
+        conv.title =
+          displayContent.length > 30 ? displayContent.substring(0, 30) + '...' : displayContent
       }
     }
 
@@ -549,6 +567,18 @@ export function useChat() {
       }
     }
 
+    const runInputContent =
+      safeAttachments.length === 0
+        ? contentForInput
+        : [
+            { type: 'text' as const, text: contentForInput },
+            ...safeAttachments.map((attachment) => ({
+              type: 'binary' as const,
+              mimeType: attachment.mimeType,
+              data: attachment.data,
+            })),
+          ]
+
     const runInput: RunAgentInput = {
       threadId: isEphemeralConversation ? undefined : conversationId,
       runId:
@@ -559,7 +589,7 @@ export function useChat() {
         {
           id: newMessage.id,
           role: 'user',
-          content: text,
+          content: runInputContent,
         },
       ],
       forwardedProps: {

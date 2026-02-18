@@ -110,7 +110,7 @@ const toggleSidebar = () => {
           :conversation-title="activeConversation?.title"
           :is-streaming="isStreaming"
           class="w-full h-full"
-          @send="({ text, model, thinking }) => sendMessage(text, model, thinking)"
+          @send="({ text, model, thinking, attachments }) => sendMessage(text, model, thinking, attachments)"
           @stop="stopStreaming"
         />
       </template>

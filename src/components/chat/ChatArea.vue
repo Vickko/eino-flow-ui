@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted } from 'vue'
 import { MoreVertical, Phone, Video } from 'lucide-vue-next'
-import type { Message } from '../../composables/useChat'
+import type { ImageAttachment, Message } from '../../composables/useChat'
 import MessageBubble from './MessageBubble.vue'
 import ChatInput from './ChatInput.vue'
 
@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'send', text: string): void
+  (e: 'send', payload: { text: string; attachments?: ImageAttachment[] }): void
 }>()
 
 const scrollAreaRef = ref<HTMLDivElement | null>(null)
@@ -52,8 +52,8 @@ onMounted(() => {
   scrollToBottom(100)
 })
 
-const handleSend = (text: string) => {
-  emit('send', text)
+const handleSend = (payload: { text: string; attachments?: ImageAttachment[] }) => {
+  emit('send', payload)
 }
 </script>
 
