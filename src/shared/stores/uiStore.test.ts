@@ -1,54 +1,32 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useUiStore } from '@/shared/stores/uiStore'
-
-const installMatchMediaMock = (matches: boolean): void => {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: vi.fn().mockImplementation(() => ({
-      matches,
-      media: '(prefers-color-scheme: dark)',
-      onchange: null,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
-  })
-}
 
 describe('useUiStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    localStorage.clear()
-    document.documentElement.classList.remove('dark')
-    installMatchMediaMock(false)
   })
 
-  it('initTheme 会按系统主题更新暗色状态', () => {
-    installMatchMediaMock(true)
-    localStorage.setItem('theme', 'system')
-
+  it('会更新布局相关状态', () => {
     const store = useUiStore()
-    store.initTheme()
+    store.setNavButtonExpanded(true)
+    store.showSidebar = false
+    store.showInspector = false
+    store.showBottomPanel = false
 
-    expect(store.theme).toBe('system')
-    expect(store.isDark).toBe(true)
-    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    expect(store.isNavButtonExpanded).toBe(true)
+    expect(store.showSidebar).toBe(false)
+    expect(store.showInspector).toBe(false)
+    expect(store.showBottomPanel).toBe(false)
   })
 
-  it('cycleTheme 会按顺序切换并持久化', () => {
+  it('toggleEdgeType 会在两种边类型间切换', () => {
     const store = useUiStore()
-    store.initTheme()
+    expect(store.edgeType).toBe('smoothstep')
 
-    store.cycleTheme()
-    expect(store.theme).toBe('light')
-    expect(localStorage.getItem('theme')).toBe('light')
-
-    store.cycleTheme()
-    expect(store.theme).toBe('dark')
-    expect(store.isDark).toBe(true)
-    expect(localStorage.getItem('theme')).toBe('dark')
+    store.toggleEdgeType()
+    expect(store.edgeType).toBe('default')
+    store.toggleEdgeType()
+    expect(store.edgeType).toBe('smoothstep')
   })
 })

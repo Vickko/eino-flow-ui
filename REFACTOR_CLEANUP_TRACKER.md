@@ -49,11 +49,11 @@
 ### 3.1 引入统一状态容器
 - [x] 引入 Pinia（或等效方案）
 - [x] 建立 `authStore`、`graphStore`、`chatStore`、`uiStore`
-- [ ] 将模块级 `ref` 单例迁移到 store（保留过渡适配）
+- [x] 将模块级 `ref` 单例迁移到 store（保留过渡适配）
 
 ### 3.2 状态边界清理
-- [ ] 把“可持久化状态”与“页面临时状态”分开
-- [ ] 为本地存储建立统一封装（key、版本、迁移）
+- [x] 把“可持久化状态”与“页面临时状态”分开
+- [x] 为本地存储建立统一封装（key、版本、迁移）
 - [x] 清理跨组件隐式共享状态（如 nav button、theme、server status）
 
 ### 3.3 并发与竞态
@@ -177,6 +177,8 @@
 - [x] 2026-02-19：开始 Phase 2 第一批（接入 Pinia，新增 auth/graph/chat/ui 四个 store 骨架并在 main.ts 注入 pinia）。
 - [x] 2026-02-19：完成 Phase 2 第二批（将 theme/nav/layout/graph/auth 的模块级状态迁移到 store，保留 composable 对外 API 兼容）。
 - [x] 2026-02-19：完成 Phase 2 第三批（useChat 核心状态迁移到 chatStore，新增 chat/serverStatus store 单测；useServerStatus store 化并补心跳订阅生命周期回收；type-check/lint/build 通过）。
+- [x] 2026-02-19：完成 Phase 2 第四批（拆分持久化与页面临时状态：theme 迁入 preferenceStore，api 配置迁入 apiConfigStore；新增统一 storage 封装并完成 legacy key 迁移；type-check/lint/test/build 通过）。
+- [x] 2026-02-19：完成 Phase 2 第四批补充（在 `main.ts` 启动阶段主动初始化 `apiConfigStore`，保证首个 API 请求前 baseURL 已应用）。
 
 ## 13. 变更说明模板（每次改动都填）
 
@@ -193,3 +195,11 @@
 - 本次完成：`useChat` 状态改读写 `chatStore`（含 loading/streaming/abort）；`useServerStatus` 改为 `serverStatusStore` 并按作用域自动 retain/release 心跳；补 `chatStore` 与 `serverStatusStore` 单测。
 - 风险与回滚点：`useChat` 仍有较多原位数组/对象变更，后续可继续收敛为 store action；如需回滚可优先回退 `src/features/chat/composables/useChat.ts` 与 `src/features/graph/composables/useServerStatus.ts`。
 - 验证结果：`npm run type-check`、`npm run lint`、`npm run build` 全通过。
+
+### 13.2 变更说明（2026-02-19 / Phase 2 第四批）
+
+- 日期：2026-02-19
+- 批次/阶段：Phase 2（状态管理重构）
+- 本次完成：完成 `useApiConfig` 的 store 化（`apiConfigStore`）；拆分 `theme`（持久化）与 `layout/nav`（页面临时）状态；新增统一 localStorage 封装（含 key 命名、版本标记、legacy key 迁移）。
+- 风险与回滚点：`apiConfigStore` 仍在首次调用 composable 时才生效，若后续需要“应用启动即应用配置”，可在 `main.ts` 主动初始化 store；回滚点为 `src/shared/stores/apiConfigStore.ts`、`src/shared/stores/preferenceStore.ts`、`src/shared/lib/storage/appStorage.ts`。
+- 验证结果：`npm run type-check`、`npm run lint`、`npm run test`、`npm run build` 全通过。

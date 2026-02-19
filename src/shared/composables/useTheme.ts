@@ -1,16 +1,16 @@
 import { storeToRefs } from 'pinia'
 import type { ThemeMode } from '@/shared/types'
-import { useUiStore } from '@/shared/stores/uiStore'
+import { usePreferenceStore } from '@/shared/stores/preferenceStore'
 
 export function useTheme() {
-  const uiStore = useUiStore()
-  const { theme, isDark } = storeToRefs(uiStore)
+  const preferenceStore = usePreferenceStore()
+  const { theme, isDark } = storeToRefs(preferenceStore)
 
   return {
     theme,
     isDark,
-    initTheme: uiStore.initTheme,
-    setTheme: (newTheme: ThemeMode) => uiStore.setTheme(newTheme),
-    cycleTheme: uiStore.cycleTheme,
+    initTheme: preferenceStore.initTheme,
+    setTheme: (newTheme: ThemeMode) => preferenceStore.setTheme(newTheme),
+    cycleTheme: preferenceStore.cycleTheme,
   }
 }

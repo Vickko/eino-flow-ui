@@ -4,6 +4,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { config } from 'md-editor-v3'
 import mermaid from 'mermaid'
+import { useApiConfigStore } from '@/shared/stores/apiConfigStore'
 import App from './App.vue'
 import router from './router'
 
@@ -24,6 +25,9 @@ config({
 
 const app = createApp(App)
 const pinia = createPinia()
+
+// 启动阶段先初始化 API 配置，避免首次请求前 baseURL 仍是默认值。
+useApiConfigStore(pinia)
 
 app.use(pinia)
 app.use(router)
