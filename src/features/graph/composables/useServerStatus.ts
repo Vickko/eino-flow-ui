@@ -1,36 +1,26 @@
-import { ref } from 'vue'
-import { ping } from '@/shared/api'
+import { getCurrentScope, onScopeDispose } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useServerStatusStore } from '@/features/graph/stores/serverStatusStore'
 
-const isOnline = ref(true)
-let failCount = 0
-let timer: ReturnType<typeof setInterval> | null = null
-
-const checkHeartbeat = async (): Promise<void> => {
-  try {
-    await ping()
-    failCount = 0
-    if (!isOnline.value) {
-      isOnline.value = true
-    }
-  } catch {
-    failCount++
-    if (failCount >= 2 && isOnline.value) {
-      isOnline.value = false
-    }
-  }
-}
-
-const startHeartbeat = (): void => {
-  if (timer) return
-  checkHeartbeat()
-  timer = setInterval(checkHeartbeat, 500)
-}
+let hasDetachedHeartbeatRetainer = false
 
 export function useServerStatus() {
-  startHeartbeat()
+  const serverStatusStore = useServerStatusStore()
+  const { isOnline } = storeToRefs(serverStatusStore)
+
+  const currentScope = getCurrentScope()
+  if (currentScope) {
+    serverStatusStore.retainHeartbeat()
+    onScopeDispose(() => {
+      serverStatusStore.releaseHeartbeat()
+    })
+  } else if (!hasDetachedHeartbeatRetainer || serverStatusStore.heartbeatSubscribers === 0) {
+    hasDetachedHeartbeatRetainer = true
+    serverStatusStore.retainHeartbeat()
+  }
 
   return {
     isOnline,
-    checkHeartbeat,
+    checkHeartbeat: serverStatusStore.checkHeartbeat,
   }
 }
