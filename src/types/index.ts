@@ -318,6 +318,24 @@ export interface SessionMessage {
   content: string
   reasoning_content?: string
   model?: string // 仅助手消息有值
+  user_input_multi_content?: SessionMessageInputPart[]
+  assistant_output_multi_content?: SessionMessageOutputPart[]
+}
+
+export interface SessionMessageImagePart {
+  base64data?: string
+  mime_type?: string
+}
+
+export interface SessionMessageInputPart {
+  type: string
+  text?: string
+  image?: SessionMessageImagePart
+}
+
+export interface SessionMessageOutputPart {
+  type: string
+  image?: SessionMessageImagePart
 }
 
 export interface SessionMessagesResponse {

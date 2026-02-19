@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { MoreVertical, Phone, Video, ChevronUp, Check, Settings, Lightbulb } from 'lucide-vue-next'
+import {
+  MoreVertical,
+  Phone,
+  Video,
+  ChevronUp,
+  Check,
+  Settings,
+  Lightbulb,
+  ImagePlus,
+} from 'lucide-vue-next'
 import type { ImageAttachment, Message } from '../../composables/useChat'
 import MessageBubble from './MessageBubble.vue'
 import ChatInput from './ChatInput.vue'
@@ -179,6 +188,48 @@ const handleSend = (payload: { text: string; attachments?: ImageAttachment[] }) 
   })
 }
 
+interface ChatInputExpose {
+  openImagePicker: () => void
+  addImageFiles: (files: File[]) => Promise<void>
+}
+
+const chatInputRef = ref<ChatInputExpose | null>(null)
+const isDragOverCard = ref(false)
+
+const triggerImageUpload = () => {
+  chatInputRef.value?.openImagePicker()
+}
+
+const handleCardDragOver = (event: DragEvent) => {
+  if (!event.dataTransfer?.types.includes('Files')) return
+  event.preventDefault()
+  if (props.isStreaming) {
+    isDragOverCard.value = false
+    return
+  }
+  isDragOverCard.value = true
+}
+
+const handleCardDragLeave = (event: DragEvent) => {
+  if (!event.currentTarget) return
+  const currentTarget = event.currentTarget as HTMLElement
+  const relatedTarget = event.relatedTarget as Node | null
+  if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+    isDragOverCard.value = false
+  }
+}
+
+const handleCardDrop = async (event: DragEvent) => {
+  if (!event.dataTransfer?.types.includes('Files')) return
+  event.preventDefault()
+  isDragOverCard.value = false
+  if (props.isStreaming) return
+
+  const files = Array.from(event.dataTransfer?.files || [])
+  if (files.length === 0) return
+  await chatInputRef.value?.addImageFiles(files)
+}
+
 // 使用模型管理 composable
 const { models } = useModelManagement()
 
@@ -279,7 +330,13 @@ const handleClickOutside = (event: MouseEvent) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden rounded-xl">
+  <div
+    class="h-full flex flex-col overflow-hidden rounded-xl relative transition-colors"
+    :class="isDragOverCard ? 'bg-primary/5' : ''"
+    @dragover="handleCardDragOver"
+    @dragleave="handleCardDragLeave"
+    @drop="handleCardDrop"
+  >
     <!-- Header (底层卡片露出的顶部) -->
     <div
       class="flex items-center justify-between px-4 bg-muted/30 rounded-t-xl border border-border/40 border-b-0 overflow-hidden shrink-0 h-10 py-2"
@@ -468,11 +525,30 @@ const handleClickOutside = (event: MouseEvent) => {
             />
           </button>
 
+          <button
+            class="p-1.5 rounded-full border-[0.5px] shadow-sm backdrop-blur-md transition-all duration-300 group bg-background/40 hover:bg-background/60 border-transparent hover:border-border hover:shadow-md"
+            :disabled="isStreaming"
+            :class="isStreaming ? 'opacity-50 cursor-not-allowed' : ''"
+            title="上传图片"
+            @click="triggerImageUpload"
+          >
+            <ImagePlus
+              class="w-4 h-4 text-muted-foreground/70 transition-all duration-300"
+              :class="!isStreaming ? 'group-hover:text-primary/80' : ''"
+            />
+          </button>
         </div>
       </div>
 
       <!-- Input Area -->
-      <ChatInput :is-streaming="isStreaming" @send="handleSend" @stop="emit('stop')" />
+      <ChatInput
+        ref="chatInputRef"
+        :is-streaming="isStreaming"
+        :show-upload-button="false"
+        :enable-drop-zone="false"
+        @send="handleSend"
+        @stop="emit('stop')"
+      />
       <div class="text-center pb-1">
         <span class="text-[10px] text-muted-foreground/50"
           >Press Enter to send, Shift + Enter for new line</span
@@ -486,6 +562,13 @@ const handleClickOutside = (event: MouseEvent) => {
       @close="showModelManagement = false"
       @update:is-open="showModelManagement = $event"
     />
+
+    <div
+      v-if="isDragOverCard"
+      class="pointer-events-none absolute inset-2 z-[140] flex items-center justify-center rounded-xl border border-dashed border-primary/50 bg-primary/10 text-sm text-primary"
+    >
+      松开即可上传图片
+    </div>
   </div>
 </template>
 

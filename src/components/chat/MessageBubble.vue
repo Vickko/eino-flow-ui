@@ -258,6 +258,22 @@ const timeString = computed(() => {
   })
 })
 
+const userPreviewImages = computed(() =>
+  (props.message.attachments || []).map((attachment, index) => ({
+    id: `${attachment.name || 'attachment'}-${index}`,
+    src: `data:${attachment.mimeType};base64,${attachment.data}`,
+    alt: attachment.name || `Uploaded image ${index + 1}`,
+  }))
+)
+
+const assistantPreviewImages = computed(() => {
+  return (props.message.images || []).map((imageData, index) => ({
+    id: `assistant-image-${index}`,
+    src: `data:image/png;base64,${imageData}`,
+    alt: `Generated image ${index + 1}`,
+  }))
+})
+
 const toolCallStatusText = (status: 'running' | 'done' | 'error') => {
   switch (status) {
     case 'running':
@@ -341,6 +357,22 @@ const formatToolCallArgs = (args: unknown) => {
       </div>
     </div>
 
+    <div
+      v-if="isUser && userPreviewImages.length > 0"
+      :class="[
+        'images-container mb-2',
+        shouldAnimateUser ? 'image-strip-animate' : '',
+      ]"
+    >
+      <img
+        v-for="image in userPreviewImages"
+        :key="image.id"
+        :src="image.src"
+        :alt="image.alt"
+        class="generated-image"
+      />
+    </div>
+
     <!-- AI 气泡：等待时显示为小圆球，有内容后平滑展开 -->
     <div
       v-if="!isUser"
@@ -391,13 +423,12 @@ const formatToolCallArgs = (args: unknown) => {
           :code-foldable="false"
         />
 
-        <!-- 图片展示区域 -->
-        <div v-if="message.images && message.images.length > 0" class="images-container mt-3">
+        <div v-if="assistantPreviewImages.length > 0" class="images-container mt-3">
           <img
-            v-for="(imageData, index) in message.images"
-            :key="index"
-            :src="`data:image/png;base64,${imageData}`"
-            :alt="`Generated image ${index + 1}`"
+            v-for="image in assistantPreviewImages"
+            :key="image.id"
+            :src="image.src"
+            :alt="image.alt"
             class="generated-image"
           />
         </div>
@@ -949,7 +980,11 @@ const formatToolCallArgs = (args: unknown) => {
 /* 图片 */
 .markdown-content :deep(.md-editor-preview img) {
   border-radius: 0.5rem;
-  max-width: 100%;
+  max-width: min(320px, 100%);
+  max-height: 240px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 /* 水平线 */
@@ -960,14 +995,26 @@ const formatToolCallArgs = (args: unknown) => {
 /* 图片展示 */
 .images-container {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  max-width: 95%;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+@media (min-width: 768px) {
+  .images-container {
+    max-width: 90%;
+  }
 }
 
 .generated-image {
-  max-width: 100%;
-  height: auto;
+  height: 120px;
+  max-width: 220px;
+  min-width: 64px;
+  width: auto;
+  object-fit: cover;
   border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border) / 0.5);
+  background: hsl(var(--muted) / 0.25);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease-out;
 }
@@ -975,6 +1022,21 @@ const formatToolCallArgs = (args: unknown) => {
 .generated-image:hover {
   transform: scale(1.02);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.image-strip-animate {
+  animation: image-strip-fade-in 0.3s ease-out both;
+}
+
+@keyframes image-strip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Mermaid 暗黑模式修复 */

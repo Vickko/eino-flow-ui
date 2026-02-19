@@ -22,12 +22,22 @@ const emit = defineEmits<{
 
 const searchQuery = ref('')
 
+const conversationTitle = (conversation: Conversation) => {
+  const rawTitle = conversation.title?.trim()
+  if (rawTitle) return rawTitle
+
+  const fallback = conversation.lastMessage?.content?.trim() || ''
+  if (!fallback) return 'New Chat'
+  return fallback.length > 28 ? `${fallback.slice(0, 28)}...` : fallback
+}
+
 const filteredConversations = computed(() => {
   if (!searchQuery.value) return props.conversations
   const query = searchQuery.value.toLowerCase()
   return props.conversations.filter(
     (c) =>
-      c.title.toLowerCase().includes(query) || c.lastMessage?.content.toLowerCase().includes(query)
+      conversationTitle(c).toLowerCase().includes(query) ||
+      c.lastMessage?.content.toLowerCase().includes(query)
   )
 })
 
@@ -116,7 +126,7 @@ const formatTime = (timestamp: number) => {
             activeId === conv.id ? 'bg-accent/50 shadow-sm' : 'hover:bg-muted/50'
           )
         "
-        :title="collapsed ? conv.title : undefined"
+        :title="collapsed ? conversationTitle(conv) : undefined"
         @click="emit('select', conv.id)"
       >
         <!-- Avatar - 始终保持在左侧固定位置 -->
@@ -148,7 +158,7 @@ const formatTime = (timestamp: number) => {
                     )
                   "
                 >
-                  {{ conv.title }}
+                  {{ conversationTitle(conv) }}
                 </span>
                 <span class="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
                   {{ formatTime(conv.updatedAt) }}

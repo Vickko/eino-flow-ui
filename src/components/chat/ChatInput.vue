@@ -20,6 +20,8 @@ const MAX_TOTAL_IMAGE_SIZE = 10 * 1024 * 1024
 
 const props = defineProps<{
   isStreaming?: boolean
+  showUploadButton?: boolean
+  enableDropZone?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -31,6 +33,7 @@ const input = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const imageInputRef = ref<HTMLInputElement | null>(null)
 const selectedImages = ref<SelectedImage[]>([])
+const isDragOver = ref(false)
 
 const isValid = computed(() => input.value.trim().length > 0 || selectedImages.value.length > 0)
 const totalImageSize = computed(() =>
@@ -47,6 +50,12 @@ const adjustHeight = () => {
 
 const handleInput = () => {
   adjustHeight()
+}
+
+const formatImageSize = (size: number) => {
+  if (size < 1024) return `${size} B`
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`
 }
 
 const readFileAsBase64 = (file: File): Promise<string> => {
@@ -66,19 +75,21 @@ const readFileAsBase64 = (file: File): Promise<string> => {
   })
 }
 
+const canUploadImages = () =>
+  !props.isStreaming &&
+  selectedImages.value.length < MAX_IMAGE_COUNT &&
+  totalImageSize.value < MAX_TOTAL_IMAGE_SIZE
+
 const openImagePicker = () => {
+  if (!canUploadImages()) return
   imageInputRef.value?.click()
 }
 
-const handleImageSelect = async (event: Event) => {
-  const inputEl = event.target as HTMLInputElement
-  const files = Array.from(inputEl.files || [])
-  if (files.length === 0) return
-
+const addImageFiles = async (files: File[]) => {
+  if (files.length === 0 || !canUploadImages()) return
   const remainCount = MAX_IMAGE_COUNT - selectedImages.value.length
   const picked = files.slice(0, Math.max(remainCount, 0))
   if (picked.length === 0) {
-    inputEl.value = ''
     return
   }
 
@@ -101,8 +112,45 @@ const handleImageSelect = async (event: Event) => {
       // skip broken file
     }
   }
+}
+
+const handleImageSelect = async (event: Event) => {
+  const inputEl = event.target as HTMLInputElement
+  const files = Array.from(inputEl.files || [])
+  await addImageFiles(files)
 
   inputEl.value = ''
+}
+
+const handleDragOver = (event: DragEvent) => {
+  if (props.enableDropZone === false) return
+  if (!event.dataTransfer?.types.includes('Files')) return
+  event.preventDefault()
+  if (!canUploadImages()) {
+    isDragOver.value = false
+    return
+  }
+  isDragOver.value = true
+}
+
+const handleDragLeave = (event: DragEvent) => {
+  if (props.enableDropZone === false) return
+  if (!event.currentTarget) return
+  const currentTarget = event.currentTarget as HTMLElement
+  const relatedTarget = event.relatedTarget as Node | null
+  if (!relatedTarget || !currentTarget.contains(relatedTarget)) {
+    isDragOver.value = false
+  }
+}
+
+const handleDrop = async (event: DragEvent) => {
+  if (props.enableDropZone === false) return
+  if (!event.dataTransfer?.types.includes('Files')) return
+  event.preventDefault()
+  isDragOver.value = false
+  if (!canUploadImages()) return
+  const files = Array.from(event.dataTransfer?.files || [])
+  await addImageFiles(files)
 }
 
 const removeImage = (id: string) => {
@@ -153,10 +201,21 @@ const handleKeydown = (e: KeyboardEvent) => {
     handleSend()
   }
 }
+
+defineExpose({
+  openImagePicker,
+  addImageFiles,
+})
 </script>
 
 <template>
-  <div class="px-4 pt-1 pb-0.5">
+  <div
+    class="px-4 pt-1 pb-0.5 rounded-lg transition-colors"
+    :class="isDragOver ? 'bg-primary/5' : ''"
+    @dragover="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+  >
     <input
       ref="imageInputRef"
       type="file"
@@ -170,10 +229,24 @@ const handleKeydown = (e: KeyboardEvent) => {
       <div
         v-for="image in selectedImages"
         :key="image.id"
-        class="inline-flex items-center gap-1 rounded-md border border-border/50 bg-muted/20 px-2 py-1 text-xs"
+        class="relative w-36 overflow-hidden rounded-md border border-border/50 bg-muted/20"
       >
-        <span class="max-w-[160px] truncate">{{ image.name }}</span>
-        <button class="rounded p-0.5 hover:bg-muted/50" @click="removeImage(image.id)">
+        <div class="flex h-24 w-full items-center justify-center bg-black/5 px-1 py-1">
+          <img
+            :src="`data:${image.mimeType};base64,${image.data}`"
+            :alt="image.name || '待发送图片'"
+            class="max-h-full max-w-full object-contain"
+          />
+        </div>
+        <div class="px-2 py-1">
+          <p class="truncate text-[11px] text-foreground/90">{{ image.name }}</p>
+          <p class="text-[10px] text-muted-foreground/80">{{ formatImageSize(image.size) }}</p>
+        </div>
+        <button
+          type="button"
+          class="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
+          @click="removeImage(image.id)"
+        >
           <X class="h-3 w-3" />
         </button>
       </div>
@@ -181,6 +254,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 
     <div class="relative flex items-end gap-2 group">
       <button
+        v-if="showUploadButton !== false"
         type="button"
         :disabled="
           isStreaming ||
@@ -231,6 +305,12 @@ const handleKeydown = (e: KeyboardEvent) => {
         <Square v-if="isStreaming" class="w-4 h-4" />
         <Send v-else class="w-4 h-4" />
       </button>
+    </div>
+    <div
+      v-if="isDragOver && props.enableDropZone !== false"
+      class="mt-2 rounded-md border border-dashed border-primary/40 bg-primary/5 px-2 py-1 text-center text-xs text-primary/80"
+    >
+      松开即可上传图片
     </div>
   </div>
 </template>
