@@ -376,7 +376,6 @@ export function useChat() {
     const safeAttachments = attachments ?? []
     const displayContent =
       normalizedText || (safeAttachments.length > 0 ? `[已上传 ${safeAttachments.length} 张图片]` : '')
-    const contentForInput = normalizedText || displayContent
 
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -567,17 +566,14 @@ export function useChat() {
       }
     }
 
-    const runInputContent =
-      safeAttachments.length === 0
-        ? contentForInput
-        : [
-            { type: 'text' as const, text: contentForInput },
-            ...safeAttachments.map((attachment) => ({
-              type: 'binary' as const,
-              mimeType: attachment.mimeType,
-              data: attachment.data,
-            })),
-          ]
+    const runInputContent = [
+      ...(normalizedText ? [{ type: 'text' as const, text: normalizedText }] : []),
+      ...safeAttachments.map((attachment) => ({
+        type: 'binary' as const,
+        mimeType: attachment.mimeType,
+        data: attachment.data,
+      })),
+    ]
 
     const runInput: RunAgentInput = {
       threadId: isEphemeralConversation ? undefined : conversationId,
