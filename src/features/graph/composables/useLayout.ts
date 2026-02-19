@@ -1,21 +1,15 @@
-import { ref } from 'vue'
-import type { EdgeType } from '@/shared/types'
-
-const showSidebar = ref(true)
-const showInspector = ref(true)
-const showBottomPanel = ref(true)
-const edgeType = ref<EdgeType>('smoothstep')
+import { storeToRefs } from 'pinia'
+import { useUiStore } from '@/shared/stores/uiStore'
 
 export function useLayout() {
-  const toggleEdgeType = (): void => {
-    edgeType.value = edgeType.value === 'smoothstep' ? 'default' : 'smoothstep'
-  }
+  const uiStore = useUiStore()
+  const { showSidebar, showInspector, showBottomPanel, edgeType } = storeToRefs(uiStore)
 
   return {
     showSidebar,
     showInspector,
     showBottomPanel,
     edgeType,
-    toggleEdgeType,
+    toggleEdgeType: uiStore.toggleEdgeType,
   }
 }

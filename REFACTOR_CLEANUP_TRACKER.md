@@ -47,8 +47,8 @@
 ## 3. 状态管理重构（Phase 2）
 
 ### 3.1 引入统一状态容器
-- [ ] 引入 Pinia（或等效方案）
-- [ ] 建立 `authStore`、`graphStore`、`chatStore`、`uiStore`
+- [x] 引入 Pinia（或等效方案）
+- [x] 建立 `authStore`、`graphStore`、`chatStore`、`uiStore`
 - [ ] 将模块级 `ref` 单例迁移到 store（保留过渡适配）
 
 ### 3.2 状态边界清理
@@ -174,6 +174,8 @@
 - [x] 2026-02-19：完成 Phase 1 第三批（API 实现迁移到 shared/api、保留 api 兼容层、新增 no-restricted-imports 规则）。
 - [x] 2026-02-19：完成 Phase 1 第四批（MainLayout/ChatLayout 下沉到 useMainShell/useChatShell，page-shell 只保留编排）。
 - [x] 2026-02-19：完成 Phase 1 第五批（feature composable 实现迁入 feature，root composable 仅保留兼容导出；新增 shared/composables；增加 feature 依赖方向 lint 约束）。
+- [x] 2026-02-19：开始 Phase 2 第一批（接入 Pinia，新增 auth/graph/chat/ui 四个 store 骨架并在 main.ts 注入 pinia）。
+- [x] 2026-02-19：完成 Phase 2 第二批（将 theme/nav/layout/graph/auth 的模块级状态迁移到 store，保留 composable 对外 API 兼容）。
 
 ## 13. 变更说明模板（每次改动都填）
 

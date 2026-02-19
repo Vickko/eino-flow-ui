@@ -1,39 +1,19 @@
-import { ref, computed } from 'vue'
-import type {
-  CanvasNode,
-  GraphNavigationItem,
-  NodeExecutionResult,
-  GraphSchema,
-} from '@/shared/types'
-
-const selectedGraphId = ref<string | null>(null)
-const selectedNode = ref<CanvasNode | null>(null)
-const nodeExecutionResults = ref<Record<string, NodeExecutionResult>>({})
-const graphNavigationStack = ref<GraphNavigationItem[]>([])
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import type { GraphSchema, NodeExecutionResult } from '@/shared/types'
+import { useGraphStore } from '@/features/graph/stores/graphStore'
 
 export function useGraph() {
+  const graphStore = useGraphStore()
+  const { selectedGraphId, selectedNode, nodeExecutionResults, graphNavigationStack } =
+    storeToRefs(graphStore)
+
   const setSelectedGraphId = (
     id: string | null,
     name: string | null = null,
     isNewNavigation = true
   ): void => {
-    selectedGraphId.value = id
-    selectedNode.value = null
-
-    if (name !== null && id) {
-      if (isNewNavigation) {
-        graphNavigationStack.value = [{ id, name }]
-      } else {
-        const existingIndex = graphNavigationStack.value.findIndex((item) => item.id === id)
-        if (existingIndex === -1) {
-          graphNavigationStack.value.push({ id, name })
-        } else {
-          graphNavigationStack.value = graphNavigationStack.value.slice(0, existingIndex + 1)
-        }
-      }
-    } else if (id === '' || id === null) {
-      graphNavigationStack.value = []
-    }
+    graphStore.setSelectedGraph(id, name, isNewNavigation)
   }
 
   const navigateToSubgraph = (subgraphSchema: GraphSchema): void => {
@@ -42,40 +22,23 @@ export function useGraph() {
       return
     }
 
-    setSelectedGraphId(subgraphSchema.id, subgraphSchema.name ?? subgraphSchema.id, false)
+    graphStore.navigateToSubgraph(subgraphSchema)
   }
 
   const navigateBack = (): void => {
-    if (graphNavigationStack.value.length > 1) {
-      graphNavigationStack.value.pop()
-      const previousGraph = graphNavigationStack.value[graphNavigationStack.value.length - 1]
-      if (previousGraph) {
-        selectedGraphId.value = previousGraph.id
-        selectedNode.value = null
-      }
-    }
+    graphStore.navigateBack()
   }
 
   const canNavigateBack = computed(() => graphNavigationStack.value.length > 1)
 
-  const setSelectedNode = (node: CanvasNode | null): void => {
-    selectedNode.value = node
-  }
+  const setSelectedNode = graphStore.setSelectedNode
 
   const setNodeExecutionResult = (nodeKey: string, result: NodeExecutionResult): void => {
-    nodeExecutionResults.value = {
-      ...nodeExecutionResults.value,
-      [nodeKey]: result,
-    }
+    graphStore.setNodeExecutionResult(nodeKey, result)
   }
 
-  const clearExecutionResults = (): void => {
-    nodeExecutionResults.value = {}
-  }
-
-  const clearNavigationStack = (): void => {
-    graphNavigationStack.value = []
-  }
+  const clearExecutionResults = graphStore.clearExecutionResults
+  const clearNavigationStack = graphStore.clearNavigationStack
 
   return {
     selectedGraphId,

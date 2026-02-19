@@ -1,16 +1,12 @@
-import { ref, computed, readonly } from 'vue'
+import { computed, readonly } from 'vue'
+import { storeToRefs } from 'pinia'
 import { getUserInfo as fetchUserInfo, logout as logoutApi } from '@/features/auth/api/authApi'
+import { useAuthStore } from '@/features/auth/stores/authStore'
 import { setUnauthorizedHandler } from '@/shared/api'
-import type { UserInfo, AuthState } from '@/shared/types'
+import type { AuthState } from '@/shared/types'
 
 // 检查是否启用认证（从环境变量读取）
 const isAuthEnabled = computed(() => import.meta.env.VITE_ENABLE_AUTH === 'true')
-
-// 全局响应式状态（单例模式）
-const isAuthenticated = ref<boolean>(false)
-const isLoading = ref<boolean>(true)
-const user = ref<UserInfo | null>(null)
-const error = ref<string | null>(null)
 
 // 跟踪初始化状态以防止重复检查
 let isInitialized = false
@@ -22,18 +18,14 @@ const redirectToLogin = (): void => {
 
   // 防止重复重定向
   if (isRedirecting) {
-    console.log('[useAuth] Login redirect already in progress, skipping')
     return
   }
 
   isRedirecting = true
-  console.log('[useAuth] Triggering login redirect')
 
   // 使用绝对 URL 确保可靠的重定向
   const currentOrigin = window.location.origin
   const loginUrl = `${currentOrigin}/api/auth/login`
-
-  console.log('[useAuth] Redirecting to:', loginUrl)
 
   // 使用 replace 避免在历史记录中留下记录
   window.location.replace(loginUrl)
@@ -44,6 +36,9 @@ setUnauthorizedHandler(() => {
 })
 
 export function useAuth() {
+  const authStore = useAuthStore()
+  const { isAuthenticated, isLoading, user, error } = storeToRefs(authStore)
+
   /**
    * 初始化认证状态
    * 在应用挂载时调用一次
@@ -53,34 +48,48 @@ export function useAuth() {
 
     // 如果认证被禁用，立即设置为已认证状态
     if (!isAuthEnabled.value) {
-      isAuthenticated.value = true
-      isLoading.value = false
+      authStore.setAuthResult({
+        isAuthenticated: true,
+        user: null,
+        error: null,
+      })
+      authStore.setLoading(false)
       isInitialized = true
       return
     }
 
-    isLoading.value = true
-    error.value = null
+    authStore.setLoading(true)
+    authStore.clearError()
 
     try {
       const userInfo = await fetchUserInfo()
-      user.value = userInfo
-      isAuthenticated.value = true
+      authStore.setAuthResult({
+        isAuthenticated: true,
+        user: userInfo,
+        error: null,
+      })
     } catch (err) {
       // 未认证或网络错误
-      user.value = null
-      isAuthenticated.value = false
+      authStore.setAuthResult({
+        isAuthenticated: false,
+        user: null,
+        error: null,
+      })
 
       // 只为非 401 错误设置错误信息（401 是预期的未登录状态）
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { status: number } }
         if (axiosError.response?.status !== 401) {
-          error.value = '无法检查认证状态'
+          authStore.setAuthResult({
+            isAuthenticated: false,
+            user: null,
+            error: '无法检查认证状态',
+          })
           console.error('认证初始化错误:', err)
         }
       }
     } finally {
-      isLoading.value = false
+      authStore.setLoading(false)
       isInitialized = true
     }
   }
@@ -94,13 +103,18 @@ export function useAuth() {
 
     try {
       const userInfo = await fetchUserInfo()
-      user.value = userInfo
-      isAuthenticated.value = true
-      error.value = null
+      authStore.setAuthResult({
+        isAuthenticated: true,
+        user: userInfo,
+        error: null,
+      })
     } catch {
       // 静默处理错误
-      user.value = null
-      isAuthenticated.value = false
+      authStore.setAuthResult({
+        isAuthenticated: false,
+        user: null,
+        error: null,
+      })
     }
   }
 
@@ -112,14 +126,19 @@ export function useAuth() {
 
     try {
       await logoutApi()
-      user.value = null
-      isAuthenticated.value = false
-      error.value = null
+      authStore.setAuthResult({
+        isAuthenticated: false,
+        user: null,
+        error: null,
+      })
     } catch (err) {
       console.error('登出错误:', err)
       // 即使登出失败，也清除本地状态
-      user.value = null
-      isAuthenticated.value = false
+      authStore.setAuthResult({
+        isAuthenticated: false,
+        user: null,
+        error: null,
+      })
     }
   }
 
@@ -134,7 +153,7 @@ export function useAuth() {
    * 清除错误状态
    */
   const clearError = (): void => {
-    error.value = null
+    authStore.clearError()
   }
 
   // 计算的状态对象（便于使用）

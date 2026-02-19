@@ -1,19 +1,20 @@
-import { ref } from 'vue'
-
-// 共享状态：按钮是否应该展开
-const isExpanded = ref(false)
+import { storeToRefs } from 'pinia'
+import { useUiStore } from '@/shared/stores/uiStore'
 
 export function useNavButton() {
+  const uiStore = useUiStore()
+  const { isNavButtonExpanded } = storeToRefs(uiStore)
+
   const handleMouseEnter = () => {
-    isExpanded.value = true
+    uiStore.setNavButtonExpanded(true)
   }
 
   const handleMouseLeave = () => {
-    isExpanded.value = false
+    uiStore.setNavButtonExpanded(false)
   }
 
   return {
-    isExpanded,
+    isExpanded: isNavButtonExpanded,
     handleMouseEnter,
     handleMouseLeave,
   }
