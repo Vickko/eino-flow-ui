@@ -1,5 +1,6 @@
 import { ref, computed, readonly } from 'vue'
 import { getUserInfo as fetchUserInfo, logout as logoutApi } from '@/features/auth/api/authApi'
+import { setUnauthorizedHandler } from '@/shared/api'
 import type { UserInfo, AuthState } from '@/shared/types'
 
 // 检查是否启用认证（从环境变量读取）
@@ -16,6 +17,31 @@ let isInitialized = false
 
 // 防止重复登录重定向的标志
 let isRedirecting = false
+const redirectToLogin = (): void => {
+  if (!isAuthEnabled.value) return
+
+  // 防止重复重定向
+  if (isRedirecting) {
+    console.log('[useAuth] Login redirect already in progress, skipping')
+    return
+  }
+
+  isRedirecting = true
+  console.log('[useAuth] Triggering login redirect')
+
+  // 使用绝对 URL 确保可靠的重定向
+  const currentOrigin = window.location.origin
+  const loginUrl = `${currentOrigin}/api/auth/login`
+
+  console.log('[useAuth] Redirecting to:', loginUrl)
+
+  // 使用 replace 避免在历史记录中留下记录
+  window.location.replace(loginUrl)
+}
+
+setUnauthorizedHandler(() => {
+  redirectToLogin()
+})
 
 export function useAuth() {
   /**
@@ -101,25 +127,7 @@ export function useAuth() {
    * 手动触发登录重定向
    */
   const login = (): void => {
-    if (!isAuthEnabled.value) return
-
-    // 防止重复重定向
-    if (isRedirecting) {
-      console.log('[useAuth] Login redirect already in progress, skipping')
-      return
-    }
-
-    isRedirecting = true
-    console.log('[useAuth] Triggering login redirect')
-
-    // 使用绝对 URL 确保可靠的重定向
-    const currentOrigin = window.location.origin
-    const loginUrl = `${currentOrigin}/api/auth/login`
-
-    console.log('[useAuth] Redirecting to:', loginUrl)
-
-    // 使用 replace 避免在历史记录中留下记录
-    window.location.replace(loginUrl)
+    redirectToLogin()
   }
 
   /**

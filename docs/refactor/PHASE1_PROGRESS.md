@@ -31,6 +31,26 @@
 - 大部分类型与工具 import 已切到 `@/shared/*`
 - 部分页面/组件 import 已切到 `@/features/*`
 
+### 5) API 实现迁移到 shared/api（第三批）
+- 已迁移：
+  - `src/api/index.ts` -> `src/shared/api/index.ts`
+  - `src/api/auth.ts` -> `src/shared/api/auth.ts`
+- 已保留兼容导出层（旧路径仍可用）：
+  - `src/api/index.ts`
+  - `src/api/auth.ts`
+- feature API 入口已切到 shared 实现：
+  - `src/features/graph/api/graphApi.ts`
+  - `src/features/chat/api/chatApi.ts`
+  - `src/features/auth/api/authApi.ts`
+
+### 6) import 规则固化
+- 在 `eslint.config.js` 新增 `no-restricted-imports`，禁止新增对以下兼容层路径的依赖：
+  - `@/api*`
+  - `@/types`
+  - `@/lib/utils`
+  - `@/utils/schema`
+  - `@/utils/modelIcons`
+
 ## 验证结果
 
 - `npm run type-check`：通过
@@ -42,8 +62,8 @@
 - 构建仍有大 chunk warning（体积优化属于后续阶段）
 - feature 目录目前是“入口层”而非“完全迁移”，后续要继续把实现文件迁入 feature 域目录
 
-## 下一步建议（Phase 1 第二批）
+## 下一步建议（Phase 1 第四批）
 
-1. 把 `graph/chat/auth` 的 API 实现从 `src/api` 拆到 feature 域目录（先复制再切流量，最后删除旧入口）。
-2. 把 `MainLayout` / `ChatLayout` 中的业务状态逻辑继续下沉，保留 page-shell 只做编排。
-3. 增加 import 约束规则（如禁止跨域相对路径引用），用 ESLint 固化。
+1. 把 `shared/api` 按域再拆细（graph/chat/system），减少单文件体积。
+2. 把 `MainLayout` / `ChatLayout` 的业务状态继续下沉，page-shell 仅保留编排逻辑。
+3. 补依赖方向约束（feature -> shared）并清理剩余跨层引用。

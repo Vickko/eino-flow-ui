@@ -74,7 +74,25 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'warn',
       'prefer-const': 'warn',
-      'no-var': 'error'
+      'no-var': 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@/api',
+                '@/api/*',
+                '@/types',
+                '@/lib/utils',
+                '@/utils/schema',
+                '@/utils/modelIcons'
+              ],
+              message: '请使用 @/shared/* 或 @/features/* 路径，避免回退到兼容层。'
+            }
+          ]
+        }
+      ]
     }
   },
 

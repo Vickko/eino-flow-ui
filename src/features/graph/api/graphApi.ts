@@ -5,4 +5,4 @@ export {
   fetchInputTypes,
   createDebugThread,
   streamDebugRun,
-} from '@/api'
+} from '@/shared/api'

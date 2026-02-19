@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { normalizeDevopsApiOrigin, setBaseUrl } from '@/api'
+import { normalizeDevopsApiOrigin, setBaseUrl } from '@/shared/api'
 
 const STORAGE_KEY = 'devops_api_base_url'
 

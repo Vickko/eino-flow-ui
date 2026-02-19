@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { ping } from '@/api'
+import { ping } from '@/shared/api'
 
 const isOnline = ref(true)
 let failCount = 0

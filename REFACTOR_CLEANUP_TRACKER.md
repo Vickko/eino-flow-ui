@@ -30,14 +30,14 @@
 ## 2. 目录与分层重构（Phase 1）
 
 ### 2.1 目标结构
-- [ ] 按功能域重排目录：`features/graph`、`features/chat`、`features/auth`
+- [x] 按功能域重排目录：`features/graph`、`features/chat`、`features/auth`
 - [x] 抽离通用层：`shared/ui`、`shared/lib`、`shared/types`、`shared/api`
 - [x] 保留兼容导出层，避免一次改完所有 import
 
 ### 2.2 依赖方向治理
 - [ ] 明确依赖方向：feature -> shared，不允许反向引用
 - [ ] 消除循环依赖（重点：api 与 auth/composable 的相互引用）
-- [ ] 制定 import 规则（统一 `@/` 别名）并用 lint 固化
+- [x] 制定 import 规则（统一 `@/` 别名）并用 lint 固化
 
 ### 2.3 路由与页面入口
 - [x] 路由改为懒加载页面级组件
@@ -171,6 +171,7 @@
 - [x] 2026-02-19：完成 Phase 0 剩余项（创建重构分支、生成 Lighthouse 首屏基线、生成 jscpd 重复逻辑基线）。
 - [x] 2026-02-19：完成 Phase 1 第一批（shared 抽离、兼容导出层、feature 入口层、路由懒加载）。
 - [x] 2026-02-19：完成 Phase 1 第二批（新增 404 兜底页、补充 feature/shared import 迁移并通过构建验证）。
+- [x] 2026-02-19：完成 Phase 1 第三批（API 实现迁移到 shared/api、保留 api 兼容层、新增 no-restricted-imports 规则）。
 
 ## 13. 变更说明模板（每次改动都填）
 

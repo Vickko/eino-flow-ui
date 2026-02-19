@@ -1,1 +1,6 @@
-export { streamChatMessage, sendChatMessage, fetchSessions, fetchSessionMessages } from '@/api'
+export {
+  streamChatMessage,
+  sendChatMessage,
+  fetchSessions,
+  fetchSessionMessages,
+} from '@/shared/api'
