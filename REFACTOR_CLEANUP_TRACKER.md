@@ -35,13 +35,13 @@
 - [x] 保留兼容导出层，避免一次改完所有 import
 
 ### 2.2 依赖方向治理
-- [ ] 明确依赖方向：feature -> shared，不允许反向引用
-- [ ] 消除循环依赖（重点：api 与 auth/composable 的相互引用）
+- [x] 明确依赖方向：feature -> shared，不允许反向引用
+- [x] 消除循环依赖（重点：api 与 auth/composable 的相互引用）
 - [x] 制定 import 规则（统一 `@/` 别名）并用 lint 固化
 
 ### 2.3 路由与页面入口
 - [x] 路由改为懒加载页面级组件
-- [ ] 将 `MainLayout`、`ChatLayout` 作为 page-shell，业务逻辑下沉到 feature
+- [x] 将 `MainLayout`、`ChatLayout` 作为 page-shell，业务逻辑下沉到 feature
 - [x] 补路由级错误页/兜底页
 
 ## 3. 状态管理重构（Phase 2）
@@ -64,7 +64,7 @@
 ## 4. API 与数据流重构（Phase 3）
 
 ### 4.1 API Client 统一
-- [ ] 拆分 `api/index.ts`：按域模块化（graph/chat/auth/system）
+- [x] 拆分 `api/index.ts`：按域模块化（graph/chat/auth/system）
 - [ ] 统一错误模型（业务错误、网络错误、认证错误）
 - [ ] 统一重试/超时/取消逻辑
 - [ ] 统一 401 处理，避免多点重定向
@@ -172,6 +172,8 @@
 - [x] 2026-02-19：完成 Phase 1 第一批（shared 抽离、兼容导出层、feature 入口层、路由懒加载）。
 - [x] 2026-02-19：完成 Phase 1 第二批（新增 404 兜底页、补充 feature/shared import 迁移并通过构建验证）。
 - [x] 2026-02-19：完成 Phase 1 第三批（API 实现迁移到 shared/api、保留 api 兼容层、新增 no-restricted-imports 规则）。
+- [x] 2026-02-19：完成 Phase 1 第四批（MainLayout/ChatLayout 下沉到 useMainShell/useChatShell，page-shell 只保留编排）。
+- [x] 2026-02-19：完成 Phase 1 第五批（feature composable 实现迁入 feature，root composable 仅保留兼容导出；新增 shared/composables；增加 feature 依赖方向 lint 约束）。
 
 ## 13. 变更说明模板（每次改动都填）
 

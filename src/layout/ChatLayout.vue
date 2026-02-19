@@ -1,57 +1,27 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
-import { useChat } from '@/features/chat'
-import { useTheme } from '@/composables/useTheme'
-import { useNavButton } from '@/composables/useNavButton'
+import { useChatShell } from '@/features/chat'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
 import ChatCard from '@/components/chat/ChatCard.vue'
 
 const {
   conversations,
-  messages,
   activeConversationId,
   sendMessage,
   createConversation,
-  selectConversation,
-  loadSessions,
   isStreaming,
   stopStreaming,
-} = useChat()
-
-const { initTheme } = useTheme()
-const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton()
-
-// 侧边栏展开状态
-const showChatSidebar = ref(true)
-
-onMounted(() => {
-  initTheme()
-  // 加载会话列表
-  loadSessions()
-})
-
-const activeConversation = computed(() =>
-  conversations.value.find((c) => c.id === activeConversationId.value)
-)
-
-const currentMessages = computed(() => {
-  if (!activeConversationId.value) return []
-  return messages.value[activeConversationId.value] || []
-})
-
-const handleSelectConversation = (id: string) => {
-  selectConversation(id)
-}
-
-const handleBack = () => {
-  activeConversationId.value = null
-}
-
-const toggleSidebar = () => {
-  showChatSidebar.value = !showChatSidebar.value
-}
+  isExpanded,
+  handleMouseEnter,
+  handleMouseLeave,
+  showChatSidebar,
+  activeConversation,
+  currentMessages,
+  handleSelectConversation,
+  handleBack,
+  toggleSidebar,
+} = useChatShell()
 </script>
 
 <template>

@@ -96,6 +96,46 @@ export default tseslint.config(
     }
   },
 
+  // feature 层依赖方向约束：feature -> shared（禁止反向依赖应用壳层）
+  {
+    files: ['src/features/**/*.{ts,tsx,vue}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@/api',
+                '@/api/*',
+                '@/types',
+                '@/lib/utils',
+                '@/utils/schema',
+                '@/utils/modelIcons'
+              ],
+              message: '请使用 @/shared/* 或 @/features/* 路径，避免回退到兼容层。'
+            },
+            {
+              group: [
+                '@/composables',
+                '@/composables/*',
+                '@/components',
+                '@/components/*',
+                '@/layout',
+                '@/layout/*',
+                '@/router',
+                '@/router/*',
+                '@/App.vue',
+                '@/main'
+              ],
+              message: 'feature 层只能依赖自身或 shared 层，不能反向依赖应用壳层。'
+            }
+          ]
+        }
+      ]
+    }
+  },
+
   // Prettier 兼容（必须放在最后）
   eslintConfigPrettier
 )

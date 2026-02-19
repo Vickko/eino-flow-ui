@@ -1,24 +1,22 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { MessageCircle } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import Sidebar from '@/components/Sidebar.vue'
 import Inspector from '@/components/Inspector.vue'
 import BottomPanel from '@/components/BottomPanel.vue'
 import GraphViewer from '@/components/GraphViewer.vue'
-import { useGraph, useLayout, useServerStatus } from '@/features/graph'
-import { useTheme } from '@/composables/useTheme'
-import { useNavButton } from '@/composables/useNavButton'
+import { useMainShell } from '@/features/graph'
 
-const { selectedGraphId } = useGraph()
-const { initTheme } = useTheme()
-const { showSidebar, showInspector, showBottomPanel } = useLayout()
-const { isOnline } = useServerStatus()
-const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton()
-
-onMounted(() => {
-  initTheme()
-})
+const {
+  selectedGraphId,
+  showSidebar,
+  showInspector,
+  showBottomPanel,
+  isOnline,
+  isExpanded,
+  handleMouseEnter,
+  handleMouseLeave,
+} = useMainShell()
 </script>
 
 <template>
