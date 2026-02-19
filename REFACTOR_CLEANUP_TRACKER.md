@@ -54,7 +54,7 @@
 ### 3.2 状态边界清理
 - [ ] 把“可持久化状态”与“页面临时状态”分开
 - [ ] 为本地存储建立统一封装（key、版本、迁移）
-- [ ] 清理跨组件隐式共享状态（如 nav button、theme、server status）
+- [x] 清理跨组件隐式共享状态（如 nav button、theme、server status）
 
 ### 3.3 并发与竞态
 - [ ] 统一请求取消策略（AbortController 生命周期）
@@ -176,6 +176,7 @@
 - [x] 2026-02-19：完成 Phase 1 第五批（feature composable 实现迁入 feature，root composable 仅保留兼容导出；新增 shared/composables；增加 feature 依赖方向 lint 约束）。
 - [x] 2026-02-19：开始 Phase 2 第一批（接入 Pinia，新增 auth/graph/chat/ui 四个 store 骨架并在 main.ts 注入 pinia）。
 - [x] 2026-02-19：完成 Phase 2 第二批（将 theme/nav/layout/graph/auth 的模块级状态迁移到 store，保留 composable 对外 API 兼容）。
+- [x] 2026-02-19：完成 Phase 2 第三批（useChat 核心状态迁移到 chatStore，新增 chat/serverStatus store 单测；useServerStatus store 化并补心跳订阅生命周期回收；type-check/lint/build 通过）。
 
 ## 13. 变更说明模板（每次改动都填）
 
@@ -184,3 +185,11 @@
 - 本次完成：
 - 风险与回滚点：
 - 验证结果：
+
+### 13.1 变更说明（2026-02-19 / Phase 2 第三批）
+
+- 日期：2026-02-19
+- 批次/阶段：Phase 2（状态管理重构）
+- 本次完成：`useChat` 状态改读写 `chatStore`（含 loading/streaming/abort）；`useServerStatus` 改为 `serverStatusStore` 并按作用域自动 retain/release 心跳；补 `chatStore` 与 `serverStatusStore` 单测。
+- 风险与回滚点：`useChat` 仍有较多原位数组/对象变更，后续可继续收敛为 store action；如需回滚可优先回退 `src/features/chat/composables/useChat.ts` 与 `src/features/graph/composables/useServerStatus.ts`。
+- 验证结果：`npm run type-check`、`npm run lint`、`npm run build` 全通过。

@@ -1,51 +1,16 @@
-import { ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { streamChatMessage, fetchSessions, fetchSessionMessages } from '@/features/chat/api/chatApi'
+import { useChatStore } from '@/features/chat/stores/chatStore'
+import type {
+  Conversation,
+  ImageAttachment,
+  Message,
+  ToolCallState,
+  User,
+} from '@/features/chat/types'
 import type { AgUiEvent, RunAgentInput, Session, SessionMessage } from '@/shared/types'
 
-// 类型定义
-export interface User {
-  id: string
-  name: string
-  avatar: string
-}
-
-export interface Message {
-  id: string
-  conversationId: string
-  role: 'user' | 'assistant' | 'system'
-  content: string
-  timestamp: number
-  status?: 'sending' | 'sent' | 'error' | 'streaming' // 新增 streaming 状态
-  model?: string
-  reasoning_content?: string
-  reasoningStatus?: 'thinking' | 'done' // 思考状态：thinking=思考中，done=思考完成
-  images?: string[] // 图片数据数组（base64 格式）
-  attachments?: ImageAttachment[] // 用户上传图片（用于消息预览）
-  tool_calls?: ToolCallState[]
-}
-
-export interface ToolCallState {
-  id: string
-  name: string
-  args?: unknown
-  status: 'running' | 'done' | 'error'
-  error?: string
-}
-
-export interface ImageAttachment {
-  mimeType: string
-  data: string
-  name?: string
-}
-
-export interface Conversation {
-  id: string // tree_id 或 local_xxx，用于前端列表 key
-  sessionId?: string // last_active_session_id，用于 API 调用
-  title: string
-  updatedAt: number
-  unreadCount: number
-  lastMessage?: Message
-}
+export type { Conversation, ImageAttachment, Message, ToolCallState, User }
 
 // Mock 对话内容 - 用于展示各种 Markdown 渲染能力
 const MARKDOWN_DEMO_CONTENT = `# Markdown 渲染演示
@@ -228,29 +193,26 @@ const createLocalDemoMessages = (): Record<string, Message[]> =>
     ])
   )
 
-// 全局状态
-const conversations = ref<Conversation[]>(createLocalDemoConversations())
-const messages = ref<Record<string, Message[]>>(createLocalDemoMessages())
-const activeConversationId = ref<string | null>(null)
-const isLoadingSessions = ref(false)
-const isLoadingMessages = ref(false)
 const currentUser: User = {
   id: 'u1',
   name: 'Me',
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
 }
 
-// SSE 流式传输控制
-const currentAbortController = ref<AbortController | null>(null)
-
-// 通过检查消息状态来判断是否正在流式传输
-const isStreaming = computed(() => {
-  if (!activeConversationId.value) return false
-  const msgList = messages.value[activeConversationId.value]
-  return msgList?.some((m) => m.status === 'streaming') ?? false
-})
-
 export function useChat() {
+  const chatStore = useChatStore()
+  const {
+    conversations,
+    messages,
+    activeConversationId,
+    isLoadingSessions,
+    isLoadingMessages,
+    currentAbortController,
+    isStreaming,
+  } = storeToRefs(chatStore)
+
+  chatStore.hydrate(createLocalDemoConversations(), createLocalDemoMessages())
+
   const extractUserAttachments = (msg: SessionMessage): ImageAttachment[] => {
     const parts = msg.user_input_multi_content || []
     return parts
