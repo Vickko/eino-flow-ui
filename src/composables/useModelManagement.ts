@@ -1,5 +1,5 @@
 import { ref, watch } from 'vue'
-import { getModelIcon } from '../utils/modelIcons'
+import { getModelIcon } from '@/shared/utils/modelIcons'
 
 // 模型接口定义
 export interface Model {

@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from 'axios'
-import type { UserInfo } from '@/types'
+import type { UserInfo } from '@/shared/types'
 
 // 使用 !== undefined 来允许空字符串作为有效值
 const AUTH_BASE =

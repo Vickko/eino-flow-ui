@@ -224,11 +224,9 @@ import {
   Workflow,
 } from 'lucide-vue-next'
 import dagre from 'dagre'
-import { fetchGraphCanvas } from '../api'
+import { fetchGraphCanvas, useGraph, useLayout } from '@/features/graph'
 import CustomNode from './CustomNode.vue'
-import { useGraph } from '../composables/useGraph'
-import { useLayout } from '@/composables/useLayout'
-import type { CanvasNode as TCanvasNode, EdgeType } from '@/types'
+import type { CanvasNode as TCanvasNode, EdgeType } from '@/shared/types'
 
 interface FlowNodeInput {
   id: string

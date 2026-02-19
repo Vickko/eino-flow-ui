@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Search, Plus, MessageSquare } from 'lucide-vue-next'
-import type { Conversation } from '../../composables/useChat'
-import { cn } from '../../lib/utils'
+import type { Conversation } from '@/features/chat'
+import { cn } from '@/shared/lib/utils'
 
 const props = withDefaults(
   defineProps<{

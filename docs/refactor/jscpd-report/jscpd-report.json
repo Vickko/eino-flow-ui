@@ -1,0 +1,645 @@
+{
+  "statistics": {
+    "detectionDate": "2026-02-19T11:19:16.136Z",
+    "formats": {
+      "markup": {
+        "sources": {
+          "src/components/chat/ModelManagementDialog.vue": {
+            "lines": 682,
+            "tokens": 3661,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/chat/ChatSidebar.vue": {
+            "lines": 222,
+            "tokens": 1263,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/chat/ChatInput.vue": {
+            "lines": 325,
+            "tokens": 2035,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/chat/ChatCard.vue": {
+            "lines": 588,
+            "tokens": 3395,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/chat/ChatArea.vue": {
+            "lines": 147,
+            "tokens": 918,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/layout/MainLayout.vue": {
+            "lines": 169,
+            "tokens": 913,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 23,
+            "duplicatedTokens": 110,
+            "percentage": 13.61,
+            "percentageTokens": 12.05,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/layout/ChatLayout.vue": {
+            "lines": 175,
+            "tokens": 967,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 23,
+            "duplicatedTokens": 110,
+            "percentage": 13.14,
+            "percentageTokens": 11.38,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/Sidebar.vue": {
+            "lines": 155,
+            "tokens": 1057,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/Logo.vue": {
+            "lines": 19,
+            "tokens": 160,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/Inspector.vue": {
+            "lines": 607,
+            "tokens": 3908,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 32,
+            "duplicatedTokens": 174,
+            "percentage": 5.27,
+            "percentageTokens": 4.45,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/GraphViewer.vue": {
+            "lines": 503,
+            "tokens": 3370,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/GraphList.vue": {
+            "lines": 95,
+            "tokens": 585,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/CustomNode.vue": {
+            "lines": 108,
+            "tokens": 637,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/BottomPanel.vue": {
+            "lines": 626,
+            "tokens": 4079,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/assets/logo_qwen.svg": {
+            "lines": 11,
+            "tokens": 196,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/assets/logo_minimax.svg": {
+            "lines": 13,
+            "tokens": 192,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/assets/logo_meta.svg": {
+            "lines": 19,
+            "tokens": 348,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/assets/logo_kimi.svg": {
+            "lines": 9,
+            "tokens": 146,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/assets/logo_grok.svg": {
+            "lines": 12,
+            "tokens": 182,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/assets/logo_gemini.svg": {
+            "lines": 20,
+            "tokens": 364,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/assets/logo_doubao.svg": {
+            "lines": 13,
+            "tokens": 186,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 4518,
+          "tokens": 28562,
+          "sources": 21,
+          "clones": 2,
+          "duplicatedLines": 39,
+          "duplicatedTokens": 197,
+          "percentage": 0.86,
+          "percentageTokens": 0.69,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "typescript": {
+        "sources": {
+          "src/utils/schema.ts": {
+            "lines": 35,
+            "tokens": 229,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/modelIcons.ts": {
+            "lines": 105,
+            "tokens": 798,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/types/index.ts": {
+            "lines": 358,
+            "tokens": 1932,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/router/index.ts": {
+            "lines": 80,
+            "tokens": 533,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useTheme.ts": {
+            "lines": 65,
+            "tokens": 537,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useServerStatus.ts": {
+            "lines": 35,
+            "tokens": 255,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useNavButton.ts": {
+            "lines": 19,
+            "tokens": 111,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useModelManagement.ts": {
+            "lines": 300,
+            "tokens": 1967,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useLayout.ts": {
+            "lines": 20,
+            "tokens": 157,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useGraph.ts": {
+            "lines": 88,
+            "tokens": 806,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useChat.ts": {
+            "lines": 788,
+            "tokens": 6220,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useAuth.ts": {
+            "lines": 155,
+            "tokens": 1062,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/composables/useApiConfig.ts": {
+            "lines": 57,
+            "tokens": 443,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/api/index.ts": {
+            "lines": 359,
+            "tokens": 2966,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 28,
+            "duplicatedTokens": 226,
+            "percentage": 7.8,
+            "percentageTokens": 7.62,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/api/auth.ts": {
+            "lines": 42,
+            "tokens": 263,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/vite-env.d.ts": {
+            "lines": 19,
+            "tokens": 238,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/main.ts": {
+            "lines": 27,
+            "tokens": 142,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 2552,
+          "tokens": 18659,
+          "sources": 17,
+          "clones": 1,
+          "duplicatedLines": 14,
+          "duplicatedTokens": 113,
+          "percentage": 0.55,
+          "percentageTokens": 0.61,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "css": {
+        "sources": {
+          "src/assets/main.css": {
+            "lines": 174,
+            "tokens": 1254,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 174,
+          "tokens": 1254,
+          "sources": 1,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      }
+    },
+    "total": {
+      "lines": 7244,
+      "tokens": 48475,
+      "sources": 39,
+      "clones": 3,
+      "duplicatedLines": 53,
+      "duplicatedTokens": 310,
+      "percentage": 0.73,
+      "percentageTokens": 0.64,
+      "newDuplicatedLines": 0,
+      "newClones": 0
+    }
+  },
+  "duplicates": [
+    {
+      "format": "markup",
+      "lines": 24,
+      "fragment": " class=\"w-5 h-5 text-foreground\" />\n      </RouterLink>\n    </div>\n  </div>\n</template>\n\n<style scoped>\n/* Nav Switch Button Auto-hide */\n.nav-switch-trigger {\n  pointer-events: none;\n}\n\n.nav-switch-trigger .nav-switch-btn {\n  pointer-events: auto;\n  transform: translate(-50%, 50%);\n  opacity: 0.3;\n}\n\n.nav-switch-trigger.expanded .nav-switch-btn {\n  transform: translate(0, 0);\n  opacity: 1;\n}\n\n/* Sidebar Toggle",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/layout/ChatLayout.vue",
+        "start": 141,
+        "end": 164,
+        "startLoc": {
+          "line": 141,
+          "column": 11,
+          "position": 799
+        },
+        "endLoc": {
+          "line": 164,
+          "column": 7,
+          "position": 909
+        }
+      },
+      "secondFile": {
+        "name": "src/layout/MainLayout.vue",
+        "start": 118,
+        "end": 141,
+        "startLoc": {
+          "line": 118,
+          "column": 14,
+          "position": 689
+        },
+        "endLoc": {
+          "line": 141,
+          "column": 11,
+          "position": 799
+        }
+      }
+    },
+    {
+      "format": "markup",
+      "lines": 17,
+      "fragment": "\"\n          class=\"flex flex-col items-center justify-center text-muted-foreground py-8\"\n        >\n          <svg\n            class=\"w-8 h-8 mb-2 opacity-20\"\n            fill=\"none\"\n            viewBox=\"0 0 24 24\"\n            stroke=\"currentColor\"\n          >\n            <path\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              stroke-width=\"2\"\n              d=\"M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z\"\n            />\n          </svg>\n          <p class=\"text-xs\">No messages",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/components/Inspector.vue",
+        "start": 512,
+        "end": 528,
+        "startLoc": {
+          "line": 512,
+          "column": 26,
+          "position": 3413
+        },
+        "endLoc": {
+          "line": 528,
+          "column": 9,
+          "position": 3500
+        }
+      },
+      "secondFile": {
+        "name": "src/components/Inspector.vue",
+        "start": 492,
+        "end": 508,
+        "startLoc": {
+          "line": 492,
+          "column": 17,
+          "position": 3279
+        },
+        "endLoc": {
+          "line": 508,
+          "column": 10,
+          "position": 3366
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 15,
+      "fragment": ",\n      ...(isAuthEnabled && { credentials: 'include' }), // 条件性添加\n    })\n\n    if (!response.ok) {\n      throw new Error(`HTTP error! status: ${response.status}`)\n    }\n\n    const reader = response.body?.getReader()\n    if (!reader) {\n      throw new Error('Response body is not readable')\n    }\n\n    const decoder = new TextDecoder()\n    let",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/api/index.ts",
+        "start": 252,
+        "end": 266,
+        "startLoc": {
+          "line": 252,
+          "column": 12,
+          "position": 2114
+        },
+        "endLoc": {
+          "line": 266,
+          "column": 4,
+          "position": 2227
+        }
+      },
+      "secondFile": {
+        "name": "src/api/index.ts",
+        "start": 163,
+        "end": 179,
+        "startLoc": {
+          "line": 163,
+          "column": 2,
+          "position": 1314
+        },
+        "endLoc": {
+          "line": 179,
+          "column": 6,
+          "position": 1430
+        }
+      }
+    }
+  ]
+}

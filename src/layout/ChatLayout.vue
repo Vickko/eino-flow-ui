@@ -2,11 +2,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
-import { useChat } from '../composables/useChat'
-import { useTheme } from '../composables/useTheme'
-import { useNavButton } from '../composables/useNavButton'
-import ChatSidebar from '../components/chat/ChatSidebar.vue'
-import ChatCard from '../components/chat/ChatCard.vue'
+import { useChat } from '@/features/chat'
+import { useTheme } from '@/composables/useTheme'
+import { useNavButton } from '@/composables/useNavButton'
+import ChatSidebar from '@/components/chat/ChatSidebar.vue'
+import ChatCard from '@/components/chat/ChatCard.vue'
 
 const {
   conversations,
@@ -110,7 +110,10 @@ const toggleSidebar = () => {
           :conversation-title="activeConversation?.title"
           :is-streaming="isStreaming"
           class="w-full h-full"
-          @send="({ text, model, thinking, attachments }) => sendMessage(text, model, thinking, attachments)"
+          @send="
+            ({ text, model, thinking, attachments }) =>
+              sendMessage(text, model, thinking, attachments)
+          "
           @stop="stopStreaming"
         />
       </template>

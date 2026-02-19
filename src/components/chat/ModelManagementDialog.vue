@@ -335,7 +335,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import { X, Pencil, Trash2, Plus, Search, GripVertical } from 'lucide-vue-next'
-import { useModelManagement, type Model } from '../../composables/useModelManagement'
+import { useModelManagement, type Model } from '@/features/chat'
 
 const props = defineProps<{
   isOpen: boolean

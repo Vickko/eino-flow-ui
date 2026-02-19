@@ -1,5 +1,10 @@
 import { ref, computed } from 'vue'
-import type { CanvasNode, GraphNavigationItem, NodeExecutionResult, GraphSchema } from '@/types'
+import type {
+  CanvasNode,
+  GraphNavigationItem,
+  NodeExecutionResult,
+  GraphSchema,
+} from '@/shared/types'
 
 const selectedGraphId = ref<string | null>(null)
 const selectedNode = ref<CanvasNode | null>(null)

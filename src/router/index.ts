@@ -1,8 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
-import MainLayout from '@/layout/MainLayout.vue'
-import ChatLayout from '@/layout/ChatLayout.vue'
-import { useAuth } from '@/composables/useAuth'
+import { useAuth } from '@/features/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,14 +8,19 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: MainLayout,
+      component: () => import('@/layout/MainLayout.vue'),
       meta: { requiresAuth: true }, // 需要认证
     },
     {
       path: '/chat',
       name: 'chat',
-      component: ChatLayout,
+      component: () => import('@/layout/ChatLayout.vue'),
       meta: { requiresAuth: true }, // 需要认证
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/layout/NotFoundLayout.vue'),
     },
   ],
 })

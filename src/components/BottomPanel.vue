@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import { useGraph } from '../composables/useGraph'
-import { createDebugThread, streamDebugRun, fetchGraphCanvas } from '../api'
-import type { CanvasNode, JsonSchema, LogEntry, SSEData } from '@/types'
+import { useGraph, createDebugThread, streamDebugRun, fetchGraphCanvas } from '@/features/graph'
+import type { CanvasNode, JsonSchema, LogEntry, SSEData } from '@/shared/types'
 
 const {
   selectedGraphId,

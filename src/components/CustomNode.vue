@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
-import type { CanvasNode } from '@/types'
-import { formatSchemaType } from '@/utils/schema'
+import type { CanvasNode } from '@/shared/types'
+import { formatSchemaType } from '@/shared/utils/schema'
 
 const props = defineProps<{
   data: CanvasNode

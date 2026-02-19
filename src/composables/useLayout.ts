@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { EdgeType } from '@/types'
+import type { EdgeType } from '@/shared/types'
 
 const showSidebar = ref(true)
 const showInspector = ref(true)

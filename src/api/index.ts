@@ -11,7 +11,7 @@ import type {
   RunAgentInput,
   SessionListResponse,
   SessionMessagesResponse,
-} from '@/types'
+} from '@/shared/types'
 
 const DEVOPS_API_PREFIX = '/eino/devops'
 
@@ -79,7 +79,7 @@ if (isAuthEnabled) {
       const axiosError = error as { response?: { status: number } }
       if (axiosError.response?.status === 401) {
         // 延迟导入 useAuth
-        const { useAuth } = await import('@/composables/useAuth')
+        const { useAuth } = await import('@/features/auth/composables/useAuth')
         const { login } = useAuth()
         login()
       }
@@ -301,9 +301,7 @@ export const streamChatMessage = async (
 }
 
 // 保留原有的非流式 API（用于兼容）
-export const sendChatMessage = async (
-  request: RunAgentInput
-): Promise<ChatMessageResponse> => {
+export const sendChatMessage = async (request: RunAgentInput): Promise<ChatMessageResponse> => {
   let content = ''
   let reasoningContent = ''
   let runErrorMessage = ''

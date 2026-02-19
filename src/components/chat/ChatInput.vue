@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { ImagePlus, Send, Square, X } from 'lucide-vue-next'
-import { cn } from '../../lib/utils'
+import { cn } from '@/shared/lib/utils'
 
 interface ImageAttachment {
   mimeType: string

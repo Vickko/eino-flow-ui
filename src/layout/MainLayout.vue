@@ -6,10 +6,8 @@ import Sidebar from '@/components/Sidebar.vue'
 import Inspector from '@/components/Inspector.vue'
 import BottomPanel from '@/components/BottomPanel.vue'
 import GraphViewer from '@/components/GraphViewer.vue'
-import { useGraph } from '@/composables/useGraph'
+import { useGraph, useLayout, useServerStatus } from '@/features/graph'
 import { useTheme } from '@/composables/useTheme'
-import { useLayout } from '@/composables/useLayout'
-import { useServerStatus } from '@/composables/useServerStatus'
 import { useNavButton } from '@/composables/useNavButton'
 
 const { selectedGraphId } = useGraph()

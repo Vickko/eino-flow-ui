@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { Sun, Moon, Monitor, Settings, Check, X } from 'lucide-vue-next'
-import { useGraph } from '@/composables/useGraph'
+import { useGraph, useServerStatus } from '@/features/graph'
 import { useTheme } from '@/composables/useTheme'
-import { useServerStatus } from '@/composables/useServerStatus'
 import { useApiConfig } from '@/composables/useApiConfig'
 import GraphList from '@/components/GraphList.vue'
 import Logo from '@/components/Logo.vue'

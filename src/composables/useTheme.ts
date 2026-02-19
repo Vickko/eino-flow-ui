@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { ThemeMode } from '@/types'
+import type { ThemeMode } from '@/shared/types'
 
 const theme = ref<ThemeMode>('system')
 const isDark = ref(false)

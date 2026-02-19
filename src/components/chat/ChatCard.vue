@@ -10,11 +10,11 @@ import {
   Lightbulb,
   ImagePlus,
 } from 'lucide-vue-next'
-import type { ImageAttachment, Message } from '../../composables/useChat'
+import type { ImageAttachment, Message } from '@/features/chat'
 import MessageBubble from './MessageBubble.vue'
 import ChatInput from './ChatInput.vue'
 import ModelManagementDialog from './ModelManagementDialog.vue'
-import { useModelManagement } from '../../composables/useModelManagement'
+import { useModelManagement } from '@/features/chat'
 
 const props = defineProps<{
   messages: Message[]
@@ -24,7 +24,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'send', payload: { text: string; model?: string; thinking?: boolean; attachments?: ImageAttachment[] }): void
+  (
+    e: 'send',
+    payload: { text: string; model?: string; thinking?: boolean; attachments?: ImageAttachment[] }
+  ): void
   (e: 'stop'): void
 }>()
 
@@ -490,7 +493,9 @@ const handleClickOutside = (event: MouseEvent) => {
                     </button>
                   </div>
 
-                  <div class="sticky bottom-0 shrink-0 border-t border-border/40 bg-background/95 p-2">
+                  <div
+                    class="sticky bottom-0 shrink-0 border-t border-border/40 bg-background/95 p-2"
+                  >
                     <button
                       class="w-full px-3 py-2 rounded-lg bg-background/50 hover:bg-muted/70 border border-border/40 hover:border-border/70 text-xs font-medium transition-colors flex items-center justify-center gap-2"
                       @click="openModelManagement"

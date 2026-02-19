@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { fetchGraphs } from '@/api'
-import { useServerStatus } from '@/composables/useServerStatus'
-import type { Graph } from '@/types'
+import { fetchGraphs, useServerStatus } from '@/features/graph'
+import type { Graph } from '@/shared/types'
 
 const props = withDefaults(
   defineProps<{

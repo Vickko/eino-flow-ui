@@ -1,6 +1,6 @@
 import { ref, computed, readonly } from 'vue'
-import { getUserInfo as fetchUserInfo, logout as logoutApi } from '@/api/auth'
-import type { UserInfo, AuthState } from '@/types'
+import { getUserInfo as fetchUserInfo, logout as logoutApi } from '@/features/auth/api/authApi'
+import type { UserInfo, AuthState } from '@/shared/types'
 
 // 检查是否启用认证（从环境变量读取）
 const isAuthEnabled = computed(() => import.meta.env.VITE_ENABLE_AUTH === 'true')

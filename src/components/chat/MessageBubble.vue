@@ -8,10 +8,10 @@ import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { Bot, Lightbulb, ChevronDown, ChevronRight } from 'lucide-vue-next'
 import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/preview.css'
-import type { Message } from '../../composables/useChat'
-import { useTheme } from '../../composables/useTheme'
-import { cn } from '../../lib/utils'
-import { getModelIcon } from '../../utils/modelIcons'
+import type { Message } from '@/features/chat'
+import { useTheme } from '@/composables/useTheme'
+import { cn } from '@/shared/lib/utils'
+import { getModelIcon } from '@/shared/utils/modelIcons'
 
 const { isDark } = useTheme()
 
@@ -359,10 +359,7 @@ const formatToolCallArgs = (args: unknown) => {
 
     <div
       v-if="isUser && userPreviewImages.length > 0"
-      :class="[
-        'images-container mb-2',
-        shouldAnimateUser ? 'image-strip-animate' : '',
-      ]"
+      :class="['images-container mb-2', shouldAnimateUser ? 'image-strip-animate' : '']"
     >
       <img
         v-for="image in userPreviewImages"
@@ -408,7 +405,8 @@ const formatToolCallArgs = (args: unknown) => {
             <pre
               v-if="toolCall.args !== undefined"
               class="mt-2 whitespace-pre-wrap break-words text-xs text-muted-foreground/90"
-            >{{ formatToolCallArgs(toolCall.args) }}</pre>
+              >{{ formatToolCallArgs(toolCall.args) }}</pre
+            >
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
-import { streamChatMessage, fetchSessions, fetchSessionMessages } from '@/api'
-import type { AgUiEvent, RunAgentInput, Session, SessionMessage } from '@/types'
+import { streamChatMessage, fetchSessions, fetchSessionMessages } from '@/features/chat/api/chatApi'
+import type { AgUiEvent, RunAgentInput, Session, SessionMessage } from '@/shared/types'
 
 // 类型定义
 export interface User {
@@ -423,7 +423,8 @@ export function useChat() {
     const normalizedText = text.trim()
     const safeAttachments = attachments ?? []
     const displayContent =
-      normalizedText || (safeAttachments.length > 0 ? `[已上传 ${safeAttachments.length} 张图片]` : '')
+      normalizedText ||
+      (safeAttachments.length > 0 ? `[已上传 ${safeAttachments.length} 张图片]` : '')
     const attachmentCopies = safeAttachments.map((attachment) => ({ ...attachment }))
 
     const newMessage: Message = {
@@ -519,7 +520,11 @@ export function useChat() {
       }
     }
 
-    const ensureToolCallState = (msg: Message, toolCallId: string, name?: string): ToolCallState => {
+    const ensureToolCallState = (
+      msg: Message,
+      toolCallId: string,
+      name?: string
+    ): ToolCallState => {
       if (!msg.tool_calls) {
         msg.tool_calls = []
       }

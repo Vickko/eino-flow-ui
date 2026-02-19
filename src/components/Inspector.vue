@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useGraph } from '../composables/useGraph'
+import { useGraph } from '@/features/graph'
 import { Settings2, Activity, MessageSquare } from 'lucide-vue-next'
-import { formatSchemaType } from '@/utils/schema'
-import type { Message } from '../composables/useChat'
+import { formatSchemaType } from '@/shared/utils/schema'
+import type { Message } from '@/features/chat'
 import MessageBubble from './chat/MessageBubble.vue'
 
 const { selectedNode, nodeExecutionResults, navigateToSubgraph } = useGraph()
