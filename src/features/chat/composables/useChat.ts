@@ -8,9 +8,17 @@ import type {
   ToolCallState,
   User,
 } from '@/features/chat/types'
+import { isApiClientError } from '@/shared/api/errors'
 import type { AgUiEvent, RunAgentInput, Session, SessionMessage } from '@/shared/types'
 
 export type { Conversation, ImageAttachment, Message, ToolCallState, User }
+
+const isAbortLikeError = (error: unknown): boolean => {
+  if (error instanceof Error && error.name === 'AbortError') {
+    return true
+  }
+  return isApiClientError(error) && error.kind === 'abort'
+}
 
 // Mock 对话内容 - 用于展示各种 Markdown 渲染能力
 const MARKDOWN_DEMO_CONTENT = `# Markdown 渲染演示
@@ -207,7 +215,6 @@ export function useChat() {
     activeConversationId,
     isLoadingSessions,
     isLoadingMessages,
-    currentAbortController,
     isStreaming,
   } = storeToRefs(chatStore)
 
@@ -440,32 +447,28 @@ export function useChat() {
       messages.value[conversationId].push(aiMessage)
     }
 
-    // 创建 AbortController 用于中断请求
-    const abortController = new AbortController()
-    currentAbortController.value = abortController
+    const { requestId: streamRequestId, controller: abortController } =
+      chatStore.beginStreamingRequest()
+    const finalizeStreamRequest = () => {
+      chatStore.completeStreamingRequest(streamRequestId)
+    }
 
     // 本地会话和内置演示会话都没有后端 threadId，需要等待 RUN_STARTED 回传
     const isLocal = conversationId.startsWith('local_')
     const isDemoConversation = !!LOCAL_DEMO_MESSAGES[conversationId]
     const isEphemeralConversation = isLocal || isDemoConversation
     let assistantMessageId = aiMessageId
+    let streamConversationId = conversationId
     let runClosed = false
 
-    const getCurrentConversationId = (): string => {
-      if (!isEphemeralConversation) return conversationId
-      return activeConversationId.value || conversationId
-    }
-
     const findAssistantMessage = (): Message | undefined => {
-      const currentConvId = getCurrentConversationId()
-      const msgList = messages.value[currentConvId]
+      const msgList = messages.value[streamConversationId]
       if (!msgList) return undefined
       return msgList.find((m) => m.id === assistantMessageId || m.id === aiMessageId)
     }
 
     const finalizeConversation = () => {
-      const currentConvId = getCurrentConversationId()
-      const convIdx = conversations.value.findIndex((c) => c.id === currentConvId)
+      const convIdx = conversations.value.findIndex((c) => c.id === streamConversationId)
       if (convIdx === -1) return
       const conv = conversations.value[convIdx]
       if (!conv) return
@@ -510,7 +513,11 @@ export function useChat() {
       switch (event.type) {
         case 'RUN_STARTED':
           if (isEphemeralConversation && event.threadId) {
-            updateConversationInfo(conversationId, event.threadId)
+            streamConversationId = updateConversationInfo(
+              streamConversationId,
+              event.threadId,
+              event.threadId
+            )
           }
           break
         case 'TEXT_MESSAGE_START':
@@ -570,7 +577,7 @@ export function useChat() {
           }
           runClosed = true
           finalizeConversation()
-          currentAbortController.value = null
+          finalizeStreamRequest()
           break
         case 'RUN_ERROR':
           if (msg) {
@@ -578,7 +585,7 @@ export function useChat() {
             msg.content = msg.content || `抱歉，发送消息时出现错误: ${event.message}`
           }
           runClosed = true
-          currentAbortController.value = null
+          finalizeStreamRequest()
           break
       }
     }
@@ -632,16 +639,17 @@ export function useChat() {
             }
             runClosed = true
             finalizeConversation()
-            currentAbortController.value = null
+            finalizeStreamRequest()
           },
           onError: (error: string) => {
+            if (abortController.signal.aborted) return
             const msg = findAssistantMessage()
             if (msg) {
               msg.status = 'error'
               msg.content = msg.content || `抱歉，发送消息时出现错误: ${error}`
             }
             runClosed = true
-            currentAbortController.value = null
+            finalizeStreamRequest()
           },
         },
         abortController.signal
@@ -650,14 +658,12 @@ export function useChat() {
       console.error('Error sending message:', error)
 
       // 更新 AI 消息状态为错误
-      // 注意：此时 conversationId 可能已被更新，需要使用新的 ID
-      const currentConvId = isEphemeralConversation ? activeConversationId.value : conversationId
-      const msgList = currentConvId ? messages.value[currentConvId] : null
+      const msgList = messages.value[streamConversationId]
       if (msgList) {
         const msg = msgList.find((m) => m.id === assistantMessageId || m.id === aiMessageId)
         if (msg) {
           // 如果是主动中断，不显示错误
-          if (error instanceof Error && error.name === 'AbortError') {
+          if (isAbortLikeError(error)) {
             msg.status = 'sent'
             if (!msg.content) {
               msg.content = '已停止生成'
@@ -672,15 +678,12 @@ export function useChat() {
       }
 
       // 清理 AbortController
-      currentAbortController.value = null
+      finalizeStreamRequest()
     }
   }
 
   const stopStreaming = () => {
-    if (currentAbortController.value) {
-      currentAbortController.value.abort()
-      currentAbortController.value = null
-    }
+    chatStore.abortStreamingRequest()
   }
 
   const createConversation = () => {
@@ -698,17 +701,37 @@ export function useChat() {
   }
 
   // 更新会话信息（用于收到后端 session 后替换本地临时数据）
-  const updateConversationInfo = (oldId: string, newTreeId: string, newSessionId?: string) => {
+  const updateConversationInfo = (oldId: string, newTreeId: string, newSessionId?: string): string => {
+    if (!oldId || !newTreeId) {
+      return oldId || newTreeId
+    }
+
+    if (oldId === newTreeId) {
+      const existing = conversations.value.find((conversation) => conversation.id === newTreeId)
+      if (existing && newSessionId) {
+        existing.sessionId = newSessionId
+      }
+      return newTreeId
+    }
+
     // 1. 更新 conversations 列表
     const oldIdx = conversations.value.findIndex((c) => c.id === oldId)
     const existingNewIdx = conversations.value.findIndex((c) => c.id === newTreeId)
     const conv = oldIdx >= 0 ? conversations.value[oldIdx] : undefined
+    const existingNew = existingNewIdx >= 0 ? conversations.value[existingNewIdx] : undefined
 
     if (conv) {
       conv.id = newTreeId
       if (newSessionId) {
         conv.sessionId = newSessionId
       }
+      if (existingNew) {
+        conv.updatedAt = Math.max(conv.updatedAt, existingNew.updatedAt)
+        conv.lastMessage = conv.lastMessage ?? existingNew.lastMessage
+        conv.sessionId = conv.sessionId ?? existingNew.sessionId
+      }
+    } else if (existingNew && newSessionId) {
+      existingNew.sessionId = newSessionId
     }
 
     // 如果列表里已经有同一个 newTreeId，去重，保留当前会话对象
@@ -736,6 +759,8 @@ export function useChat() {
     if (activeConversationId.value === oldId) {
       activeConversationId.value = newTreeId
     }
+
+    return newTreeId
   }
 
   return {

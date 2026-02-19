@@ -57,17 +57,17 @@
 - [x] 清理跨组件隐式共享状态（如 nav button、theme、server status）
 
 ### 3.3 并发与竞态
-- [ ] 统一请求取消策略（AbortController 生命周期）
-- [ ] 修复会话切换时消息流竞态
-- [ ] 修复临时会话 ID 与后端 threadId 替换时的边界问题
+- [x] 统一请求取消策略（AbortController 生命周期）
+- [x] 修复会话切换时消息流竞态
+- [x] 修复临时会话 ID 与后端 threadId 替换时的边界问题
 
 ## 4. API 与数据流重构（Phase 3）
 
 ### 4.1 API Client 统一
 - [x] 拆分 `api/index.ts`：按域模块化（graph/chat/auth/system）
-- [ ] 统一错误模型（业务错误、网络错误、认证错误）
-- [ ] 统一重试/超时/取消逻辑
-- [ ] 统一 401 处理，避免多点重定向
+- [x] 统一错误模型（业务错误、网络错误、认证错误）
+- [x] 统一重试/超时/取消逻辑
+- [x] 统一 401 处理，避免多点重定向
 
 ### 4.2 SSE/流式协议抽象
 - [ ] 独立 `sseClient` 与事件解析器
@@ -179,6 +179,8 @@
 - [x] 2026-02-19：完成 Phase 2 第三批（useChat 核心状态迁移到 chatStore，新增 chat/serverStatus store 单测；useServerStatus store 化并补心跳订阅生命周期回收；type-check/lint/build 通过）。
 - [x] 2026-02-19：完成 Phase 2 第四批（拆分持久化与页面临时状态：theme 迁入 preferenceStore，api 配置迁入 apiConfigStore；新增统一 storage 封装并完成 legacy key 迁移；type-check/lint/test/build 通过）。
 - [x] 2026-02-19：完成 Phase 2 第四批补充（在 `main.ts` 启动阶段主动初始化 `apiConfigStore`，保证首个 API 请求前 baseURL 已应用）。
+- [x] 2026-02-19：完成 Phase 2 第五批（统一 chat 流式请求 AbortController 生命周期；修复会话切换时流式消息写入竞态；修复 local 临时会话替换 threadId 后的消息归属边界；新增 useChat 并发竞态单测）。
+- [x] 2026-02-19：完成 Phase 3 第一批（统一 API 错误模型；落地请求级重试/超时/取消策略；统一 axios/fetch 的 401 handler 入口，避免多点重定向；新增 request policy 单测）。
 
 ## 13. 变更说明模板（每次改动都填）
 
@@ -202,4 +204,20 @@
 - 批次/阶段：Phase 2（状态管理重构）
 - 本次完成：完成 `useApiConfig` 的 store 化（`apiConfigStore`）；拆分 `theme`（持久化）与 `layout/nav`（页面临时）状态；新增统一 localStorage 封装（含 key 命名、版本标记、legacy key 迁移）。
 - 风险与回滚点：`apiConfigStore` 仍在首次调用 composable 时才生效，若后续需要“应用启动即应用配置”，可在 `main.ts` 主动初始化 store；回滚点为 `src/shared/stores/apiConfigStore.ts`、`src/shared/stores/preferenceStore.ts`、`src/shared/lib/storage/appStorage.ts`。
+- 验证结果：`npm run type-check`、`npm run lint`、`npm run test`、`npm run build` 全通过。
+
+### 13.3 变更说明（2026-02-19 / Phase 2 第五批）
+
+- 日期：2026-02-19
+- 批次/阶段：Phase 2（状态管理重构）
+- 本次完成：`chatStore` 新增流式请求生命周期动作（begin/complete/abort）；`useChat` 按“请求 ID + 会话 ID 绑定”收口流式写入；修复 local 临时会话在 `RUN_STARTED` 后替换为后端 `threadId` 时的消息迁移与去重边界；新增 `useChat` 并发竞态测试与 `chatStore` 生命周期测试。
+- 风险与回滚点：当前策略为“新请求发起时自动中断旧请求”，如后续希望支持多会话并行流式，需要把全局 `currentAbortController` 升级为按会话映射；回滚点为 `src/features/chat/stores/chatStore.ts`、`src/features/chat/composables/useChat.ts`、`src/features/chat/composables/useChat.test.ts`。
+- 验证结果：`npm run type-check`、`npm run lint`、`npm run test`、`npm run build` 全通过。
+
+### 13.4 变更说明（2026-02-19 / Phase 3 第一批）
+
+- 日期：2026-02-19
+- 批次/阶段：Phase 3（API 与数据流重构）
+- 本次完成：新增统一错误模型（`ApiClientError`，覆盖 business/network/timeout/abort/unauthorized/http/unknown）；新增统一请求策略层（重试、超时、取消、fetch/axios 一致行为）；graph/chat/system/auth API 全量接入请求策略；`notifyUnauthorized` 作为 401 统一入口，收敛 axios 与 fetch 的未授权处理路径。
+- 风险与回滚点：目前默认重试仅对 retryable 错误生效（网络、超时、5xx/429），POST 默认不重试；若后续后端幂等策略完善，可再扩大重试范围。回滚点为 `src/shared/api/errors.ts`、`src/shared/api/request.ts`、`src/shared/api/base.ts` 与四个域 API 文件（`graphApi.ts/chatApi.ts/systemApi.ts/auth.ts`）。
 - 验证结果：`npm run type-check`、`npm run lint`、`npm run test`、`npm run build` 全通过。

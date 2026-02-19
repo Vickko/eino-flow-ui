@@ -41,4 +41,27 @@ describe('useChatStore', () => {
     expect(store.conversations).toHaveLength(1)
     expect(store.messages['c-1']).toHaveLength(1)
   })
+
+  it('begin/complete/abort streaming request 生命周期正确', () => {
+    const store = useChatStore()
+
+    const first = store.beginStreamingRequest()
+    expect(store.currentAbortController).toBe(first.controller)
+
+    const second = store.beginStreamingRequest()
+    expect(first.controller.signal.aborted).toBe(true)
+    expect(store.currentAbortController).toBe(second.controller)
+
+    store.completeStreamingRequest(first.requestId)
+    expect(store.currentAbortController).toBe(second.controller)
+
+    store.completeStreamingRequest(second.requestId)
+    expect(store.currentAbortController).toBeNull()
+
+    const third = store.beginStreamingRequest()
+    expect(store.currentAbortController).toBe(third.controller)
+    store.abortStreamingRequest()
+    expect(third.controller.signal.aborted).toBe(true)
+    expect(store.currentAbortController).toBeNull()
+  })
 })

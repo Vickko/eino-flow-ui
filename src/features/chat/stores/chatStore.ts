@@ -9,6 +9,7 @@ export const useChatStore = defineStore('chat', () => {
   const isLoadingSessions = ref(false)
   const isLoadingMessages = ref(false)
   const currentAbortController = ref<AbortController | null>(null)
+  const activeAbortRequestId = ref(0)
   const isHydrated = ref(false)
 
   const isStreaming = computed(() => {
@@ -52,15 +53,46 @@ export const useChatStore = defineStore('chat', () => {
 
   const setCurrentAbortController = (controller: AbortController | null): void => {
     currentAbortController.value = controller
+    activeAbortRequestId.value += 1
+  }
+
+  const beginStreamingRequest = (): { requestId: number; controller: AbortController } => {
+    if (currentAbortController.value) {
+      currentAbortController.value.abort()
+    }
+    const controller = new AbortController()
+    currentAbortController.value = controller
+    activeAbortRequestId.value += 1
+    return {
+      requestId: activeAbortRequestId.value,
+      controller,
+    }
+  }
+
+  const completeStreamingRequest = (requestId: number): void => {
+    if (activeAbortRequestId.value !== requestId) return
+    currentAbortController.value = null
+  }
+
+  const abortStreamingRequest = (): void => {
+    if (currentAbortController.value) {
+      currentAbortController.value.abort()
+      currentAbortController.value = null
+    }
+    activeAbortRequestId.value += 1
   }
 
   const reset = (): void => {
+    if (currentAbortController.value) {
+      currentAbortController.value.abort()
+    }
     conversations.value = []
     messages.value = {}
     activeConversationId.value = null
     isLoadingSessions.value = false
     isLoadingMessages.value = false
     currentAbortController.value = null
+    activeAbortRequestId.value = 0
     isHydrated.value = false
   }
 
@@ -79,6 +111,9 @@ export const useChatStore = defineStore('chat', () => {
     setLoadingSessions,
     setLoadingMessages,
     setCurrentAbortController,
+    beginStreamingRequest,
+    completeStreamingRequest,
+    abortStreamingRequest,
     reset,
   }
 })

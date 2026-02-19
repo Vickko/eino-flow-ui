@@ -5,7 +5,14 @@ import type {
   SessionListResponse,
   SessionMessagesResponse,
 } from '@/shared/types'
-import { chatApiClient, getChatApiBase, isAuthEnabled } from '@/shared/api/base'
+import {
+  chatApiClient,
+  getChatApiBase,
+  isAuthEnabled,
+  notifyUnauthorized,
+} from '@/shared/api/base'
+import { normalizeApiError } from '@/shared/api/errors'
+import { fetchWithPolicy, requestWithPolicy } from '@/shared/api/request'
 
 // Chat API - SSE 流式接口
 export interface StreamChatCallbacks {
@@ -62,19 +69,23 @@ export const streamChatMessage = async (
   abortSignal?: AbortSignal
 ): Promise<void> => {
   try {
-    const response = await fetch(`${getChatApiBase()}/api/v1/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetchWithPolicy(
+      `${getChatApiBase()}/api/v1/chat`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+        ...(isAuthEnabled && { credentials: 'include' }),
       },
-      body: JSON.stringify(request),
-      signal: abortSignal,
-      ...(isAuthEnabled && { credentials: 'include' }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
+      {
+        signal: abortSignal,
+        retryCount: 0,
+        timeoutMs: 0,
+        onUnauthorized: notifyUnauthorized,
+      }
+    )
 
     const reader = response.body?.getReader()
     if (!reader) {
@@ -113,9 +124,10 @@ export const streamChatMessage = async (
       throw new Error('Stream ended before completion event')
     }
   } catch (error) {
-    console.error('Error streaming chat message:', error)
-    callbacks.onError?.(error instanceof Error ? error.message : 'Unknown error')
-    throw error
+    const apiError = normalizeApiError(error, 'Stream chat message failed')
+    console.error('Error streaming chat message:', apiError)
+    callbacks.onError?.(apiError.message)
+    throw apiError
   }
 }
 
@@ -154,22 +166,30 @@ export const sendChatMessage = async (request: RunAgentInput): Promise<ChatMessa
 
 // Session API - 获取会话列表
 export const fetchSessions = async (): Promise<SessionListResponse> => {
-  try {
-    const response = await chatApiClient.get<SessionListResponse>('/api/v1/sessions')
-    return response.data
-  } catch (error) {
-    console.error('Error fetching sessions:', error)
-    throw error
-  }
+  return requestWithPolicy(
+    async (signal) => {
+      const response = await chatApiClient.get<SessionListResponse>('/api/v1/sessions', { signal })
+      return response.data
+    },
+    {
+      retryCount: 1,
+      timeoutMs: 10000,
+    }
+  )
 }
 
 // Session API - 获取会话消息列表
 export const fetchSessionMessages = async (sessionId: string): Promise<SessionMessagesResponse> => {
-  try {
-    const response = await chatApiClient.get<SessionMessagesResponse>(`/api/v1/sessions/${sessionId}`)
-    return response.data
-  } catch (error) {
-    console.error(`Error fetching session messages for ${sessionId}:`, error)
-    throw error
-  }
+  return requestWithPolicy(
+    async (signal) => {
+      const response = await chatApiClient.get<SessionMessagesResponse>(`/api/v1/sessions/${sessionId}`, {
+        signal,
+      })
+      return response.data
+    },
+    {
+      retryCount: 1,
+      timeoutMs: 10000,
+    }
+  )
 }

@@ -2,7 +2,7 @@ import { computed, readonly } from 'vue'
 import { storeToRefs } from 'pinia'
 import { getUserInfo as fetchUserInfo, logout as logoutApi } from '@/features/auth/api/authApi'
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import { setUnauthorizedHandler } from '@/shared/api'
+import { isApiClientError, setUnauthorizedHandler } from '@/shared/api'
 import type { AuthState } from '@/shared/types'
 
 // 检查是否启用认证（从环境变量读取）
@@ -77,16 +77,13 @@ export function useAuth() {
       })
 
       // 只为非 401 错误设置错误信息（401 是预期的未登录状态）
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { status: number } }
-        if (axiosError.response?.status !== 401) {
-          authStore.setAuthResult({
-            isAuthenticated: false,
-            user: null,
-            error: '无法检查认证状态',
-          })
-          console.error('认证初始化错误:', err)
-        }
+      if (!isApiClientError(err) || err.kind !== 'unauthorized') {
+        authStore.setAuthResult({
+          isAuthenticated: false,
+          user: null,
+          error: '无法检查认证状态',
+        })
+        console.error('认证初始化错误:', err)
       }
     } finally {
       authStore.setLoading(false)

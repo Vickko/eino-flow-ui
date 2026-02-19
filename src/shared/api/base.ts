@@ -39,6 +39,18 @@ type UnauthorizedHandler = () => void | Promise<void>
 let unauthorizedHandler: UnauthorizedHandler | null = null
 let isHandlingUnauthorized = false
 
+const runUnauthorizedHandler = async (): Promise<void> => {
+  if (!unauthorizedHandler || isHandlingUnauthorized) return
+  isHandlingUnauthorized = true
+  try {
+    await unauthorizedHandler()
+  } catch (handlerError) {
+    console.error('Error handling 401 unauthorized:', handlerError)
+  } finally {
+    isHandlingUnauthorized = false
+  }
+}
+
 export const apiClient: AxiosInstance = axios.create({
   baseURL: apiBaseDevops,
   withCredentials: isAuthEnabled, // 仅在认证启用时发送 cookies
@@ -69,20 +81,17 @@ export const setUnauthorizedHandler = (handler: UnauthorizedHandler | null): voi
   unauthorizedHandler = handler
 }
 
+export const notifyUnauthorized = (): void => {
+  void runUnauthorizedHandler()
+}
+
 // 添加 401 响应拦截器（仅在认证启用时）
 if (isAuthEnabled) {
   const handle401 = async (error: unknown) => {
     if (error && typeof error === 'object' && 'response' in error) {
       const axiosError = error as { response?: { status: number } }
-      if (axiosError.response?.status === 401 && unauthorizedHandler && !isHandlingUnauthorized) {
-        isHandlingUnauthorized = true
-        try {
-          await unauthorizedHandler()
-        } catch (handlerError) {
-          console.error('Error handling 401 unauthorized:', handlerError)
-        } finally {
-          isHandlingUnauthorized = false
-        }
+      if (axiosError.response?.status === 401) {
+        await runUnauthorizedHandler()
       }
     }
     return Promise.reject(error)
