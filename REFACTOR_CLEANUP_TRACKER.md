@@ -70,10 +70,10 @@
 - [x] 统一 401 处理，避免多点重定向
 
 ### 4.2 SSE/流式协议抽象
-- [ ] 独立 `sseClient` 与事件解析器
-- [ ] 将 AG-UI 事件转换逻辑移到 adapter 层
-- [ ] 统一 DONE/RUN_FINISHED/RUN_ERROR 收尾逻辑
-- [ ] 增加流式断线恢复策略（至少明确不可恢复时的提示）
+- [x] 独立 `sseClient` 与事件解析器
+- [x] 将 AG-UI 事件转换逻辑移到 adapter 层
+- [x] 统一 DONE/RUN_FINISHED/RUN_ERROR 收尾逻辑
+- [x] 增加流式断线恢复策略（至少明确不可恢复时的提示）
 
 ### 4.3 类型系统收敛
 - [ ] 收敛 `unknown` 过宽字段（输入、输出、错误）
@@ -181,6 +181,7 @@
 - [x] 2026-02-19：完成 Phase 2 第四批补充（在 `main.ts` 启动阶段主动初始化 `apiConfigStore`，保证首个 API 请求前 baseURL 已应用）。
 - [x] 2026-02-19：完成 Phase 2 第五批（统一 chat 流式请求 AbortController 生命周期；修复会话切换时流式消息写入竞态；修复 local 临时会话替换 threadId 后的消息归属边界；新增 useChat 并发竞态单测）。
 - [x] 2026-02-19：完成 Phase 3 第一批（统一 API 错误模型；落地请求级重试/超时/取消策略；统一 axios/fetch 的 401 handler 入口，避免多点重定向；新增 request policy 单测）。
+- [x] 2026-02-19：完成 Phase 3 第二批（新增通用 `sseClient` + `SseParser`；新增 AG-UI stream adapter 并统一 DONE/RUN_FINISHED/RUN_ERROR 收尾；补“流中断不可恢复”提示；debug 流改用统一 SSE 解析入口）。
 
 ## 13. 变更说明模板（每次改动都填）
 
@@ -220,4 +221,12 @@
 - 批次/阶段：Phase 3（API 与数据流重构）
 - 本次完成：新增统一错误模型（`ApiClientError`，覆盖 business/network/timeout/abort/unauthorized/http/unknown）；新增统一请求策略层（重试、超时、取消、fetch/axios 一致行为）；graph/chat/system/auth API 全量接入请求策略；`notifyUnauthorized` 作为 401 统一入口，收敛 axios 与 fetch 的未授权处理路径。
 - 风险与回滚点：目前默认重试仅对 retryable 错误生效（网络、超时、5xx/429），POST 默认不重试；若后续后端幂等策略完善，可再扩大重试范围。回滚点为 `src/shared/api/errors.ts`、`src/shared/api/request.ts`、`src/shared/api/base.ts` 与四个域 API 文件（`graphApi.ts/chatApi.ts/systemApi.ts/auth.ts`）。
+- 验证结果：`npm run type-check`、`npm run lint`、`npm run test`、`npm run build` 全通过。
+
+### 13.5 变更说明（2026-02-19 / Phase 3 第二批）
+
+- 日期：2026-02-19
+- 批次/阶段：Phase 3（API 与数据流重构）
+- 本次完成：新增 `SseParser` 与 `streamSse` 通用流式客户端；新增 AG-UI adapter，把事件转换与完成态判断从 chat API 主流程中抽离；统一 `[DONE] / RUN_FINISHED / RUN_ERROR` 收尾；当流提前断开且未闭合时给出“不可自动恢复，请重新发送”的明确提示；`streamDebugRun` 接入统一 SSE 入口并输出结构化事件。
+- 风险与回滚点：当前“不可恢复”策略是直接失败提示，不做自动重连；如果后续后端支持 resumable stream，可在 adapter 层扩展 runId/threadId 续传。回滚点为 `src/shared/api/sse/*`、`src/shared/api/chatApi.ts`、`src/shared/api/graphApi.ts`、`src/components/BottomPanel.vue`。
 - 验证结果：`npm run type-check`、`npm run lint`、`npm run test`、`npm run build` 全通过。

@@ -1,6 +1,7 @@
 export * from '@/shared/api/base'
 export * from '@/shared/api/errors'
 export * from '@/shared/api/request'
+export * from '@/shared/api/sse'
 export * from '@/shared/api/systemApi'
 export * from '@/shared/api/graphApi'
 export * from '@/shared/api/chatApi'

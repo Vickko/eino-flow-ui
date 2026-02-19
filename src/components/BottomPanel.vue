@@ -331,6 +331,15 @@ const resetToDefault = (): void => {
   })
 }
 
+const parseMaybeJson = (value: unknown): unknown => {
+  if (typeof value !== 'string') return value
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
+
 const runDebug = async (): Promise<void> => {
   if (!selectedGraphId.value) {
     appendLog('Error: No graph selected')
@@ -378,80 +387,29 @@ const runDebug = async (): Promise<void> => {
     appendLog(`Starting from node: ${selectedFromNode.value}`)
     appendLog('Streaming execution...')
 
-    let sseBuffer = ''
-    await streamDebugRun(selectedGraphId.value, threadId, debugRequest, (chunk: string) => {
-      appendLog(chunk)
-      sseBuffer += chunk
+    await streamDebugRun(
+      selectedGraphId.value,
+      threadId,
+      debugRequest,
+      {
+        onChunk: (chunk) => {
+          appendLog(chunk)
+        },
+        onEvent: (data: SSEData) => {
+          if (data.type !== 'data' || !data.content?.node_key) return
 
-      const events = sseBuffer.split('\n\n')
-      sseBuffer = events.pop() ?? ''
-
-      for (const event of events) {
-        if (!event.trim()) continue
-
-        const lines = event.split('\n')
-        let dataContent = ''
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            dataContent += line.substring(6)
-          } else if (line.startsWith('data:')) {
-            dataContent += line.substring(5)
-          } else if (dataContent && line.startsWith(':')) {
-            dataContent += line.substring(1)
-          }
-        }
-
-        if (!dataContent) continue
-
-        try {
-          const data = JSON.parse(dataContent) as SSEData
-
-          if (data.type === 'data' && data.content?.node_key) {
-            const nodeData = data.content
-
-            let parsedInput: unknown = nodeData.input
-            let parsedOutput: unknown = nodeData.output
-            let parsedError: unknown = nodeData.error
-
-            try {
-              if (typeof nodeData.input === 'string') {
-                parsedInput = JSON.parse(nodeData.input)
-              }
-            } catch {
-              // keep original
-            }
-
-            try {
-              if (typeof nodeData.output === 'string') {
-                parsedOutput = JSON.parse(nodeData.output)
-              }
-            } catch {
-              // keep original
-            }
-
-            try {
-              if (typeof nodeData.error === 'string') {
-                parsedError = JSON.parse(nodeData.error)
-              }
-            } catch {
-              // keep original
-            }
-
-            setNodeExecutionResult(nodeData.node_key, {
-              status: nodeData.status === 'error' || nodeData.error ? 'error' : 'success',
-              input: parsedInput,
-              output: parsedOutput,
-              error: parsedError,
-              metrics: nodeData.metrics ?? {},
-              timestamp: new Date().toISOString(),
-            })
-          }
-        } catch {
-          // ignore SSE parse errors
-        }
+          const nodeData = data.content
+          setNodeExecutionResult(nodeData.node_key, {
+            status: nodeData.status === 'error' || nodeData.error ? 'error' : 'success',
+            input: parseMaybeJson(nodeData.input),
+            output: parseMaybeJson(nodeData.output),
+            error: parseMaybeJson(nodeData.error),
+            metrics: nodeData.metrics ?? {},
+            timestamp: new Date().toISOString(),
+          })
+        },
       }
-    })
+    )
 
     appendLog('Execution finished.')
     status.value = 'Completed'

@@ -5,10 +5,12 @@ import type {
   GraphCanvasResponse,
   GraphListResponse,
   InputTypesResponse,
+  SSEData,
 } from '@/shared/types'
 import { apiClient, getBaseUrl, isAuthEnabled, notifyUnauthorized } from '@/shared/api/base'
 import { createBusinessError } from '@/shared/api/errors'
-import { fetchWithPolicy, requestWithPolicy } from '@/shared/api/request'
+import { requestWithPolicy } from '@/shared/api/request'
+import { streamSse } from '@/shared/api/sse'
 
 const ensureApiSuccess = <T>(response: ApiResponse<T>): ApiResponse<T> => {
   if (response.code !== 0) {
@@ -89,14 +91,28 @@ export const createDebugThread = async (
   return ensureApiSuccess(data)
 }
 
+const parseDebugSseData = (payload: string): SSEData | null => {
+  if (!payload.trim()) return null
+  try {
+    return JSON.parse(payload) as SSEData
+  } catch {
+    return null
+  }
+}
+
+export interface DebugStreamCallbacks {
+  onChunk?: (chunk: string) => void
+  onEvent?: (event: SSEData) => void
+}
+
 export const streamDebugRun = async (
   graphId: string,
   threadId: string,
   input: DebugRunRequest,
-  onChunk?: (chunk: string) => void,
+  callbacks?: DebugStreamCallbacks,
   abortSignal?: AbortSignal
 ): Promise<void> => {
-  const response = await fetchWithPolicy(
+  await streamSse(
     `${getBaseUrl()}/debug/v1/graphs/${graphId}/threads/${threadId}/stream`,
     {
       method: 'POST',
@@ -111,20 +127,13 @@ export const streamDebugRun = async (
       retryCount: 0,
       timeoutMs: 0,
       onUnauthorized: notifyUnauthorized,
+      onChunk: callbacks?.onChunk,
+      onMessage: (message) => {
+        const parsed = parseDebugSseData(message.data)
+        if (parsed) {
+          callbacks?.onEvent?.(parsed)
+        }
+      },
     }
   )
-
-  const reader = response.body?.getReader()
-  if (!reader) {
-    throw new Error('Response body is not readable')
-  }
-
-  const decoder = new TextDecoder()
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    const chunk = decoder.decode(value, { stream: true })
-    onChunk?.(chunk)
-  }
 }

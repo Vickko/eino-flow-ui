@@ -12,7 +12,12 @@ import {
   notifyUnauthorized,
 } from '@/shared/api/base'
 import { normalizeApiError } from '@/shared/api/errors'
-import { fetchWithPolicy, requestWithPolicy } from '@/shared/api/request'
+import { requestWithPolicy } from '@/shared/api/request'
+import {
+  createAgUiStreamAdapter,
+  NON_RECOVERABLE_CHAT_STREAM_MESSAGE,
+  streamSse,
+} from '@/shared/api/sse'
 
 // Chat API - SSE 流式接口
 export interface StreamChatCallbacks {
@@ -21,55 +26,18 @@ export interface StreamChatCallbacks {
   onError?: (error: string) => void // 发生错误
 }
 
-const isAgUiEvent = (value: unknown): value is AgUiEvent => {
-  if (typeof value !== 'object' || value === null) return false
-  if (!('type' in value)) return false
-  return typeof (value as { type?: unknown }).type === 'string'
-}
-
-const parseSSEEventBlock = (
-  block: string,
-  callbacks: StreamChatCallbacks,
-  notifyDone: () => void
-): void => {
-  const lines = block.split('\n')
-  const dataLines: string[] = []
-
-  for (const line of lines) {
-    if (line.startsWith('data:')) {
-      dataLines.push(line.slice(5).trimStart())
-    }
-  }
-
-  if (dataLines.length === 0) return
-
-  const payload = dataLines.join('\n').trim()
-  if (!payload) return
-  if (payload === '[DONE]') {
-    notifyDone()
-    return
-  }
-
-  try {
-    const parsed = JSON.parse(payload) as unknown
-    if (!isAgUiEvent(parsed)) return
-
-    callbacks.onEvent?.(parsed)
-    if (parsed.type === 'RUN_FINISHED' || parsed.type === 'RUN_ERROR') {
-      notifyDone()
-    }
-  } catch {
-    console.warn('Ignore invalid SSE event payload:', payload)
-  }
-}
-
 export const streamChatMessage = async (
   request: RunAgentInput,
   callbacks: StreamChatCallbacks,
   abortSignal?: AbortSignal
 ): Promise<void> => {
+  const adapter = createAgUiStreamAdapter({
+    onEvent: callbacks.onEvent,
+    onDone: callbacks.onDone,
+  })
+
   try {
-    const response = await fetchWithPolicy(
+    await streamSse(
       `${getChatApiBase()}/api/v1/chat`,
       {
         method: 'POST',
@@ -84,47 +52,13 @@ export const streamChatMessage = async (
         retryCount: 0,
         timeoutMs: 0,
         onUnauthorized: notifyUnauthorized,
+        onMessage: adapter.handleMessage,
       }
     )
 
-    const reader = response.body?.getReader()
-    if (!reader) {
-      throw new Error('Response body is not readable')
-    }
-
-    const decoder = new TextDecoder()
-    let buffer = ''
-    let doneNotified = false
-    const notifyDone = () => {
-      if (doneNotified) return
-      doneNotified = true
-      callbacks.onDone?.()
-    }
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n')
-
-      let eventSeparatorIndex = buffer.indexOf('\n\n')
-      while (eventSeparatorIndex !== -1) {
-        const eventBlock = buffer.slice(0, eventSeparatorIndex)
-        buffer = buffer.slice(eventSeparatorIndex + 2)
-        parseSSEEventBlock(eventBlock, callbacks, notifyDone)
-        eventSeparatorIndex = buffer.indexOf('\n\n')
-      }
-    }
-
-    if (buffer.trim()) {
-      parseSSEEventBlock(buffer, callbacks, notifyDone)
-    }
-
-    if (!doneNotified) {
-      throw new Error('Stream ended before completion event')
-    }
+    adapter.ensureCompleted()
   } catch (error) {
-    const apiError = normalizeApiError(error, 'Stream chat message failed')
+    const apiError = normalizeApiError(error, NON_RECOVERABLE_CHAT_STREAM_MESSAGE)
     console.error('Error streaming chat message:', apiError)
     callbacks.onError?.(apiError.message)
     throw apiError
