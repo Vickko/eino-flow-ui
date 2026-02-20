@@ -361,13 +361,13 @@ const formatToolCallArgs = (args: unknown) => {
       v-if="isUser && userPreviewImages.length > 0"
       :class="['images-container mb-2', shouldAnimateUser ? 'image-strip-animate' : '']"
     >
-      <img
+      <div
         v-for="image in userPreviewImages"
         :key="image.id"
-        :src="image.src"
-        :alt="image.alt"
-        class="generated-image"
-      />
+        class="generated-image-frame"
+      >
+        <img :src="image.src" :alt="image.alt" class="generated-image" />
+      </div>
     </div>
 
     <!-- AI 气泡：等待时显示为小圆球，有内容后平滑展开 -->
@@ -422,13 +422,13 @@ const formatToolCallArgs = (args: unknown) => {
         />
 
         <div v-if="assistantPreviewImages.length > 0" class="images-container mt-3">
-          <img
+          <div
             v-for="image in assistantPreviewImages"
             :key="image.id"
-            :src="image.src"
-            :alt="image.alt"
-            class="generated-image"
-          />
+            class="generated-image-frame"
+          >
+            <img :src="image.src" :alt="image.alt" class="generated-image" />
+          </div>
         </div>
       </div>
 
@@ -996,6 +996,10 @@ const formatToolCallArgs = (args: unknown) => {
   max-width: 95%;
   gap: 0.5rem;
   overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 6px 8px;
+  margin: -4px -4px -2px;
+  scrollbar-gutter: stable;
 }
 
 @media (min-width: 768px) {
@@ -1004,22 +1008,39 @@ const formatToolCallArgs = (args: unknown) => {
   }
 }
 
-.generated-image {
+.generated-image-frame {
+  display: block;
+  flex-shrink: 0;
   height: 120px;
-  max-width: 220px;
   min-width: 64px;
-  width: auto;
-  object-fit: cover;
+  max-width: 220px;
+  width: fit-content;
+  line-height: 0;
+  overflow: hidden;
   border-radius: 0.5rem;
   border: 1px solid hsl(var(--border) / 0.5);
   background: hsl(var(--muted) / 0.25);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-out;
+  transition:
+    box-shadow 0.2s ease-out,
+    transform 0.2s ease-out;
+  transform: translateY(0);
+  transform-origin: center bottom;
+  will-change: transform;
 }
 
-.generated-image:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.generated-image {
+  display: block;
+  height: 100%;
+  max-width: 220px;
+  min-width: 64px;
+  width: auto;
+  object-fit: cover;
+}
+
+.generated-image-frame:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 
 .image-strip-animate {

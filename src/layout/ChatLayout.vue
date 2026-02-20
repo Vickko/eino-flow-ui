@@ -61,7 +61,7 @@ const {
 
     <!-- Chat Area -->
     <div
-      class="flex-1 flex-col h-full relative p-3"
+      class="flex-1 min-h-0 flex-col h-full relative p-3"
       :class="[activeConversationId ? 'flex' : 'hidden md:flex']"
     >
       <template v-if="activeConversationId">

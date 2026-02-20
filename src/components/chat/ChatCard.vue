@@ -334,7 +334,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 <template>
   <div
-    class="h-full flex flex-col overflow-hidden rounded-xl relative transition-colors"
+    class="h-full min-h-0 flex flex-col overflow-hidden rounded-xl relative transition-colors"
     :class="isDragOverCard ? 'bg-primary/5' : ''"
     @dragover="handleCardDragOver"
     @dragleave="handleCardDragLeave"
@@ -368,13 +368,13 @@ const handleClickOutside = (event: MouseEvent) => {
 
     <!-- Main Content (上层卡片，覆盖在顶栏之上) -->
     <div
-      class="flex-1 flex flex-col rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-panel overflow-visible relative z-20 transition-[margin] duration-300 ease-in-out"
+      class="flex-1 min-h-0 flex flex-col rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-panel overflow-visible relative z-20 transition-[margin] duration-300 ease-in-out"
       :class="isHeaderCollapsed ? '-mt-10' : '-mt-1'"
     >
       <!-- Messages Area -->
       <div
         ref="scrollAreaRef"
-        class="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth custom-scrollbar"
+        class="flex-1 min-h-0 overflow-y-auto p-4 space-y-6 scroll-smooth custom-scrollbar"
       >
         <div
           v-if="messages.length === 0"
@@ -410,7 +410,7 @@ const handleClickOutside = (event: MouseEvent) => {
       </div>
 
       <!-- Model Selector -->
-      <div class="px-4 pt-1.5 pb-1 relative z-20">
+      <div class="px-4 pt-1.5 pb-1 relative z-20 shrink-0">
         <div class="flex items-center gap-2">
           <div class="model-selector relative inline-block z-[110]">
             <button
@@ -548,13 +548,14 @@ const handleClickOutside = (event: MouseEvent) => {
       <!-- Input Area -->
       <ChatInput
         ref="chatInputRef"
+        class="shrink-0"
         :is-streaming="isStreaming"
         :show-upload-button="false"
         :enable-drop-zone="false"
         @send="handleSend"
         @stop="emit('stop')"
       />
-      <div class="text-center pb-1">
+      <div class="text-center pb-1 shrink-0">
         <span class="text-[10px] text-muted-foreground/50"
           >Press Enter to send, Shift + Enter for new line</span
         >
