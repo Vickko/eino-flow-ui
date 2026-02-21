@@ -45,6 +45,15 @@ let lastScrollTop = 0
 let scrollDelta = 0
 let ticking = false
 const SCROLL_THRESHOLD = 30 // 需要累积的滚动距离才触发状态变化
+const HEADER_TOGGLE_LOCK_MS = 350
+let ignoreScrollUntil = 0
+
+const setHeaderCollapsed = (collapsed: boolean) => {
+  if (isHeaderCollapsed.value === collapsed) return
+  isHeaderCollapsed.value = collapsed
+  scrollDelta = 0
+  ignoreScrollUntil = performance.now() + HEADER_TOGGLE_LOCK_MS
+}
 
 const scrollToBottom = async (smooth = false) => {
   await nextTick()
@@ -65,11 +74,16 @@ const handleScroll = () => {
 
   const currentScrollTop = scrollAreaRef.value.scrollTop
 
+  // Header 动画会改变容器高度，短时间忽略这类被动滚动，避免反复抖动。
+  if (performance.now() < ignoreScrollUntil) {
+    lastScrollTop = currentScrollTop
+    return
+  }
+
   // 在顶部附近时始终显示 header
   if (currentScrollTop < 50) {
-    isHeaderCollapsed.value = false
+    setHeaderCollapsed(false)
     lastScrollTop = currentScrollTop
-    scrollDelta = 0
     return
   }
 
@@ -91,11 +105,9 @@ const handleScroll = () => {
     requestAnimationFrame(() => {
       // 累积足够的滚动距离才触发状态变化
       if (scrollDelta > SCROLL_THRESHOLD) {
-        isHeaderCollapsed.value = true
-        scrollDelta = 0
+        setHeaderCollapsed(true)
       } else if (scrollDelta < -SCROLL_THRESHOLD) {
-        isHeaderCollapsed.value = false
-        scrollDelta = 0
+        setHeaderCollapsed(false)
       }
       ticking = false
     })
