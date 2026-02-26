@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 import { config } from 'md-editor-v3'
 import mermaid from 'mermaid'
 import { useApiConfigStore } from '@/shared/stores/apiConfigStore'
+import { usePreferenceStore } from '@/shared/stores/preferenceStore'
 import App from './App.vue'
 import router from './router'
 
@@ -28,6 +29,9 @@ const pinia = createPinia()
 
 // 启动阶段先初始化 API 配置，避免首次请求前 baseURL 仍是默认值。
 useApiConfigStore(pinia)
+// Theme must be initialized once at app bootstrap. Otherwise some navigation flows can render
+// without the `dark` class applied, causing the whole page to look "white".
+usePreferenceStore(pinia).initTheme()
 
 app.use(pinia)
 app.use(router)

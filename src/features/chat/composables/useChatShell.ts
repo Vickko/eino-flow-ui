@@ -1,5 +1,4 @@
 import { computed, onMounted, ref } from 'vue'
-import { useTheme } from '@/shared/composables/useTheme'
 import { useNavButton } from '@/shared/composables/useNavButton'
 import { useChat } from '@/features/chat/composables/useChat'
 
@@ -16,12 +15,10 @@ export function useChatShell() {
     stopStreaming,
   } = useChat()
 
-  const { initTheme } = useTheme()
   const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton()
   const showChatSidebar = ref(true)
 
   onMounted(() => {
-    initTheme()
     loadSessions()
   })
 

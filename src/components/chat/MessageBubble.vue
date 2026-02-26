@@ -18,6 +18,7 @@ const props = defineProps<{
 }>()
 
 const message = toRef(props, 'message')
+const isNew = toRef(props, 'isNew')
 
 // 判断是否正在流式接收
 const isStreaming = computed(() => message.value.status === 'streaming')
@@ -51,6 +52,7 @@ const { markdownContentRef, bubbleRef, shouldAnimateAI, shouldAnimateUser } = us
     message,
     isStreaming,
     hasDisplayablePayload,
+    isNew,
   }
 )
 

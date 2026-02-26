@@ -17,6 +17,7 @@ export interface UseMessageBubbleEffectsOptions {
   message: Ref<Message>
   isStreaming: ComputedRef<boolean>
   hasDisplayablePayload: ComputedRef<boolean>
+  isNew?: Ref<boolean | undefined>
 }
 
 export interface UseMessageBubbleEffectsResult {
@@ -30,7 +31,7 @@ export interface UseMessageBubbleEffectsResult {
 export function useMessageBubbleEffects(
   options: UseMessageBubbleEffectsOptions
 ): UseMessageBubbleEffectsResult {
-  const { message, isStreaming, hasDisplayablePayload } = options
+  const { message, isStreaming, hasDisplayablePayload, isNew } = options
 
   const markdownContentRef = ref<HTMLElement | null>(null)
   const bubbleRef = ref<HTMLElement | null>(null)
@@ -38,7 +39,8 @@ export function useMessageBubbleEffects(
   // Entrance animation state (only plays the first time a message is rendered)
   const isFirstRender = !renderedMessageIds.has(message.value.id)
   renderedMessageIds.add(message.value.id)
-  const shouldPlayEntranceAnimation = ref(isFirstRender)
+  // If caller explicitly marks this message as not-new, do not play entrance animation.
+  const shouldPlayEntranceAnimation = ref(isNew?.value === false ? false : isFirstRender)
 
   let copyButtonObserver: MutationObserver | null = null
   let resizeObserver: ResizeObserver | null = null
@@ -215,4 +217,3 @@ export function useMessageBubbleEffects(
     shouldAnimateUser,
   }
 }
-

@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { fetchGraphCanvas, useGraph, useLayout } from '@/features/graph'
 import type { CanvasNode as TCanvasNode } from '@/shared/types'
 import GraphCanvas from './graphViewer/GraphCanvas.vue'
@@ -97,6 +97,15 @@ const graphName = ref('')
 const graphVersion = ref('')
 const elements = ref<FlowElement[]>([])
 const isGraphReady = ref(false)
+let loadGraphRequestId = 0
+let paneFitTimeoutId: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (paneFitTimeoutId) {
+    clearTimeout(paneFitTimeoutId)
+    paneFitTimeoutId = null
+  }
+})
 
 const adjustViewportPosition = (instance: VueFlowInstance): void => {
   const viewport = instance.getViewport()
@@ -113,12 +122,15 @@ const adjustViewportPosition = (instance: VueFlowInstance): void => {
 }
 
 const loadGraphDetails = async (id: string | null): Promise<void> => {
+  const requestId = ++loadGraphRequestId
+
   error.value = null
   elements.value = []
   setSelectedNode(null)
   isGraphReady.value = false
 
   if (!id) {
+    loading.value = false
     graphName.value = ''
     graphVersion.value = ''
     return
@@ -128,19 +140,21 @@ const loadGraphDetails = async (id: string | null): Promise<void> => {
 
   try {
     const data = await fetchGraphCanvas(id)
+    if (requestId !== loadGraphRequestId) return
+
     if (data.code === 0 && data.data.canvas_info) {
       const canvas = data.data.canvas_info
       graphName.value = canvas.name
       graphVersion.value = canvas.version
 
-      const nodes = canvas.nodes.map((node) => ({
+      const nodes = (canvas.nodes ?? []).map((node) => ({
         id: node.key,
         label: node.key,
         type: 'custom',
         data: { ...node },
       }))
 
-      const edges: FlowEdge[] = canvas.edges.map((edge) => ({
+      const edges: FlowEdge[] = (canvas.edges ?? []).map((edge) => ({
         id: edge.id,
         source: edge.source_node_key,
         target: edge.target_node_key,
@@ -154,23 +168,33 @@ const loadGraphDetails = async (id: string | null): Promise<void> => {
       elements.value = layoutElements(nodes, edges)
 
       await nextTick()
-      await new Promise((resolve) => setTimeout(resolve, 50))
+      if (requestId !== loadGraphRequestId) return
 
-      if (vueFlowInstance.value) {
-        await vueFlowInstance.value.fitView({ padding: 0.3, duration: 0 })
-        adjustViewportPosition(vueFlowInstance.value)
+      // Mark ready as soon as the elements are committed, so we never end up with a persistent blank canvas.
+      isGraphReady.value = true
+
+      // Best-effort viewport adjustment. If it fails, keep the graph visible.
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        if (requestId !== loadGraphRequestId) return
+
+        if (vueFlowInstance.value) {
+          await vueFlowInstance.value.fitView({ padding: 0.3, duration: 0 })
+          adjustViewportPosition(vueFlowInstance.value)
+        }
+      } catch (e) {
+        console.warn('Failed to adjust graph viewport:', e)
       }
-
-      requestAnimationFrame(() => {
-        isGraphReady.value = true
-      })
     } else {
       error.value = 'Failed to load graph details'
     }
   } catch (err) {
+    if (requestId !== loadGraphRequestId) return
     error.value = `Error: ${err instanceof Error ? err.message : String(err)}`
   } finally {
-    loading.value = false
+    if (requestId === loadGraphRequestId) {
+      loading.value = false
+    }
   }
 }
 
@@ -184,7 +208,11 @@ const onNodeClick = (event: NodeClickEvent): void => {
 const onPaneReady = (instance: VueFlowInstance): void => {
   vueFlowInstance.value = instance
 
-  setTimeout(() => {
+  if (paneFitTimeoutId) {
+    clearTimeout(paneFitTimeoutId)
+  }
+
+  paneFitTimeoutId = setTimeout(() => {
     if (elements.value.length > 0) {
       instance.fitView({ padding: 0.3, duration: 0 })
       adjustViewportPosition(instance)
@@ -207,10 +235,13 @@ watch(
       return
     }
 
-    elements.value.forEach((el) => {
-      if ('data' in el) {
-        ;(el as FlowNode).selected = newNode !== null && el.id === newNode.key
-      }
+    elements.value = elements.value.map((el) => {
+      if (!('data' in el)) return el
+
+      const isSelected = newNode !== null && el.id === newNode.key
+      const node = el as FlowNode
+      if (node.selected === isSelected) return el
+      return { ...node, selected: isSelected }
     })
   },
   { immediate: false }
@@ -221,10 +252,11 @@ watch(edgeType, (newType) => {
     return
   }
 
-  elements.value.forEach((el) => {
-    if ('source' in el && 'target' in el) {
-      ;(el as FlowEdge).type = newType
-    }
+  elements.value = elements.value.map((el) => {
+    if (!('source' in el && 'target' in el)) return el
+    const edge = el as FlowEdge
+    if (edge.type === newType) return el
+    return { ...edge, type: newType }
   })
 })
 </script>
@@ -234,4 +266,3 @@ watch(edgeType, (newType) => {
   font-size: 10px;
 }
 </style>
-

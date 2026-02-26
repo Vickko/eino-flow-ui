@@ -1,5 +1,4 @@
-import { onMounted } from 'vue'
-import { useTheme } from '@/shared/composables/useTheme'
+// Theme is initialized at app bootstrap (src/main.ts).
 import { useNavButton } from '@/shared/composables/useNavButton'
 import { useGraph } from '@/features/graph/composables/useGraph'
 import { useLayout } from '@/features/graph/composables/useLayout'
@@ -9,12 +8,7 @@ export function useMainShell() {
   const { selectedGraphId } = useGraph()
   const { showSidebar, showInspector, showBottomPanel } = useLayout()
   const { isOnline } = useServerStatus()
-  const { initTheme } = useTheme()
   const { isExpanded, handleMouseEnter, handleMouseLeave } = useNavButton()
-
-  onMounted(() => {
-    initTheme()
-  })
 
   return {
     selectedGraphId,

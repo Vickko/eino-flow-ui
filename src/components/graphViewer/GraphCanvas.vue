@@ -103,7 +103,7 @@ const elements = computed({
           zoom-activation-key-code="Control"
           :zoom-on-pinch="true"
           class="h-full w-full transition-opacity duration-300"
-          :class="{ 'opacity-0': !props.isGraphReady, 'opacity-100': props.isGraphReady }"
+          :class="{ 'opacity-50': !props.isGraphReady, 'opacity-100': props.isGraphReady }"
           @node-click="(event) => emit('nodeClick', event)"
           @pane-ready="(instance) => emit('paneReady', instance)"
         >

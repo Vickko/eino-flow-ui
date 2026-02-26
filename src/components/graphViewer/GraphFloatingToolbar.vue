@@ -55,6 +55,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   resizeObserver?.disconnect()
+  clearTimeout(hideTimeout)
 })
 
 const show = (): void => {
@@ -183,4 +184,3 @@ const previousGraphLabel = computed(() => {
     </div>
   </Teleport>
 </template>
-

@@ -1,6 +1,7 @@
-import { computed, nextTick, ref, watch, type Ref } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch, type Ref } from 'vue'
 import { createDebugThread, fetchGraphCanvas, streamDebugRun, useGraph } from '@/features/graph'
 import type { CanvasNode, JsonSchema, JsonValue, LogEntry, SSEData } from '@/shared/types'
+import { isApiClientError } from '@/shared/api/errors'
 
 interface UseBottomPanelResult {
   selectedGraphId: Ref<string | null>
@@ -48,6 +49,7 @@ export function useBottomPanel(): UseBottomPanelResult {
 
   const typewriteQueue = ref<LogEntry[]>([])
   const isTyping = ref(false)
+  const typewriteVersion = ref(0)
   const isInternalUpdate = ref(false)
 
   const manuallyModifiedInputs = ref(new Map<string, string>())
@@ -56,21 +58,39 @@ export function useBottomPanel(): UseBottomPanelResult {
 
   const hasSelectedGraph = computed(() => !!selectedGraphId.value)
 
+  // Avoid calling nextTick on every animation frame when logs are streaming.
+  let scrollScheduled = false
+  let lastScrollAt = 0
   const scrollToBottom = (): void => {
-    nextTick(() => {
-      if (logsContainer.value) {
-        logsContainer.value.scrollTop = logsContainer.value.scrollHeight
-      }
+    if (scrollScheduled) return
+    scrollScheduled = true
+
+    requestAnimationFrame(() => {
+      scrollScheduled = false
+      const now = Date.now()
+      if (now - lastScrollAt < 50) return
+      lastScrollAt = now
+
+      nextTick(() => {
+        if (logsContainer.value) {
+          logsContainer.value.scrollTop = logsContainer.value.scrollHeight
+        }
+      })
     })
   }
 
-  const typewriteLog = (logEntry: LogEntry): Promise<void> => {
+  const typewriteLog = (logEntry: LogEntry, version: number): Promise<void> => {
     return new Promise((resolve) => {
       let cursor = 0
       const totalLength = logEntry.fullMessage.length
       const charsPerFrame = 20
 
       const type = (): void => {
+        if (version !== typewriteVersion.value) {
+          resolve()
+          return
+        }
+
         if (cursor >= totalLength) {
           resolve()
           return
@@ -99,11 +119,16 @@ export function useBottomPanel(): UseBottomPanelResult {
     }
 
     isTyping.value = true
+    const version = typewriteVersion.value
 
     while (typewriteQueue.value.length > 0) {
+      if (version !== typewriteVersion.value) {
+        break
+      }
+
       const logEntry = typewriteQueue.value.shift()
       if (logEntry) {
-        await typewriteLog(logEntry)
+        await typewriteLog(logEntry, version)
       }
     }
 
@@ -122,8 +147,24 @@ export function useBottomPanel(): UseBottomPanelResult {
     processTypewriteQueue()
   }
 
+  const resetTypewriter = (): void => {
+    typewriteVersion.value += 1
+    typewriteQueue.value = []
+    isTyping.value = false
+  }
+
+  const debugAbortController = ref<AbortController | null>(null)
+  const debugRunVersion = ref(0)
+
+  onUnmounted(() => {
+    debugAbortController.value?.abort()
+    debugAbortController.value = null
+    resetTypewriter()
+  })
+
   const clearLogs = (): void => {
     logs.value = []
+    resetTypewriter()
     status.value = 'Ready'
     statusColor.value = 'bg-green-500'
   }
@@ -141,6 +182,10 @@ export function useBottomPanel(): UseBottomPanelResult {
   }
 
   const loadCanvasNodes = async (graphId: string | null): Promise<void> => {
+    // Latest-wins guard to prevent fast switching from showing stale canvas nodes.
+    // Also ensures selectedFromNode can change even if next graph has the same "start" key.
+    const requestId = ++loadCanvasNodesRequestId
+
     if (!graphId) {
       canvasNodes.value = []
       selectedFromNode.value = ''
@@ -148,7 +193,11 @@ export function useBottomPanel(): UseBottomPanelResult {
     }
 
     try {
+      selectedFromNode.value = ''
+
       const data = await fetchGraphCanvas(graphId)
+      if (requestId !== loadCanvasNodesRequestId) return
+
       if (data.code === 0 && data.data.canvas_info) {
         const canvas = data.data.canvas_info
         canvasNodes.value = canvas.nodes ?? []
@@ -157,11 +206,14 @@ export function useBottomPanel(): UseBottomPanelResult {
         selectedFromNode.value = startNode ? startNode.key : (canvasNodes.value[0]?.key ?? '')
       }
     } catch (err) {
+      if (requestId !== loadCanvasNodesRequestId) return
       console.error('Failed to load canvas nodes:', err)
       canvasNodes.value = []
       selectedFromNode.value = ''
     }
   }
+
+  let loadCanvasNodesRequestId = 0
 
   const generateSampleJson = (schema: JsonSchema): string => {
     if (!schema) return '{}'
@@ -295,6 +347,24 @@ export function useBottomPanel(): UseBottomPanelResult {
   watch(
     selectedGraphId,
     (newId) => {
+      // Stop any in-flight debug stream when graph changes.
+      if (debugAbortController.value) {
+        debugAbortController.value.abort()
+        debugAbortController.value = null
+      }
+      debugRunVersion.value += 1
+
+      // Reset UI state that should not leak across graphs.
+      isRunning.value = false
+      status.value = 'Ready'
+      statusColor.value = 'bg-green-500'
+      logs.value = []
+      resetTypewriter()
+      clearExecutionResults()
+
+      // Force selectedFromNode watcher to run even when the new graph reuses the same key ("start").
+      selectedFromNode.value = ''
+
       loadCanvasNodes(newId)
       manuallyModifiedInputs.value.clear()
       useDefaultTemplate.value = false
@@ -407,16 +477,25 @@ export function useBottomPanel(): UseBottomPanelResult {
 
     manuallyModifiedInputs.value.delete(selectedFromNode.value)
 
+    // Cancel any previous run before starting a new one.
+    debugAbortController.value?.abort()
+    const controller = new AbortController()
+    debugAbortController.value = controller
+    const myRunVersion = ++debugRunVersion.value
+    const isStaleRun = (): boolean => myRunVersion !== debugRunVersion.value
+
     isRunning.value = true
     status.value = 'Running...'
     statusColor.value = 'bg-amber-500 animate-pulse'
     logs.value = []
+    resetTypewriter()
     clearExecutionResults()
     appendLog('Starting debug session...')
 
     try {
       appendLog('Creating debug thread...')
       const threadRes = await createDebugThread(selectedGraphId.value, {})
+      if (isStaleRun()) return
 
       if (threadRes.code !== 0) {
         throw new Error(threadRes.msg ?? 'Failed to create thread')
@@ -434,22 +513,45 @@ export function useBottomPanel(): UseBottomPanelResult {
       appendLog(`Starting from node: ${selectedFromNode.value}`)
       appendLog('Streaming execution...')
 
-      await streamDebugRun(selectedGraphId.value, threadId, debugRequest, {
-        onChunk: (chunk) => {
-          appendLog(chunk)
+      await streamDebugRun(
+        selectedGraphId.value,
+        threadId,
+        debugRequest,
+        {
+          onChunk: (chunk) => {
+            if (myRunVersion !== debugRunVersion.value) return
+            appendLog(chunk)
+          },
+          onEvent: (event) => {
+            if (myRunVersion !== debugRunVersion.value) return
+            handleDebugEvent(event)
+          },
         },
-        onEvent: handleDebugEvent,
-      })
+        controller.signal
+      )
 
+      if (isStaleRun()) return
       appendLog('Execution finished.')
       status.value = 'Completed'
       statusColor.value = 'bg-blue-500'
     } catch (err) {
-      appendLog(`Error: ${err instanceof Error ? err.message : String(err)}`)
-      status.value = 'Error'
-      statusColor.value = 'bg-red-500'
+      if (isStaleRun()) return
+
+      if (isApiClientError(err) && err.kind === 'abort') {
+        // Aborts are expected when switching graphs or starting a new run.
+        appendLog('Cancelled.')
+        status.value = 'Cancelled'
+        statusColor.value = 'bg-slate-500'
+      } else {
+        appendLog(`Error: ${err instanceof Error ? err.message : String(err)}`)
+        status.value = 'Error'
+        statusColor.value = 'bg-red-500'
+      }
     } finally {
-      isRunning.value = false
+      if (myRunVersion === debugRunVersion.value) {
+        isRunning.value = false
+        debugAbortController.value = null
+      }
     }
   }
 

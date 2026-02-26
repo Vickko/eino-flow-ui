@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { Activity, MessageSquare, Settings2 } from 'lucide-vue-next'
 
 type InspectorTab = 'config' | 'trace' | 'chat'
@@ -15,20 +15,35 @@ const emit = defineEmits<{
 
 const playChatAnimation = ref(false)
 const playTraceAnimation = ref(false)
+let chatTimeoutId: ReturnType<typeof setTimeout> | null = null
+let traceTimeoutId: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (chatTimeoutId) {
+    clearTimeout(chatTimeoutId)
+    chatTimeoutId = null
+  }
+  if (traceTimeoutId) {
+    clearTimeout(traceTimeoutId)
+    traceTimeoutId = null
+  }
+})
 
 watch(
   () => props.modelValue,
   (newTab, oldTab) => {
     if (newTab === 'chat' && oldTab !== 'chat') {
       playChatAnimation.value = true
-      setTimeout(() => {
+      if (chatTimeoutId) clearTimeout(chatTimeoutId)
+      chatTimeoutId = setTimeout(() => {
         playChatAnimation.value = false
       }, 500)
     }
 
     if (newTab === 'trace' && oldTab !== 'trace') {
       playTraceAnimation.value = true
-      setTimeout(() => {
+      if (traceTimeoutId) clearTimeout(traceTimeoutId)
+      traceTimeoutId = setTimeout(() => {
         playTraceAnimation.value = false
       }, 200)
     }
@@ -146,4 +161,3 @@ watch(
   flex-shrink: 0;
 }
 </style>
-
