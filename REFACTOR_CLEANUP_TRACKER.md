@@ -83,10 +83,10 @@
 ## 5. 组件拆分与UI清洁（Phase 4）
 
 ### 5.1 大文件拆分
-- [ ] 拆分 `MessageBubble.vue`（渲染、动画、样式分层）
-- [ ] 拆分 `BottomPanel.vue`（表单、日志、SSE处理分离）
-- [ ] 拆分 `Inspector.vue`（tabs 子组件化）
-- [ ] 拆分 `GraphViewer.vue`（toolbar、canvas、layout算法分离）
+- [x] 拆分 `MessageBubble.vue`（渲染、动画、样式分层）
+- [x] 拆分 `BottomPanel.vue`（表单、日志、SSE处理分离）
+- [x] 拆分 `Inspector.vue`（tabs 子组件化）
+- [x] 拆分 `GraphViewer.vue`（toolbar、canvas、layout算法分离）
 
 ### 5.2 组件边界规范
 - [ ] 统一 props/emits 命名规范
@@ -183,6 +183,7 @@
 - [x] 2026-02-19：完成 Phase 3 第一批（统一 API 错误模型；落地请求级重试/超时/取消策略；统一 axios/fetch 的 401 handler 入口，避免多点重定向；新增 request policy 单测）。
 - [x] 2026-02-19：完成 Phase 3 第二批（新增通用 `sseClient` + `SseParser`；新增 AG-UI stream adapter 并统一 DONE/RUN_FINISHED/RUN_ERROR 收尾；补“流中断不可恢复”提示；debug 流改用统一 SSE 解析入口）。
 - [x] 2026-02-26：完成 Phase 3 第三批（类型系统收敛：引入 JsonValue 收口输入/输出/错误；补齐 AG-UI 与 debug SSEData 事件类型守卫并接入解析；抽离 chat Session/SessionMessage -> Conversation/Message 转换层并补单测）。
+- [x] 2026-02-26：完成 Phase 4 第一批（组件拆分与 UI 清洁：拆分 MessageBubble/BottomPanel/Inspector/GraphViewer；通过 type-check/lint/test/build 验证）。
 
 ## 13. 变更说明模板（每次改动都填）
 
