@@ -1,3 +1,11 @@
+// JSON 可序列化值（用于收敛 unknown 过宽字段）
+export type JsonPrimitive = string | number | boolean | null
+// 注意：这里刻意不做递归定义（Record<string, JsonValue>）以避免在 Vue/Pinia 的深层类型展开中触发 TS2589。
+// 运行时如果需要校验 SSE payload，请使用 shared/api/sse/guards.ts 里的 parseAgUiEventPayload/parseSseDataPayload。
+export type JsonObject = Record<string, unknown>
+export type JsonArray = unknown[]
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray
+
 // API 响应类型
 export interface ApiResponse<T = unknown> {
   code: number
@@ -70,9 +78,9 @@ export interface ExecutionMetrics {
 
 export interface NodeExecutionResult {
   status: 'success' | 'error'
-  input: unknown
-  output: unknown
-  error?: unknown
+  input: JsonValue
+  output: JsonValue
+  error?: JsonValue
   metrics: ExecutionMetrics
   timestamp: string
 }
@@ -109,7 +117,7 @@ export interface JsonSchema {
   items?: JsonSchema
   anyOf?: JsonSchema[]
   enum?: string[]
-  default?: unknown
+  default?: JsonValue
   propertyOrder?: string[]
   additionalProperties?: JsonSchema
   required?: string[]
@@ -125,9 +133,9 @@ export interface InputTypesResponse {
 export interface SSEDataContent {
   node_key: string
   status?: string
-  input?: unknown
-  output?: unknown
-  error?: unknown
+  input?: JsonValue
+  output?: JsonValue
+  error?: JsonValue
   metrics?: ExecutionMetrics
 }
 
@@ -166,11 +174,11 @@ export interface RunAgentInputMessage {
 export interface RunAgentInput {
   threadId?: string
   runId?: string
-  state?: Record<string, unknown>
+  state?: Record<string, JsonValue>
   messages: RunAgentInputMessage[]
-  tools?: unknown[]
-  context?: unknown[]
-  forwardedProps?: Record<string, unknown>
+  tools?: JsonValue[]
+  context?: JsonValue[]
+  forwardedProps?: Record<string, JsonValue>
 }
 
 export interface ChatMessageRequest {
@@ -215,13 +223,13 @@ export interface ChatMessageResponse {
 export interface AgUiRunStartedEvent {
   type: 'RUN_STARTED'
   threadId: string
-  runId: string
+  runId?: string
 }
 
 export interface AgUiRunFinishedEvent {
   type: 'RUN_FINISHED'
-  threadId: string
-  runId: string
+  threadId?: string
+  runId?: string
 }
 
 export interface AgUiRunErrorEvent {
@@ -274,7 +282,7 @@ export interface AgUiToolCallStartEvent {
 export interface AgUiToolCallArgsEvent {
   type: 'TOOL_CALL_ARGS'
   toolCallId: string
-  args: unknown
+  args: JsonValue
   parentMessageId?: string
 }
 
@@ -348,6 +356,7 @@ export interface UserInfo {
   email?: string
   name?: string
   preferred_username?: string
+  // OIDC claims/扩展字段可能非常自由；这里保持 unknown，避免与 Vue 的深层类型展开产生冲突。
   [key: string]: unknown
 }
 

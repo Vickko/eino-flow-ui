@@ -76,9 +76,9 @@
 - [x] 增加流式断线恢复策略（至少明确不可恢复时的提示）
 
 ### 4.3 类型系统收敛
-- [ ] 收敛 `unknown` 过宽字段（输入、输出、错误）
-- [ ] 为 SSE 事件建立类型守卫全集
-- [ ] 建立后端 DTO 与前端 ViewModel 转换层
+- [x] 收敛 `unknown` 过宽字段（输入、输出、错误）
+- [x] 为 SSE 事件建立类型守卫全集
+- [x] 建立后端 DTO 与前端 ViewModel 转换层
 
 ## 5. 组件拆分与UI清洁（Phase 4）
 
@@ -182,6 +182,7 @@
 - [x] 2026-02-19：完成 Phase 2 第五批（统一 chat 流式请求 AbortController 生命周期；修复会话切换时流式消息写入竞态；修复 local 临时会话替换 threadId 后的消息归属边界；新增 useChat 并发竞态单测）。
 - [x] 2026-02-19：完成 Phase 3 第一批（统一 API 错误模型；落地请求级重试/超时/取消策略；统一 axios/fetch 的 401 handler 入口，避免多点重定向；新增 request policy 单测）。
 - [x] 2026-02-19：完成 Phase 3 第二批（新增通用 `sseClient` + `SseParser`；新增 AG-UI stream adapter 并统一 DONE/RUN_FINISHED/RUN_ERROR 收尾；补“流中断不可恢复”提示；debug 流改用统一 SSE 解析入口）。
+- [x] 2026-02-26：完成 Phase 3 第三批（类型系统收敛：引入 JsonValue 收口输入/输出/错误；补齐 AG-UI 与 debug SSEData 事件类型守卫并接入解析；抽离 chat Session/SessionMessage -> Conversation/Message 转换层并补单测）。
 
 ## 13. 变更说明模板（每次改动都填）
 
@@ -229,4 +230,17 @@
 - 批次/阶段：Phase 3（API 与数据流重构）
 - 本次完成：新增 `SseParser` 与 `streamSse` 通用流式客户端；新增 AG-UI adapter，把事件转换与完成态判断从 chat API 主流程中抽离；统一 `[DONE] / RUN_FINISHED / RUN_ERROR` 收尾；当流提前断开且未闭合时给出“不可自动恢复，请重新发送”的明确提示；`streamDebugRun` 接入统一 SSE 入口并输出结构化事件。
 - 风险与回滚点：当前“不可恢复”策略是直接失败提示，不做自动重连；如果后续后端支持 resumable stream，可在 adapter 层扩展 runId/threadId 续传。回滚点为 `src/shared/api/sse/*`、`src/shared/api/chatApi.ts`、`src/shared/api/graphApi.ts`、`src/components/BottomPanel.vue`。
+- 验证结果：`npm run type-check`、`npm run lint`、`npm run test`、`npm run build` 全通过。
+
+### 13.6 变更说明（2026-02-26 / Phase 3 第三批）
+
+- 日期：2026-02-26
+- 批次/阶段：Phase 3（API 与数据流重构）
+- 本次完成：
+  - 收敛类型：新增 `JsonValue`，将 debug 的 input/output/error、SSEDataContent input/output/error、AG-UI TOOL_CALL_ARGS args、RunAgentInput forwardedProps/state/tools/context 等从 `unknown` 收口到 JSON 可序列化范围。
+  - SSE 类型守卫：新增 `parseAgUiEventPayload/parseSseDataPayload`，对 AG-UI 与 debug SSEData 做运行时校验；adapter 与 graphApi 接入守卫，遇到异常 payload 会被忽略而不是污染 UI 状态。
+  - DTO -> ViewModel：抽离 `Session/SessionMessage` 到 `Conversation/Message` 的 mapper（从 `useChat.ts` 移出），并补充 mapper 单测。
+- 风险与回滚点：
+  - 风险：SSE 守卫只校验最小必要字段（例如 `type`、`threadId/runId`、`node_key`），但仍可能因为后端协议漂移（字段缺失/命名变化/非 JSON）导致事件被忽略，从而出现“流未正常结束”的现象；为降低排查成本，已在开发环境下对首次异常 payload 打一次 warning（线上不打印）。
+  - 回滚点：`src/shared/types/index.ts`、`src/shared/api/sse/guards.ts`、`src/shared/api/sse/agUiAdapter.ts`、`src/shared/api/graphApi.ts`、`src/features/chat/mappers/sessionMappers.ts`、`src/features/chat/composables/useChat.ts`、`src/components/BottomPanel.vue` 及新增/更新的测试文件。
 - 验证结果：`npm run type-check`、`npm run lint`、`npm run test`、`npm run build` 全通过。

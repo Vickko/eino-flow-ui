@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 import { useGraph, createDebugThread, streamDebugRun, fetchGraphCanvas } from '@/features/graph'
-import type { CanvasNode, JsonSchema, LogEntry, SSEData } from '@/shared/types'
+import type { CanvasNode, JsonSchema, JsonValue, LogEntry, SSEData } from '@/shared/types'
 
 const {
   selectedGraphId,
@@ -331,10 +331,10 @@ const resetToDefault = (): void => {
   })
 }
 
-const parseMaybeJson = (value: unknown): unknown => {
+const parseMaybeJson = (value: JsonValue): JsonValue => {
   if (typeof value !== 'string') return value
   try {
-    return JSON.parse(value)
+    return JSON.parse(value) as JsonValue
   } catch {
     return value
   }
@@ -401,9 +401,9 @@ const runDebug = async (): Promise<void> => {
           const nodeData = data.content
           setNodeExecutionResult(nodeData.node_key, {
             status: nodeData.status === 'error' || nodeData.error ? 'error' : 'success',
-            input: parseMaybeJson(nodeData.input),
-            output: parseMaybeJson(nodeData.output),
-            error: parseMaybeJson(nodeData.error),
+            input: parseMaybeJson(nodeData.input ?? null),
+            output: parseMaybeJson(nodeData.output ?? null),
+            error: nodeData.error !== undefined ? parseMaybeJson(nodeData.error) : undefined,
             metrics: nodeData.metrics ?? {},
             timestamp: new Date().toISOString(),
           })

@@ -1,3 +1,5 @@
+import type { JsonValue } from '@/shared/types'
+
 export interface User {
   id: string
   name: string
@@ -13,7 +15,7 @@ export interface ImageAttachment {
 export interface ToolCallState {
   id: string
   name: string
-  args?: unknown
+  args?: JsonValue
   status: 'running' | 'done' | 'error'
   error?: string
 }

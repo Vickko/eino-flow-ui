@@ -5,12 +5,13 @@ import type {
   GraphCanvasResponse,
   GraphListResponse,
   InputTypesResponse,
+  JsonValue,
   SSEData,
 } from '@/shared/types'
 import { apiClient, getBaseUrl, isAuthEnabled, notifyUnauthorized } from '@/shared/api/base'
 import { createBusinessError } from '@/shared/api/errors'
 import { requestWithPolicy } from '@/shared/api/request'
-import { streamSse } from '@/shared/api/sse'
+import { parseSseDataPayload, streamSse } from '@/shared/api/sse'
 
 const ensureApiSuccess = <T>(response: ApiResponse<T>): ApiResponse<T> => {
   if (response.code !== 0) {
@@ -72,7 +73,7 @@ export const fetchInputTypes = async (): Promise<ApiResponse<InputTypesResponse>
 
 export const createDebugThread = async (
   graphId: string,
-  input: Record<string, unknown>
+  input: Record<string, JsonValue>
 ): Promise<ApiResponse<DebugThreadResponse>> => {
   const data = await requestWithPolicy(
     async (signal) => {
@@ -91,15 +92,6 @@ export const createDebugThread = async (
   return ensureApiSuccess(data)
 }
 
-const parseDebugSseData = (payload: string): SSEData | null => {
-  if (!payload.trim()) return null
-  try {
-    return JSON.parse(payload) as SSEData
-  } catch {
-    return null
-  }
-}
-
 export interface DebugStreamCallbacks {
   onChunk?: (chunk: string) => void
   onEvent?: (event: SSEData) => void
@@ -112,6 +104,17 @@ export const streamDebugRun = async (
   callbacks?: DebugStreamCallbacks,
   abortSignal?: AbortSignal
 ): Promise<void> => {
+  let invalidPayloadWarned = false
+  const warnInvalidPayloadOnce = (kind: string, payload: string): void => {
+    if (invalidPayloadWarned) return
+    invalidPayloadWarned = true
+
+    if (!import.meta.env.DEV || import.meta.env.MODE === 'test') return
+
+    const sample = payload.length > 200 ? `${payload.slice(0, 200)}...` : payload
+    console.warn('[Debug SSE] Ignore invalid payload:', kind, sample)
+  }
+
   await streamSse(
     `${getBaseUrl()}/debug/v1/graphs/${graphId}/threads/${threadId}/stream`,
     {
@@ -129,7 +132,9 @@ export const streamDebugRun = async (
       onUnauthorized: notifyUnauthorized,
       onChunk: callbacks?.onChunk,
       onMessage: (message) => {
-        const parsed = parseDebugSseData(message.data)
+        const parsed = parseSseDataPayload(message.data, (info) => {
+          warnInvalidPayloadOnce(info.kind, info.payload)
+        })
         if (parsed) {
           callbacks?.onEvent?.(parsed)
         }

@@ -32,6 +32,39 @@ describe('createAgUiStreamAdapter', () => {
     expect(onDone).toHaveBeenCalledTimes(1)
   })
 
+  it('RUN_FINISHED 缺 runId 也会被接收（不影响结束信号）', () => {
+    const onDone = vi.fn()
+    const onEvent = vi.fn()
+    const adapter = createAgUiStreamAdapter({ onDone, onEvent })
+
+    adapter.handleMessage({
+      data: JSON.stringify({
+        type: 'RUN_FINISHED',
+        threadId: 'thread_1',
+        // runId 缺失
+      }),
+    })
+
+    expect(onEvent).toHaveBeenCalledTimes(1)
+    expect(onDone).toHaveBeenCalledTimes(1)
+  })
+
+  it('RUN_FINISHED 缺 threadId 也会被接收（优先保证流能结束）', () => {
+    const onDone = vi.fn()
+    const onEvent = vi.fn()
+    const adapter = createAgUiStreamAdapter({ onDone, onEvent })
+
+    adapter.handleMessage({
+      data: JSON.stringify({
+        type: 'RUN_FINISHED',
+        // threadId 缺失
+      }),
+    })
+
+    expect(onEvent).toHaveBeenCalledTimes(1)
+    expect(onDone).toHaveBeenCalledTimes(1)
+  })
+
   it('未结束时 ensureCompleted 抛出不可恢复错误提示', () => {
     const adapter = createAgUiStreamAdapter({})
 
