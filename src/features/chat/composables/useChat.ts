@@ -623,7 +623,11 @@ export function useChat() {
   }
 
   // 更新会话信息（用于收到后端 session 后替换本地临时数据）
-  const updateConversationInfo = (oldId: string, newTreeId: string, newSessionId?: string): string => {
+  const updateConversationInfo = (
+    oldId: string,
+    newTreeId: string,
+    newSessionId?: string
+  ): string => {
     if (!oldId || !newTreeId) {
       return oldId || newTreeId
     }

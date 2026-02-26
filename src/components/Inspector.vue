@@ -40,7 +40,8 @@ const shouldShowChatTab = computed(() => {
   // 检查 output 是否是 Message 指针
   // 格式如 "*schema.Message"
   const isOutputMessage = !!(
-    outputType?.title?.includes('Message') || outputType?.goDefinition?.typeName?.includes('Message')
+    outputType?.title?.includes('Message') ||
+    outputType?.goDefinition?.typeName?.includes('Message')
   )
 
   return isInputMessageArray && isOutputMessage

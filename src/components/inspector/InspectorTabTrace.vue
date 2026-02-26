@@ -53,7 +53,12 @@ const formattedStartTime = computed((): string => {
 <template>
   <div class="space-y-4">
     <div v-if="!props.executionResult" class="text-center py-8 text-muted-foreground">
-      <svg class="w-8 h-8 mx-auto mb-2 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg
+        class="w-8 h-8 mx-auto mb-2 opacity-20"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -73,7 +78,9 @@ const formattedStartTime = computed((): string => {
 
     <div v-else class="space-y-4">
       <div class="space-y-2">
-        <div class="p-2 bg-muted/20 rounded border border-border/50 flex items-center justify-between">
+        <div
+          class="p-2 bg-muted/20 rounded border border-border/50 flex items-center justify-between"
+        >
           <div class="text-[10px] text-muted-foreground uppercase">Status</div>
           <div class="flex items-center gap-2">
             <div

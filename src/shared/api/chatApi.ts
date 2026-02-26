@@ -5,12 +5,7 @@ import type {
   SessionListResponse,
   SessionMessagesResponse,
 } from '@/shared/types'
-import {
-  chatApiClient,
-  getChatApiBase,
-  isAuthEnabled,
-  notifyUnauthorized,
-} from '@/shared/api/base'
+import { chatApiClient, getChatApiBase, isAuthEnabled, notifyUnauthorized } from '@/shared/api/base'
 import { normalizeApiError } from '@/shared/api/errors'
 import { requestWithPolicy } from '@/shared/api/request'
 import {
@@ -116,9 +111,12 @@ export const fetchSessions = async (): Promise<SessionListResponse> => {
 export const fetchSessionMessages = async (sessionId: string): Promise<SessionMessagesResponse> => {
   return requestWithPolicy(
     async (signal) => {
-      const response = await chatApiClient.get<SessionMessagesResponse>(`/api/v1/sessions/${sessionId}`, {
-        signal,
-      })
+      const response = await chatApiClient.get<SessionMessagesResponse>(
+        `/api/v1/sessions/${sessionId}`,
+        {
+          signal,
+        }
+      )
       return response.data
     },
     {

@@ -90,7 +90,8 @@ describe('useChat', () => {
   })
 
   it('会话切换后，流式增量仍写回原会话', async () => {
-    const { createConversation, sendMessage, selectConversation, activeConversationId, messages } = useChat()
+    const { createConversation, sendMessage, selectConversation, activeConversationId, messages } =
+      useChat()
 
     createConversation()
     const streamConversationId = activeConversationId.value as string
@@ -109,7 +110,11 @@ describe('useChat', () => {
     const streamMessages = messages.value[streamConversationId] || []
     const assistantMessage = streamMessages.find((message) => message.role === 'assistant')
     expect(assistantMessage?.content).toContain('hello stream')
-    expect((messages.value['markdown-demo'] || []).some((message) => message.content.includes('hello stream'))).toBe(false)
+    expect(
+      (messages.value['markdown-demo'] || []).some((message) =>
+        message.content.includes('hello stream')
+      )
+    ).toBe(false)
 
     emitEvent(stream, {
       type: 'RUN_FINISHED',
@@ -121,7 +126,8 @@ describe('useChat', () => {
   })
 
   it('临时会话替换成后端 threadId 后，后续事件仍落到新会话', async () => {
-    const { createConversation, sendMessage, selectConversation, activeConversationId, messages } = useChat()
+    const { createConversation, sendMessage, selectConversation, activeConversationId, messages } =
+      useChat()
 
     createConversation()
     const localConversationId = activeConversationId.value as string
@@ -154,7 +160,11 @@ describe('useChat', () => {
     const replacedMessages = messages.value['tree_10001'] || []
     const replacedAssistant = replacedMessages.find((message) => message.role === 'assistant')
     expect(replacedAssistant?.content).toBe('first second')
-    expect((messages.value['reasoning-demo'] || []).some((message) => message.content.includes('first second'))).toBe(false)
+    expect(
+      (messages.value['reasoning-demo'] || []).some((message) =>
+        message.content.includes('first second')
+      )
+    ).toBe(false)
 
     stream.callbacks.onDone?.()
     stream.resolve()
@@ -191,7 +201,8 @@ describe('useChat', () => {
   })
 
   it('主动停止流式请求时，消息应标记为已停止生成', async () => {
-    const { createConversation, sendMessage, stopStreaming, activeConversationId, messages } = useChat()
+    const { createConversation, sendMessage, stopStreaming, activeConversationId, messages } =
+      useChat()
 
     createConversation()
     const conversationId = activeConversationId.value as string
@@ -206,7 +217,9 @@ describe('useChat', () => {
       (message) => message.role === 'assistant'
     )
     expect(
-      assistantMessages.some((message) => message.status === 'sent' && message.content === '已停止生成')
+      assistantMessages.some(
+        (message) => message.status === 'sent' && message.content === '已停止生成'
+      )
     ).toBe(true)
     expect(assistantMessages.some((message) => message.status === 'error')).toBe(false)
   })

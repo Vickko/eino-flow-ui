@@ -65,4 +65,3 @@ const onInput = (e: Event): void => {
     ></textarea>
   </div>
 </template>
-

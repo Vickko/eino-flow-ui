@@ -47,7 +47,10 @@ describe('sessionMappers', () => {
     const content = buildSessionUserDisplayContent({
       role: 'user',
       content: '   ',
-      user_input_multi_content: [{ type: 'text', text: 'hi' }, { type: 'text', text: '!' }],
+      user_input_multi_content: [
+        { type: 'text', text: 'hi' },
+        { type: 'text', text: '!' },
+      ],
     })
     expect(content).toBe('hi!')
   })
@@ -92,4 +95,3 @@ describe('sessionMappers', () => {
     expect(msg.content).toBe('tool says')
   })
 })
-

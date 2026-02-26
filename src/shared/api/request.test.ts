@@ -20,14 +20,11 @@ describe('api request policy', () => {
       )
       .mockResolvedValueOnce('ok')
 
-    const result = await requestWithPolicy(
-      async (signal) => task(signal),
-      {
-        retryCount: 1,
-        retryDelayMs: 1,
-        timeoutMs: 1000,
-      }
-    )
+    const result = await requestWithPolicy(async (signal) => task(signal), {
+      retryCount: 1,
+      retryDelayMs: 1,
+      timeoutMs: 1000,
+    })
 
     expect(result).toBe('ok')
     expect(task).toHaveBeenCalledTimes(2)

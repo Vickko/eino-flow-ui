@@ -132,7 +132,10 @@ const previousGraphLabel = computed(() => {
                   {{ props.graphName || 'No Graph Selected' }}
                 </h2>
 
-                <div v-if="props.selectedGraphId" class="flex items-center gap-3 whitespace-nowrap ml-3">
+                <div
+                  v-if="props.selectedGraphId"
+                  class="flex items-center gap-3 whitespace-nowrap ml-3"
+                >
                   <span class="w-px h-4 bg-border"></span>
                   <div class="flex items-center gap-2 text-xs text-muted-foreground">
                     <span class="font-mono">{{ props.selectedGraphId }}</span>

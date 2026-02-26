@@ -52,4 +52,3 @@ const formattedConfig = computed((): string => {
     </div>
   </div>
 </template>
-

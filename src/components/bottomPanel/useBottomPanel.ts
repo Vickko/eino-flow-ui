@@ -331,7 +331,9 @@ export function useBottomPanel(): UseBottomPanelResult {
     } else if (nodeExecutionResults.value[selectedFromNode.value]?.input) {
       const executionInput = nodeExecutionResults.value[selectedFromNode.value]?.input
       inputJson.value =
-        typeof executionInput === 'string' ? executionInput : JSON.stringify(executionInput, null, 2)
+        typeof executionInput === 'string'
+          ? executionInput
+          : JSON.stringify(executionInput, null, 2)
     } else {
       const defaultTemplate = getDefaultTemplate()
       if (defaultTemplate) {

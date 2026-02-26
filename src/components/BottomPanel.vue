@@ -43,11 +43,7 @@ const {
       />
 
       <!-- Output Area -->
-      <BottomPanelLogsPane
-        :logs="logs"
-        :set-container="setLogsContainer"
-        @copy="copyLogs"
-      />
+      <BottomPanelLogsPane :logs="logs" :set-container="setLogsContainer" @copy="copyLogs" />
     </div>
   </div>
 </template>

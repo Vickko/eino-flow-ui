@@ -107,7 +107,10 @@ watch(
       title="Chat Messages"
       @click="emit('update:modelValue', 'chat')"
     >
-      <MessageSquare class="w-4 h-4 transition-transform duration-200" :class="{ 'animate-wiggle': playChatAnimation }" />
+      <MessageSquare
+        class="w-4 h-4 transition-transform duration-200"
+        :class="{ 'animate-wiggle': playChatAnimation }"
+      />
     </div>
   </div>
 </template>

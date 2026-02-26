@@ -14,8 +14,7 @@ describe('useApiConfigStore', () => {
 
     const store = useApiConfigStore()
     const envApiBase = import.meta.env.VITE_API_BASE_URL
-    const shouldDefaultToSameOrigin =
-      !(typeof envApiBase === 'string' && envApiBase.trim() !== '')
+    const shouldDefaultToSameOrigin = !(typeof envApiBase === 'string' && envApiBase.trim() !== '')
     const expectedApiBase = shouldDefaultToSameOrigin
       ? window.location.origin
       : 'http://localhost:52538'

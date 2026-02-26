@@ -47,14 +47,13 @@ const isWaitingForFirstToken = computed(() => {
   return !hasDisplayablePayload.value
 })
 
-const { markdownContentRef, bubbleRef, shouldAnimateAI, shouldAnimateUser } = useMessageBubbleEffects(
-  {
+const { markdownContentRef, bubbleRef, shouldAnimateAI, shouldAnimateUser } =
+  useMessageBubbleEffects({
     message,
     isStreaming,
     hasDisplayablePayload,
     isNew,
-  }
-)
+  })
 
 const isUser = computed(() => message.value.role === 'user')
 
@@ -188,11 +187,7 @@ const formatToolCallArgs = (args: unknown) => {
       v-if="isUser && userPreviewImages.length > 0"
       :class="['images-container mb-2', shouldAnimateUser ? 'image-strip-animate' : '']"
     >
-      <div
-        v-for="image in userPreviewImages"
-        :key="image.id"
-        class="generated-image-frame"
-      >
+      <div v-for="image in userPreviewImages" :key="image.id" class="generated-image-frame">
         <img :src="image.src" :alt="image.alt" class="generated-image" />
       </div>
     </div>

@@ -57,25 +57,40 @@ const elements = computed({
       v-if="props.loading"
       class="absolute inset-0 bg-background/80 flex flex-col items-center justify-center z-50 backdrop-blur-sm"
     >
-      <div class="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin mb-4"></div>
+      <div
+        class="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin mb-4"
+      ></div>
       <p class="text-muted-foreground font-medium">Loading Graph...</p>
     </div>
 
     <!-- Error State -->
     <div v-else-if="props.error" class="absolute inset-0 flex items-center justify-center p-8">
-      <div class="bg-destructive/10 border border-destructive/20 rounded-lg p-6 max-w-md text-center">
+      <div
+        class="bg-destructive/10 border border-destructive/20 rounded-lg p-6 max-w-md text-center"
+      >
         <div class="text-destructive font-medium mb-2">Error Loading Graph</div>
         <div class="text-destructive/80 text-sm">{{ props.error }}</div>
       </div>
     </div>
 
-    <div v-if="!props.loading && !props.error" class="flex-1 flex flex-col h-full overflow-hidden relative">
+    <div
+      v-if="!props.loading && !props.error"
+      class="flex-1 flex flex-col h-full overflow-hidden relative"
+    >
       <div
         v-if="!props.selectedGraphId"
         class="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-muted/20"
       >
-        <div class="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 shadow-sm">
-          <svg class="w-12 h-12 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+        <div
+          class="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 shadow-sm"
+        >
+          <svg
+            class="w-12 h-12 text-muted-foreground/50"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+          >
             <circle cx="18" cy="5" r="3" />
             <circle cx="6" cy="12" r="3" />
             <circle cx="18" cy="19" r="3" />

@@ -38,7 +38,12 @@ import { fetchGraphCanvas, useGraph, useLayout } from '@/features/graph'
 import type { CanvasNode as TCanvasNode } from '@/shared/types'
 import GraphCanvas from './graphViewer/GraphCanvas.vue'
 import GraphFloatingToolbar from './graphViewer/GraphFloatingToolbar.vue'
-import { layoutElements, type FlowEdge, type FlowElement, type FlowNode } from './graphViewer/graphLayout'
+import {
+  layoutElements,
+  type FlowEdge,
+  type FlowElement,
+  type FlowNode,
+} from './graphViewer/graphLayout'
 
 interface NodeClickEvent {
   node: {

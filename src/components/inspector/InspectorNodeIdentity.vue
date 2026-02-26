@@ -52,4 +52,3 @@ const nodeTypeColor = computed((): string => {
     </div>
   </div>
 </template>
-

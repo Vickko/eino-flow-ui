@@ -28,7 +28,9 @@ const resolveInitialApiBase = (): string => {
   }
 
   let initialUrl = normalizedStoredUrl ?? DEFAULT_API_BASE
-  const shouldDefaultToSameOrigin = !(typeof ENV_API_BASE === 'string' && ENV_API_BASE.trim() !== '')
+  const shouldDefaultToSameOrigin = !(
+    typeof ENV_API_BASE === 'string' && ENV_API_BASE.trim() !== ''
+  )
   if (
     shouldDefaultToSameOrigin &&
     storedUrl &&

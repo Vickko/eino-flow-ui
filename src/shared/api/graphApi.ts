@@ -58,9 +58,12 @@ export const fetchGraphCanvas = async (
 export const fetchInputTypes = async (): Promise<ApiResponse<InputTypesResponse>> => {
   const data = await requestWithPolicy(
     async (signal) => {
-      const response = await apiClient.get<ApiResponse<InputTypesResponse>>('/debug/v1/input_types', {
-        signal,
-      })
+      const response = await apiClient.get<ApiResponse<InputTypesResponse>>(
+        '/debug/v1/input_types',
+        {
+          signal,
+        }
+      )
       return response.data
     },
     {

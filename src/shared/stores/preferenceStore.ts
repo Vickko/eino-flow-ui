@@ -33,7 +33,8 @@ export const usePreferenceStore = defineStore('preference', () => {
 
   const applyTheme = (): void => {
     const query = ensureMediaQuery()
-    const shouldBeDark = theme.value === 'system' ? query?.matches ?? false : theme.value === 'dark'
+    const shouldBeDark =
+      theme.value === 'system' ? (query?.matches ?? false) : theme.value === 'dark'
     isDark.value = shouldBeDark
 
     if (typeof document !== 'undefined') {
