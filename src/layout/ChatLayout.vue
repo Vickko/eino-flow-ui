@@ -52,7 +52,7 @@ watch(
       sidebarCollapsed.value = false
     }
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 // Delayed display state: keeps chat content visible during slide-out animation.
