@@ -39,7 +39,7 @@ watch(activeConversationId, (newId) => {
 })
 
 const displayedConversation = computed(() =>
-  conversations.value.find((c) => c.id === displayedConversationId.value),
+  conversations.value.find((c) => c.id === displayedConversationId.value)
 )
 
 const displayedMessages = computed(() => {
@@ -67,13 +67,7 @@ const onSlideTransitionEnd = (e: TransitionEvent) => {
       <!-- Sidebar -->
       <div
         class="w-full shrink-0 h-full border-r border-border/40 bg-background/50 backdrop-blur-xl transition-[width] duration-300 relative sidebar-container z-30 flex"
-        :class="[
-          activeConversationId
-            ? showChatSidebar
-              ? 'md:w-80'
-              : 'md:w-20'
-            : '',
-        ]"
+        :class="[activeConversationId ? (showChatSidebar ? 'md:w-80' : 'md:w-20') : '']"
       >
         <ChatSidebar
           class="w-full"
