@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-vue-next'
-import { RouterLink } from 'vue-router'
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { useChatShell } from '@/features/chat'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
 import ChatCard from '@/components/chat/ChatCard.vue'
@@ -12,9 +11,6 @@ const {
   createConversation,
   isStreaming,
   stopStreaming,
-  isExpanded,
-  handleMouseEnter,
-  handleMouseLeave,
   showChatSidebar,
   activeConversation,
   currentMessages,
@@ -99,41 +95,10 @@ const {
       </div>
     </div>
 
-    <!-- Nav Switch Button (Bottom Left) -->
-    <div
-      class="nav-switch-trigger absolute left-0 bottom-0 z-50 w-24 h-24 pointer-events-auto"
-      :class="{ expanded: isExpanded }"
-      @mouseenter="handleMouseEnter"
-      @mouseleave="handleMouseLeave"
-    >
-      <RouterLink
-        to="/"
-        class="nav-switch-btn absolute left-3 bottom-3 p-3 rounded-full bg-background/60 backdrop-blur-xl border border-border/40 shadow-panel hover:bg-muted/50 transition-all duration-300"
-        title="Graph"
-      >
-        <LayoutGrid class="w-5 h-5 text-foreground" />
-      </RouterLink>
-    </div>
   </div>
 </template>
 
 <style scoped>
-/* Nav Switch Button Auto-hide */
-.nav-switch-trigger {
-  pointer-events: none;
-}
-
-.nav-switch-trigger .nav-switch-btn {
-  pointer-events: auto;
-  transform: translate(-50%, 50%);
-  opacity: 0.3;
-}
-
-.nav-switch-trigger.expanded .nav-switch-btn {
-  transform: translate(0, 0);
-  opacity: 1;
-}
-
 /* Sidebar Toggle Button Hover Effect */
 .sidebar-container .toggle-btn {
   opacity: 0.4;

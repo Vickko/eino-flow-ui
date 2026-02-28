@@ -8,8 +8,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('@/layout/MainLayout.vue'),
-      meta: { requiresAuth: true }, // 需要认证
+      redirect: '/chat',
     },
     {
       path: '/chat',
