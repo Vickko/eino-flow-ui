@@ -20,7 +20,7 @@ const {
 </script>
 
 <template>
-  <div class="relative h-screen w-full overflow-hidden bg-background text-foreground font-sans">
+  <div class="relative h-dvh w-full overflow-hidden bg-background text-foreground font-sans">
     <!-- 1. Graph Layer (Bottom Z-Index) -->
     <div class="absolute inset-0 z-0 bg-muted/20 overflow-hidden">
       <!-- GraphViewer -->

@@ -210,7 +210,7 @@ defineExpose({
 
 <template>
   <div
-    class="px-4 pt-1 pb-0.5 rounded-lg transition-colors"
+    class="px-4 pt-1 pb-[max(2px,env(safe-area-inset-bottom))] rounded-lg transition-colors"
     :class="isDragOver ? 'bg-primary/5' : ''"
     @dragover="handleDragOver"
     @dragleave="handleDragLeave"

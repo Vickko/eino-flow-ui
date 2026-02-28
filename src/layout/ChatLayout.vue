@@ -21,7 +21,7 @@ const {
 </script>
 
 <template>
-  <div class="flex h-screen w-full overflow-hidden bg-background text-foreground">
+  <div class="flex h-dvh w-full overflow-hidden bg-background text-foreground">
     <!-- Sidebar with Collapse -->
     <div
       class="h-full border-r border-border/40 bg-background/50 backdrop-blur-xl flex-shrink-0 transition-all duration-300 relative sidebar-container z-30"
