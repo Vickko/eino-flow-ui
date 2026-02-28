@@ -4,6 +4,7 @@ import {
   MoreVertical,
   Phone,
   Video,
+  ChevronLeft,
   ChevronUp,
   Check,
   Settings,
@@ -29,6 +30,7 @@ const emit = defineEmits<{
     payload: { text: string; model?: string; thinking?: boolean; attachments?: ImageAttachment[] }
   ): void
   (e: 'stop'): void
+  (e: 'back'): void
 }>()
 
 const scrollAreaRef = ref<HTMLDivElement | null>(null)
@@ -357,6 +359,12 @@ const handleClickOutside = (event: MouseEvent) => {
       class="flex items-center justify-between px-4 bg-muted/30 rounded-t-xl border border-border/40 border-b-0 overflow-hidden shrink-0 h-10 py-2"
     >
       <div class="flex items-center gap-2">
+        <button
+          class="md:hidden p-1 -ml-1 rounded-lg hover:bg-muted/50 transition-colors"
+          @click="emit('back')"
+        >
+          <ChevronLeft class="w-5 h-5" />
+        </button>
         <div
           class="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-primary font-semibold text-xs"
         >

@@ -61,16 +61,6 @@ const {
       :class="[activeConversationId ? 'flex' : 'hidden md:flex']"
     >
       <template v-if="activeConversationId">
-        <!-- Mobile Back Button Overlay -->
-        <div class="md:hidden absolute top-6 left-5 z-50">
-          <button
-            class="p-2 rounded-full bg-background/50 backdrop-blur-md border border-border/50 shadow-sm hover:bg-muted transition-colors"
-            @click="handleBack"
-          >
-            <ChevronLeft class="w-5 h-5" />
-          </button>
-        </div>
-
         <ChatCard
           :messages="currentMessages"
           :conversation-title="activeConversation?.title"
@@ -81,6 +71,7 @@ const {
               sendMessage(text, model, thinking, attachments)
           "
           @stop="stopStreaming"
+          @back="handleBack"
         />
       </template>
 
