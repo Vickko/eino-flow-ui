@@ -42,7 +42,7 @@ RUN apk add --no-cache curl
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # 从构建阶段复制构建产物到 Nginx 目录
-COPY --from=builder /app/dist /usr/share/nginx/html/devops
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # 创建非 root 用户运行 Nginx
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
