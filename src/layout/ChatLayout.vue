@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { useChatShell } from '@/features/chat'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
@@ -18,6 +18,42 @@ const {
   handleBack,
   toggleSidebar,
 } = useChatShell()
+
+const isMobile = ref(false)
+
+onMounted(() => {
+  const mql = window.matchMedia('(max-width: 767.98px)')
+  isMobile.value = mql.matches
+  mql.addEventListener('change', (e) => {
+    isMobile.value = e.matches
+  })
+})
+
+// Delayed collapsed state: on mobile back-navigation the slide panel needs time to
+// move into view before the sidebar content enter-animations fire. Without the delay
+// the animations complete while the panel is still off-screen and appear invisible.
+const sidebarCollapsed = ref(false)
+let collapseTimer: ReturnType<typeof setTimeout> | undefined
+
+watch(
+  () => activeConversationId.value !== null && (isMobile.value || !showChatSidebar.value),
+  (shouldCollapse, wasPrevCollapsed) => {
+    if (collapseTimer !== undefined) {
+      clearTimeout(collapseTimer)
+      collapseTimer = undefined
+    }
+    if (shouldCollapse) {
+      sidebarCollapsed.value = true
+    } else if (wasPrevCollapsed && isMobile.value) {
+      collapseTimer = setTimeout(() => {
+        sidebarCollapsed.value = false
+      }, 150)
+    } else {
+      sidebarCollapsed.value = false
+    }
+  },
+  { immediate: true },
+)
 
 // Delayed display state: keeps chat content visible during slide-out animation.
 // When opening a chat, displayedConversationId updates immediately.
@@ -73,7 +109,7 @@ const onSlideTransitionEnd = (e: TransitionEvent) => {
           class="w-full"
           :conversations="conversations"
           :active-id="activeConversationId"
-          :collapsed="!showChatSidebar && activeConversationId !== null"
+          :collapsed="sidebarCollapsed"
           @select="handleSelectConversation"
           @create="createConversation"
         />

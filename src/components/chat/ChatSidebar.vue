@@ -41,6 +41,16 @@ const filteredConversations = computed(() => {
   )
 })
 
+// Staggered enter delay for conversation text transitions
+const setItemEnterDelay = (el: Element, index: number) => {
+  const delay = Math.min(80 + index * 30, 300)
+  ;(el as HTMLElement).style.transitionDelay = `${delay}ms`
+}
+
+const clearTransitionDelay = (el: Element) => {
+  ;(el as HTMLElement).style.transitionDelay = ''
+}
+
 const formatTime = (timestamp: number) => {
   const date = new Date(timestamp)
   const now = new Date()
@@ -117,7 +127,7 @@ const formatTime = (timestamp: number) => {
     <!-- List -->
     <div class="flex-1 overflow-y-auto px-2 pb-2 space-y-1 custom-scrollbar">
       <div
-        v-for="conv in collapsed ? conversations : filteredConversations"
+        v-for="(conv, index) in collapsed ? conversations : filteredConversations"
         :key="conv.id"
         :class="
           cn(
@@ -147,7 +157,11 @@ const formatTime = (timestamp: number) => {
           :class="collapsed ? 'w-0' : 'flex-1 min-w-0'"
           class="overflow-hidden transition-[width] duration-0"
         >
-          <Transition name="fade-slide">
+          <Transition
+            name="fade-slide"
+            @before-enter="(el: Element) => setItemEnterDelay(el, index)"
+            @after-enter="clearTransitionDelay"
+          >
             <div v-if="!collapsed" class="text-left">
               <div class="flex items-center justify-between mb-0.5">
                 <span
