@@ -45,10 +45,10 @@ const DEFAULT_MODELS: Model[] = [
     icon: getModelIcon('claude-opus-4-6'),
   },
   {
-    id: 'claude-sonnet-4-5',
-    name: 'Claude Sonnet 4.5',
+    id: 'claude-sonnet-4-6',
+    name: 'Claude Sonnet 4.6',
     description: 'Balanced performance',
-    icon: getModelIcon('claude-sonnet-4-5'),
+    icon: getModelIcon('claude-sonnet-4-6'),
   },
   {
     id: 'claude-haiku-4-5',
@@ -57,10 +57,10 @@ const DEFAULT_MODELS: Model[] = [
     icon: getModelIcon('claude-haiku-4-5'),
   },
   {
-    id: 'gemini-3-pro-preview',
-    name: 'Gemini 3 Pro Preview',
+    id: 'gemini-3.1-pro-preview',
+    name: 'Gemini 3.1 Pro Preview',
     description: 'Latest Gemini preview',
-    icon: getModelIcon('gemini-3-pro-preview'),
+    icon: getModelIcon('gemini-3.1-pro-preview'),
   },
   {
     id: 'gemini-3-flash-preview',
@@ -75,10 +75,10 @@ const DEFAULT_MODELS: Model[] = [
     icon: getModelIcon('gemini-3-pro-image-preview'),
   },
   {
-    id: 'gemini-2.5-flash-image',
-    name: 'Nano Banana',
-    description: 'Gemini 2.5 Pro with image support',
-    icon: getModelIcon('gemini-2.5-flash-image'),
+    id: 'gemini-3.1-flash-image-preview',
+    name: 'Nano Banana 2',
+    description: 'Gemini 3.1 Flash with image support',
+    icon: getModelIcon('gemini-3.1-flash-image-preview'),
   },
   {
     id: 'grok-4-1-fast-non-reasoning',
@@ -99,10 +99,10 @@ const DEFAULT_MODELS: Model[] = [
     icon: getModelIcon('qwen3.5-397b-a17b'),
   },
   {
-    id: 'qwen3-vl-235b-a22b-thinking',
-    name: 'Qwen3 VL 235B Thinking',
-    description: 'Vision-language thinking model',
-    icon: getModelIcon('qwen3-vl-235b-a22b-thinking'),
+    id: 'qwen3.5-plus',
+    name: 'Qwen3.5 Plus',
+    description: 'Vision-language model with hybrid architecture',
+    icon: getModelIcon('qwen3.5-plus'),
   },
   {
     id: 'glm-5',
@@ -115,12 +115,6 @@ const DEFAULT_MODELS: Model[] = [
     name: 'Doubao Seed 2.0 Pro',
     description: 'ByteDance flagship model',
     icon: getModelIcon('doubao-seed-2-0-pro'),
-  },
-  {
-    id: 'kimi-k2-thinking',
-    name: 'Kimi K2 Thinking',
-    description: 'Deep thinking model',
-    icon: getModelIcon('kimi-k2-thinking'),
   },
   {
     id: 'kimi-k2.5',
